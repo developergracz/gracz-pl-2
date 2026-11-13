@@ -33,22 +33,130 @@ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>.foot
 body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>.footer-newsletter-validation:empty{display:none!important}
 body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>.footer-newsletter-status:empty{display:none!important}
 body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-trust{display:none!important}
+/* Mobile and tablet: the desktop-wide scene must never crop the phone.
+   Reflow the content + separate mobile illustration, respecting content height.
+   Limit scope to this homepage newsletter; other forms remain untouched. */
 @media(max-width:960px){
- body.homepage-premium-max .site-footer .footer-news.footer-news--fullmax-r1{height:auto!important;min-height:calc(100dvh - 100px)!important;padding:28px 18px 280px!important;overflow:hidden!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{inset:auto 0 0!important;height:290px!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{object-fit:cover!important;object-position:right bottom!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-content{position:relative!important;inset:auto!important;width:100%!important;max-width:660px!important;margin:0 auto!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{font-size:clamp(25px,5.3vw,42px)!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-lead{font-size:15px!important}
+ body.homepage-premium-max .site-footer>.footer-grid{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  align-items:stretch!important;
+  gap:0!important;
+ }
+ body.homepage-premium-max .site-footer .footer-grid>.footer-news.footer-news--fullmax-r1{
+  grid-column:1/-1!important;
+  grid-row:1!important;
+  scroll-margin-top:96px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:clamp(18px,3vw,30px)!important;
+  height:auto!important;
+  min-height:0!important;
+  overflow:visible!important;
+  padding:clamp(26px,4vw,42px) clamp(16px,4vw,32px) clamp(28px,5vw,48px)!important;
+  background:#004744!important;
+ }
+ body.homepage-premium-max .site-footer .footer-grid>.footer-brand,
+ body.homepage-premium-max .site-footer .footer-grid>.footer-col:not(.footer-news){
+  grid-column:1!important;
+  grid-row:auto!important;
+  min-width:0!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-content{
+  position:relative!important;
+  inset:auto!important;
+  order:1!important;
+  width:100%!important;
+  max-width:660px!important;
+  min-width:0!important;
+  height:auto!important;
+  margin:0 auto!important;
+  transform:none!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{
+  position:relative!important;
+  inset:auto!important;
+  order:2!important;
+  display:block!important;
+  width:min(100%,380px)!important;
+  max-width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0 auto!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:min(54dvh,470px)!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:0 auto!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{
+  font-size:clamp(25px,5.2vw,42px)!important;
+  line-height:1.12!important;
+  overflow-wrap:break-word!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-lead{
+  max-width:580px!important;
+  margin-bottom:18px!important;
+  font-size:15px!important;
+  line-height:1.5!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form{
+  width:100%!important;
+  min-width:0!important;
+ }
 }
 @media(max-width:550px){
- body.homepage-premium-max .site-footer .footer-news.footer-news--fullmax-r1{padding:22px 15px 240px!important;min-height:640px!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{height:245px!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{font-size:clamp(24px,6.5vw,31px)!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form{grid-template-columns:minmax(0,1fr)!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>input#news-email[type=email]{grid-column:1!important;grid-row:1!important}
- body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>button.btn--news{grid-column:1!important;grid-row:2!important}
+ body.homepage-premium-max .site-footer .footer-grid>.footer-news.footer-news--fullmax-r1{
+  padding:24px 16px 32px!important;
+  gap:16px!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-content{
+  max-width:100%!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 #f-news{
+  font-size:clamp(24px,6.3vw,31px)!important;
+  margin-bottom:14px!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-lead{
+  margin-bottom:16px!important;
+  font-size:14px!important;
+  line-height:1.52!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form.footer-newsletter-live,
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 form.news-form{
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>input#news-email[type=email]{
+  grid-column:1!important;
+  grid-row:1!important;
+  height:52px!important;
+  min-height:52px!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .news-form>button.btn--news{
+  grid-column:1!important;
+  grid-row:2!important;
+  height:52px!important;
+  min-height:52px!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene{
+  width:min(100%,310px)!important;
+ }
+ body.homepage-premium-max .site-footer .footer-news--fullmax-r1 .footer-news-fullmax-scene img{
+  max-height:380px!important;
+ }
 }
+
 
 /* R3 — owner fix: genuinely white input with black typed/autofilled e-mail.
    Scope to homepage only; leave signup validation and disabled-state logic intact. */
