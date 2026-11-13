@@ -137,6 +137,14 @@ async function expandChessMoreIfNeeded(page){
   const details=page.locator('body.chess-console .chess-minimal-more');
   if(await details.count()&&!(await details.evaluate(el=>el.open)))await details.locator(':scope > summary').click();
 }
+async function collapseChessMoreIfNeeded(page){
+  const more=page.locator('body.chess-console .chess-minimal-more');
+  if(!(await more.count())||!(await more.evaluate(el=>el.open)))return;
+  // When the real configurator modal covers the console, close the disclosure
+  // as test cleanup without clicking through the modal.
+  if(await page.locator('#console-config-modal:visible').count())await more.evaluate(el=>{el.open=false;});
+  else await more.locator(':scope > summary').click();
+}
 async function closeDialogs(page){
   for(const s of ['#player-actions-close','#chess-invite-close','#chat-settings-close','#howto-close'])
     if(await clickIfVisible(page,s))return true;
@@ -172,7 +180,7 @@ export const SCENARIOS = [
   {id:'time-unlimited',label:'Czas: bez limitu',kind:'click',allow:['training-options',...CLOCKS],run:p=>p.selectOption('#training-time','0')},
   {id:'time-bonus',label:'Czas 5 min + bonus 3 s',kind:'click',allow:['training-options',...CLOCKS],run:async p=>{
     await p.selectOption('#training-time','5');await quiet(p,{idle:150,max:1500});
-    await expandChessMoreIfNeeded(p);await p.selectOption('#training-increment','3');
+    await expandChessMoreIfNeeded(p);await p.selectOption('#training-increment','3');await collapseChessMoreIfNeeded(p);
   }},
   {id:'online',label:'Przełączenie do gry online',kind:'click',allow:[...SIDEBAR_CONTENT,...CHAT_CONTENT,...CLOCKS],run:p=>p.locator('#online-mode').click()},
   {id:'online-time',label:'Ustawienie czasu pokoju online',kind:'click',allow:[...SIDEBAR_CONTENT,...CLOCKS],run:p=>p.selectOption('#create-room-time','10')},
@@ -185,14 +193,14 @@ export const SCENARIOS = [
     }
     await p.locator('.side-dock .game-tools .tool-btn').first().hover();
   }},
-  {id:'config-open',label:'Otwarcie konfiguratora',kind:'click',run:async p=>{await expandChessMoreIfNeeded(p);await p.locator('#console-config-open').click();}},
+  {id:'config-open',label:'Otwarcie konfiguratora',kind:'click',run:async p=>{await expandChessMoreIfNeeded(p);await p.locator('#console-config-open').click();await collapseChessMoreIfNeeded(p);}},
   {id:'hide-sidebar',label:'Ukrycie lewego panelu',kind:'state',run:p=>toggleTile(p,'sidebar')},
   {id:'hide-dock',label:'Ukrycie prawego panelu',kind:'state',run:p=>toggleTile(p,'dock')},
   {id:'show-dock',label:'Ponowne dodanie prawego panelu',kind:'state',run:p=>toggleTile(p,'dock')},
   {id:'show-sidebar',label:'Ponowne dodanie lewego panelu',kind:'restore',run:p=>toggleTile(p,'sidebar')},
   {id:'config-close',label:'Zamknięcie konfiguratora',kind:'restore',run:p=>p.locator('#console-config-done').click()},
   {id:'focus',label:'Tryb „Sama gra”',kind:'state',ownState:true,run:async p=>{await expandChessMoreIfNeeded(p);await p.locator('#focus-game').click();}},
-  {id:'focus-exit',label:'Wyjście z trybu „Sama gra”',kind:'restore',run:p=>p.locator('#focus-exit').click()},
+  {id:'focus-exit',label:'Wyjście z trybu „Sama gra”',kind:'restore',run:async p=>{await p.locator('#focus-exit').click();await collapseChessMoreIfNeeded(p);}},
   {id:'fullscreen',label:'Pełny ekran (okno powiększone do ekranu)',kind:'state',ownState:true,run:async (p,g,ctx)=>{
     await p.locator('#fullscreen-game').click();
     await p.waitForFunction(()=>!!document.fullscreenElement,null,{timeout:3000}).catch(()=>{});
