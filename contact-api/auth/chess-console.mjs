@@ -85,6 +85,15 @@ const referenceLayoutCss = String.raw`
   body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
     display:flex;flex-direction:column;flex:1 1 230px;min-height:190px!important;overflow:hidden
   }
+  body.chess-console .layout:not(.game-focus) .side-dock .match-panel.moves-only{
+    display:flex!important;flex-direction:column!important;flex:1 0 180px!important;min-height:180px!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock .match-panel.moves-only #moves-panel{
+    display:flex!important;flex-direction:column!important;flex:1 1 auto!important;min-height:0!important
+  }
+  body.chess-console .layout:not(.game-focus) .side-dock .match-panel.moves-only #moves-list{
+    flex:1 1 auto!important;min-height:125px!important;height:auto!important;overflow-y:auto
+  }
   body.chess-console .layout:not(.game-focus) .side-dock>.game-tools{flex:0 0 42px}
   body.chess-console .layout:not(.game-focus) .bottom{
     grid-column:1!important;grid-row:3!important;width:100%;min-width:0;min-height:0
