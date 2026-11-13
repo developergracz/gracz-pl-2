@@ -297,6 +297,7 @@ body.chess-console .layout:not(.game-focus)>.boardarea>.players{
   min-height:0!important;gap:10px!important;margin:0!important;
   padding:0!important;overflow:visible!important
 }
+body.chess-console .layout.console-hide-players:not(.game-focus)>.boardarea>.players{display:none!important}
 body.chess-console .layout:not(.game-focus)>.boardarea>.players>.versus{display:none!important}
 body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player{
   display:flex!important;align-items:center;justify-content:center;
@@ -388,6 +389,8 @@ const ownerCompactJs = String.raw`
         const el=training.querySelector(selector);
         if(el)advanced.appendChild(el);
       }
+      const levelHelp=training.querySelector('#ai-hint')?.closest('details');
+      if(levelHelp)advanced.appendChild(levelHelp);
       const clockHelp=training.querySelector('.training-clock-help')?.closest('details');
       if(clockHelp)advanced.appendChild(clockHelp);
       // Preserve existing modal entry points for keyboard users and game tests.
