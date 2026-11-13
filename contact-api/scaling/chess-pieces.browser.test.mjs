@@ -116,7 +116,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   await square('d5 czarny pionek').click();await inspectPieces(page,31);
   assert.equal(await square('d5 biały pionek').locator('svg').getAttribute('data-piece'),'P');
   const more=page.locator('.chess-minimal-more');
-  if(await more.count()&&!(await more.evaluate(el=>el.open)))await more.locator('summary').click();
+  if(await more.count()&&!(await more.evaluate(el=>el.open)))await more.locator(':scope > summary').click();
   await page.locator('#focus-game').click();await inspectPieces(page,31);
   for(const selector of ['#clock-1','#clock-2','.players .versus'])assert.equal(await page.locator(selector).isVisible(),true,selector+' must remain visible in focus mode');
   await page.locator('#focus-exit').click();
