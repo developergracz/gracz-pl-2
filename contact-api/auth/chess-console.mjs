@@ -223,7 +223,8 @@ body.chess-console .layout:not(.game-focus) .side-dock .console-settings-slot{
 body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{
   min-height:0!important;flex:0 0 auto!important;overflow:visible!important
 }
-body.chess-console .layout:not(.game-focus) .side-dock #training-records{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock #training-records:not([hidden]){display:block!important}
+body.chess-console .layout:not(.game-focus) .side-dock #training-records[hidden]{display:none!important}
 body.chess-console .layout:not(.game-focus) .side-dock #training-settings{
   display:flex!important;flex-direction:column;gap:4px;min-height:0!important;
   max-height:none!important;overflow:visible!important
@@ -252,13 +253,16 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-options sele
   height:34px!important;font-size:clamp(11px,.8vw,13px)!important;padding:0 20px 0 7px!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-level:has(>select[hidden]){display:none!important}
-/* The time controls remain in the game DOM and keep the chosen 7-minute
-   clock; they are simply tucked away in the approved clean game presentation. */
-body.chess-console .layout:not(.game-focus) .side-dock #training-settings>.training-timer-label,
-body.chess-console .layout:not(.game-focus) .side-dock #training-settings>#training-time,
-body.chess-console .layout:not(.game-focus) .side-dock #training-settings>#training-increment,
-body.chess-console .layout:not(.game-focus) .side-dock #training-settings>label[for="training-increment"],
-body.chess-console .layout:not(.game-focus) .side-dock #training-settings>.panel-help:not(:first-of-type){display:none!important}
+/* Advanced training controls stay usable and scrollable below the chat;
+   they are not removed or made invisible to tests or keyboard users. */
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced{
+  display:flex;flex-direction:column;gap:5px;padding:10px 5px;
+  border-top:1px solid #6a807950;margin-top:8px;flex:0 0 auto
+}
+body.chess-console .layout:not(.game-focus) .side-dock:has(#training-settings[hidden]) .chess-owner-advanced{display:none!important}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>select{width:100%;max-width:100%}
+body.chess-console .layout:not(.game-focus) .side-dock .chess-owner-advanced>label{font-size:12px}
+
 body.chess-console .layout:not(.game-focus) .side-dock .match-panel{
   flex:1 1 240px!important;min-height:220px!important;height:auto!important;
   max-height:none!important
@@ -371,7 +375,22 @@ const ownerCompactJs = String.raw`
     if(trainingMode?.querySelector('strong'))trainingMode.querySelector('strong').textContent='Komputer';
     const actions=dock.querySelector('.chess-reference-actions');
     const tools=dock.querySelector('.game-tools');
+    const match=dock.querySelector('#match-panel');
     if(actions&&tools)dock.insertBefore(actions,tools);
+    if(match){
+      const advanced=document.createElement('section');
+      advanced.className='chess-owner-advanced';
+      advanced.setAttribute('aria-label','Dodatkowe ustawienia treningu');
+      dock.insertBefore(advanced,tools||null);
+      const records=dock.querySelector('#training-records');
+      if(records)advanced.appendChild(records);
+      for(const selector of ['label[for="training-time"]','#training-time','label[for="training-increment"]','#training-increment']){
+        const el=training.querySelector(selector);
+        if(el)advanced.appendChild(el);
+      }
+      const clockHelp=training.querySelector('.training-clock-help')?.closest('details');
+      if(clockHelp)advanced.appendChild(clockHelp);
+    }
     layout.dataset.ownerCompact='yes';
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',composeOwnerChessControls,{once:true});
