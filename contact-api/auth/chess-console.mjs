@@ -722,6 +722,14 @@ body.chess-console .layout:not(.game-focus):not(.console-hide-training-settings)
 body.chess-console .layout:not(.game-focus):not(.console-hide-training-records) .side-dock .console-settings-slot > #training-records[hidden]{
   display:none!important
 }
+/* Online room configuration is longer than computer mode. Contain its
+   scroll locally so the game clocks, chat and history never leave the console. */
+@media(min-width:801px){
+  body.chess-console .layout:not(.game-focus) .side-dock > .sidebar:has(#online-settings:not([hidden])){
+    max-height:min(250px,34dvh)!important;
+    overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:thin
+  }
+}
 /* Keep the old full-board action interactive only while its disclosure is open;
    otherwise it is visually clipped by the native details element. */
 body.chess-console .layout:not(.game-focus) .side-dock .chess-minimal-more:not([open]) #focus-game{
