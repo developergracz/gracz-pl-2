@@ -1291,12 +1291,20 @@ body.chess-console .layout:not(.game-focus) .side-dock>.game-tools{
   display:none!important
 }
 /* Online still exposes the pre-existing accepted-game and invitation controls. */
+body.chess-console .layout:not(.game-focus):has(#online-mode.active) .side-dock .console-settings-slot,
 body.chess-console .layout:not(.game-focus) .side-dock>.sidebar:has(#online-mode.active) .console-settings-slot{
   display:block!important;min-height:0!important;max-height:180px!important;
   overflow-y:auto!important;margin:6px 0 0!important;padding:4px 0!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock #online-settings:not([hidden]){
   display:block!important;max-height:170px!important;overflow-y:auto!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock>.chess-owner-claim-draw:not([hidden]){
+  display:block!important;order:2!important;flex:0 0 auto!important;
+  width:100%!important;min-height:36px!important;padding:7px!important;
+  border:0!important;border-radius:8px!important;
+  background:#006b6a!important;color:#f5e8c5!important;
+  font:700 13px system-ui,sans-serif!important;cursor:pointer
 }
 body.chess-console .layout:not(.game-focus) .side-dock>#game-state:not(:has(.chess-promote)){
   position:absolute!important;width:1px!important;height:1px!important;
@@ -1421,7 +1429,7 @@ body.chess-console .layout:not(.game-focus) .side-dock #chat-send{
     padding:4px 6px!important;
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.players>.player .player-clock:not([hidden]){
-    min-width:51px!important;width:auto!important;
+    width:auto!important;flex-basis:auto!important;
     font-size:clamp(16px,4.7vw,21px)!important
   }
   body.chess-console .layout:not(.game-focus)>.boardarea>.side-dock{
@@ -1465,6 +1473,22 @@ const approvedOwnerChessJs=String.raw`
     onlineNew.textContent='Nowa gra';
     onlineNew.hidden=true;
     actions.insertBefore(onlineNew,restart);
+    // FIDE draw claims still need a visible, keyboard-accessible action even
+    // though the old advanced training configuration no longer occupies the panel.
+    const claim=dock.querySelector('.chess-claim-draw');
+    if(claim){
+      const visibleClaim=document.createElement('button');
+      visibleClaim.type='button';visibleClaim.className='chess-owner-claim-draw';
+      visibleClaim.hidden=true;
+      actions.insertAdjacentElement('afterend',visibleClaim);
+      visibleClaim.addEventListener('click',()=>claim.click());
+      const refreshClaim=()=>{
+        visibleClaim.hidden=claim.hidden;
+        if(!claim.hidden)visibleClaim.textContent=claim.textContent;
+      };
+      new MutationObserver(refreshClaim).observe(claim,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true});
+      refreshClaim();
+    }
     const online=()=>!!dock.querySelector('#online-mode.active');
     const update=()=>{onlineNew.hidden=!online();};
     onlineNew.addEventListener('click',()=>dock.querySelector('#invite-friend')?.click());
