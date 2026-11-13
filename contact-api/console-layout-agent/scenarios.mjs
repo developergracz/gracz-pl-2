@@ -135,7 +135,7 @@ async function toggleTile(page,key){
 }
 async function expandChessMoreIfNeeded(page){
   const details=page.locator('body.chess-console .chess-minimal-more');
-  if(await details.count()&&!(await details.evaluate(el=>el.open)))await details.locator('summary').click();
+  if(await details.count()&&!(await details.evaluate(el=>el.open)))await details.locator(':scope > summary').click();
 }
 async function closeDialogs(page){
   for(const s of ['#player-actions-close','#chess-invite-close','#chat-settings-close','#howto-close'])
