@@ -154,6 +154,12 @@ test('mouse drag & drop uses the existing move path next to click-to-move',{time
  assert.deepEqual(errors,[]);
 });
 
+// Minimal chess keeps advanced controls in one keyboard-operable disclosure.
+async function openMinimalSettings(page){
+ const more=page.locator('body.chess-console .chess-minimal-more');
+ if(await more.count()&&!(await more.evaluate(el=>el.open)))await more.locator(':scope > summary').click();
+}
+
 test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:120000},async t=>{
  const base=await fixture(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
@@ -193,7 +199,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   const {page,errors}=await open(browser,base);
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','nonsense'));
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
-  await page.locator('#console-config-open').click();
+  await openMinimalSettings(page);await page.locator('#console-config-open').click();
   assert.equal(await page.locator('#chess-input-mode-both').isChecked(),true,'invalid stored value falls back to both');
   await page.locator('#chess-input-mode-both').focus();
   await page.keyboard.press('ArrowRight');
@@ -204,7 +210,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   await clickMove(page,'e2','e4');
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
 
-  await page.locator('#console-config-open').click();
+  await openMinimalSettings(page);await page.locator('#console-config-open').click();
   await page.locator('label[for],label.chess-input-mode').filter({hasText:'Przeciąganie (kliknięcie wybiera)'}).click();
   await page.locator('#console-config-done').click();
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
@@ -220,7 +226,7 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   // "Sama gra", fullscreen and page zoom keep an exact hit-test.
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','both'));
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
-  await page.locator('#focus-game').click();
+  await openMinimalSettings(page);await page.locator('#focus-game').click();
   assert.equal(await page.locator('#game').evaluate(e=>e.classList.contains('game-focus')),true);
   await mouseDrag(page,'e2','e4');await noGhost(page);
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
