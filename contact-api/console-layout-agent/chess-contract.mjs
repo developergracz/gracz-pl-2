@@ -6,7 +6,7 @@ export async function readChessLayout(page){
   return page.evaluate(()=>{
     if(!document.body.classList.contains('chess-console'))return null;
     const layout=document.querySelector('.layout'),focus=layout.classList.contains('game-focus');
-    const minimal=layout.dataset.minimalChess==='yes',minimalDesktop=minimal&&innerWidth>800;
+    const minimal=layout.dataset.minimalChess==='yes',minimalDesktop=minimal&&innerWidth>800,minimalMobile=minimal&&innerWidth<=800;
     const selectors={board:'#board',frame:'.boardframe',arena:'.arena',dock:'.side-dock',
       settings:'.sidebar',settingsSlot:'.console-settings-slot',players:'.players',status:'#game-state',
       match:'#match-panel',tabs:'.dock-tabs',moves:'#moves-list',chat:'#chat-messages',composer:'.mini-chat',
@@ -38,10 +38,10 @@ export async function readChessLayout(page){
       require(getComputedStyle(elements.frame).padding==='0px'&&getComputedStyle(elements.frame).borderTopWidth==='0px','zewnętrzna rama planszy');
       const coordinates=[...document.querySelectorAll('.chess-coordinate')];
       require(coordinates.length===16&&coordinates.every(e=>inside(rect(e),rect(e.parentElement))),'oznaczenia poza polami planszy');
-      if(minimalDesktop)require(!boxes.heading,'ozdobny nagłówek powinien być ukryty');
+      if(minimalDesktop||minimalMobile)require(!boxes.heading,'ozdobny nagłówek powinien być ukryty');
       else require(!!boxes.heading!==hidden('heading'),'niewłaściwa widoczność nagłówka');
       require(!!boxes.dock!==hidden('dock'),'niewłaściwa widoczność prawego panelu');
-      if(minimalDesktop)require(!boxes.nav,'ozdobny pasek linków powinien być ukryty');
+      if(minimalDesktop||minimalMobile)require(!boxes.nav,'ozdobny pasek linków powinien być ukryty');
       else require(!!boxes.nav!==hidden('quicklinks'),'niewłaściwa widoczność nawigacji');
       if(boxes.dock){
         require(!!boxes.settings!==hidden('sidebar'),'niewłaściwa widoczność ustawień');
@@ -59,7 +59,24 @@ export async function readChessLayout(page){
         if(innerWidth>800){
           require(boxes.dock.x>=boxes.board.x+boxes.board.width-2,'panel nie leży po prawej stronie planszy');
           require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
-        }else require(boxes.dock.y>=boxes.board.y+boxes.board.height-2,'panel nie leży pod planszą');
+        }else{
+          require(boxes.dock.y>=boxes.board.y+boxes.board.height-2,'panel nie leży pod planszą');
+          if(minimalMobile){
+            const mobileMode=layout.querySelector('.boardarea > .chess-mobile-mode');
+            const header=layout.querySelector('.boardarea > .chess-mobile-heading');
+            const modeBox=rect(mobileMode),headerBox=rect(header);
+            require(!!modeBox&&!!headerBox,'brak mobilnego nagłówka lub trybów');
+            require(!!modeBox&&!!boxes.players&&modeBox.y+modeBox.height<=boxes.players.y+2,'tryby mobilne nie są nad zegarami');
+            require(!!boxes.players&&boxes.players.y+boxes.players.height<=boxes.board.y+2,'zegary mobilne nie są nad szachownicą');
+            require(boxes.board.width>=innerWidth-2,'szachownica mobilna nie wypełnia szerokości ekranu');
+            const squares=[...document.querySelectorAll('#board>.chess-square')];
+            require(squares.length===64,'mobilna plansza musi mieć 64 pola');
+            require(squares.filter(el=>el.querySelector('.chess-coordinate-rank')).length===8,'cyfry nie są wewnątrz ośmiu lewych pól');
+            require(squares.filter(el=>el.querySelector('.chess-coordinate-file')).length===8,'litery nie są wewnątrz ośmiu dolnych pól');
+            const overflow=document.documentElement.scrollWidth>innerWidth+2;
+            require(!overflow,'mobilny interfejs wychodzi poza ekran');
+          }
+        }
         for(const [a,b] of [['settings','status'],['status','match'],['match','tools']])
           require(!overlap(boxes[a],boxes[b]),'kolizja '+a+' / '+b);
         const history=elements.match.classList.contains('moves-only');
@@ -80,7 +97,7 @@ export async function readChessLayout(page){
       require(!boxes.dock&&!boxes.settings,'panel boczny widoczny w trybie Sama gra');
       require(boxes.players&&boxes.clock1&&boxes.clock2,'brak zegarów w trybie Sama gra');
     }
-    return {focus,minimal:minimalDesktop,boxes,issues};
+    return {focus,minimal:minimalDesktop,mobile:minimalMobile,boxes,issues};
   });
 }
 
