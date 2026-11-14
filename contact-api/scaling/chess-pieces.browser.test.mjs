@@ -178,7 +178,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   // so the computer cannot promote black's pawn while Playwright selects it.
   await page.route('**/app.js',async route=>{
    const response=await route.fetch(),source=await response.text();
-   const hook="opponentSelect.addEventListener('change',updateOpponent);";
+   const hook="opponentSelect.addEventListener('change',()=>{updateOpponent();saveTrainingHistory();});";
    assert.ok(source.includes(hook));
    await route.fulfill({response,body:source.replace(hook,"opponentSelect.value='human';"+hook)});
   });
@@ -222,7 +222,7 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   const page=await ctx.newPage();page.setDefaultTimeout(10000);
   await page.goto(base+'/konto/szachy/');
   await page.locator('.chess-piece').first().waitFor();
-  await page.locator('#chess-opponent').selectOption('human');
+  await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const square=label=>page.getByRole('gridcell',{name:label,exact:true});
   await square('e2 biały pionek').click();
   await square('e4 puste').click();
