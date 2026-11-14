@@ -367,3 +367,37 @@ test('desktop chess shows approved right panel with live clocks, mailbox, action
  assert.equal(await page.locator('#console-config-modal').isVisible(),true,'settings icon opens existing console configurator');
  assert.deepEqual(failures,[],'no browser runtime errors in premium desktop console');
 });
+
+
+test('desktop online room controls cannot collapse premium chat or hide its footer', {timeout:90000},async t=>{
+ const server=createServer((req,res)=>{
+  const url=new URL(req.url,'http://localhost');
+  if(serveChessConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+  res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:true,items:[],friends:[],challenges:[]}));
+ });
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(()=>{server.close();server.closeAllConnections();});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
+ for(const width of [1024,1366]){
+  const context=await browser.newContext({viewport:{width,height:768}});t.after(()=>context.close());
+  const page=await context.newPage();
+  await page.goto('http://127.0.0.1:'+server.address().port+'/konto/szachy/');
+  await page.locator('.side-dock.chess-pro-panel').waitFor({state:'visible'});
+  await page.locator('#online-mode').click();
+  await page.locator('#online-settings').waitFor({state:'visible'});
+  const geometry=await page.evaluate(()=>{
+   const r=q=>document.querySelector(q).getBoundingClientRect();
+   return {
+    chat:r('#chat-messages').height,
+    dockBottom:r('.side-dock.chess-pro-panel').bottom,
+    footerBottom:r('.chess-pro-tools').bottom,
+    sidebarHeight:r('.side-dock.chess-pro-panel>.sidebar').height,
+    roomHeight:r('#online-settings').height
+   };
+  });
+  assert.ok(geometry.chat>100,'Online chat needs >100px height at '+width+': '+JSON.stringify(geometry));
+  assert.ok(geometry.footerBottom<=geometry.dockBottom+2,
+   'Tools must stay inside compact Online panel at '+width+': '+JSON.stringify(geometry));
+  assert.ok(geometry.roomHeight<=140,'Online room creation uses a compact scrolling area: '+JSON.stringify(geometry));
+ }
+});
