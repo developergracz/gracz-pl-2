@@ -1404,7 +1404,21 @@ body.chess-console .layout:not(.game-focus) .side-dock #chat-input{
 body.chess-console .layout:not(.game-focus) .side-dock #chat-send{
   border-radius:7px!important;background:#006b6a!important
 }
+/* Online settings were pale gold/white on mint: keep all field labels legible. */
+body.chess-console .layout:not(.game-focus) .side-dock #online-settings{
+  color:#074749!important
+}
+body.chess-console .layout:not(.game-focus) .side-dock #online-settings :is(h2,h3,p,small,label,legend,span,strong,summary){
+  color:#074749!important;text-shadow:none!important
+}
+/* Empty chat text must be readable against the warm-cream chat surface. */
+body.chess-console .layout:not(.game-focus) .side-dock #match-panel .dock-empty{
+  color:#557377!important
+}
 @media(min-width:801px){
+  /* The mobile heading must not appear unstyled under the desktop board. */
+  body.chess-console .layout:not(.game-focus) .chess-mobile-heading{display:none!important}
+
   body.chess-console .layout:not(.game-focus)>.boardarea{
     grid-template-columns:minmax(0,1fr) clamp(345px,31vw,510px)!important;
     gap:12px!important;padding:8px 12px!important
