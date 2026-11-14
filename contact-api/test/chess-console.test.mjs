@@ -203,7 +203,7 @@ test('CHESS-RESULT-P1: existing premium loss dialog is wired only to player loss
  assert.match(app,/game-result-review/);
  assert.match(app,/game-result-close/);
  assert.match(app,/if\(mode==='online'\)\{location\.assign\('\/konto\/panel\/'\);return;\}/);
- assert.match(app,/reset\.addEventListener\('click',\(\)=>\{announcedLoss='';hideChessLoss\(\);/);
+ assert.match(app,/reset\.addEventListener\('click',\(\)=>\{historyViewIndex=null;announcedLoss='';hideChessLoss\(\);/);
 });
 
 test('owner-approved chess Online labels and empty chat remain legible on both layouts',()=>{
