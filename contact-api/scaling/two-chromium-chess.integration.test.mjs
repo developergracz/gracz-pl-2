@@ -140,7 +140,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.ok(Math.abs(board.width-board.height)<=2,'chessboard must stay square');
  assert.ok(board.width>=580,'desktop chessboard fills a large square');
  assert.ok(right.x>=board.x+board.width-3,'compact console must be to the right of the board');
- assert.ok(right.width>=345&&right.width<=520,'approved right panel has responsive width');
+ assert.ok(right.width>=410&&right.width<=Math.max(600,layout.width*.49),'approved two-column panel has responsive width');
  assert.ok(right.x+right.width<=layout.x+layout.width+2,'console stays inside the viewport');
  for(const clock of ['clock-1','clock-2']){
   const pos=await local.locator('#'+clock).boundingBox();
