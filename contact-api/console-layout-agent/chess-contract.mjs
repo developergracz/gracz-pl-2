@@ -8,6 +8,9 @@ export async function readChessLayout(page){
     const layout=document.querySelector('.layout'),focus=layout.classList.contains('game-focus');
     const minimal=layout.dataset.minimalChess==='yes',minimalDesktop=minimal&&innerWidth>800,minimalMobile=minimal&&innerWidth<=800;
     const approved=layout.dataset.approvedOwnerChess==='yes';
+    // CHESS-CONSOLE-OWNER-P1 (#814): one console on every viewport — clocks, envelope and
+    // profile in its top row; on phones the whole console sits below the board.
+    const owner=layout.dataset.ownerConsole==='yes'&&document.body.classList.contains('cc-owner');
     const selectors={board:'#board',frame:'.boardframe',arena:'.arena',dock:'.side-dock',
       settings:'.sidebar',settingsSlot:'.console-settings-slot',players:'.players',status:'#game-state',
       match:'#match-panel',tabs:'.dock-tabs',moves:'#moves-list',chat:'#chat-messages',composer:'.mini-chat',
@@ -34,7 +37,8 @@ export async function readChessLayout(page){
     if(!focus){
       require(elements.dock?.parentElement===elements.arena?.parentElement,'dock nie jest obok obszaru planszy');
       require(elements.settings?.parentElement===elements.dock,'ustawienia nie należą do prawego panelu');
-      if(minimalDesktop)require(elements.players?.parentElement===elements.dock,'zegary nie są w prawym panelu');
+      if(owner)require(!!elements.dock?.contains(elements.players)&&elements.players.parentElement?.classList.contains('cc-top'),'zegary nie są w górnym wierszu prawego panelu');
+      else if(minimalDesktop)require(elements.players?.parentElement===elements.dock,'zegary nie są w prawym panelu');
       else require(elements.players?.parentElement===elements.arena?.parentElement,'zegary nie są nad planszą');
       require(getComputedStyle(elements.frame).padding==='0px'&&getComputedStyle(elements.frame).borderTopWidth==='0px','zewnętrzna rama planszy');
       const coordinates=[...document.querySelectorAll('.chess-coordinate')];
@@ -55,8 +59,8 @@ export async function readChessLayout(page){
           const shown=[...document.querySelectorAll('.chess-reference-actions button')].filter(e=>{
             const r=e.getBoundingClientRect();return r.width>0&&r.height>0;
           });
-          require(shown.length===3,'muszą być dokładnie trzy działania: Nowa gra, Rewanż, Zaproś do gry');
-          require(shown.map(e=>e.textContent.trim()).join('|')==='Nowa gra|Rewanż|Zaproś do gry','niewłaściwa kolejność działań');
+          require(shown.length===3,'muszą być dokładnie trzy działania: Nowa gra, Rewanż, Zaproś');
+          require(shown.map(e=>e.textContent.trim()).join('|')===(owner?'Nowa gra|Rewanż|Zaproś':'Nowa gra|Rewanż|Zaproś do gry'),'niewłaściwa kolejność działań');
         }else{
           require(!!boxes.tools!==hidden('tools'),'niewłaściwa widoczność narzędzi');
           require(!!boxes.status!==hidden('status'),'niewłaściwa widoczność komunikatu gry');
@@ -65,7 +69,7 @@ export async function readChessLayout(page){
           const b=boxes[name],d=boxes.dock;
           require(!b||(b.x>=d.x-2&&b.x+b.width<=d.x+d.width+2),name+' wychodzi poza szerokość panelu');
         }
-        if(!hidden('players')){require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');if(minimalDesktop){
+        if(!hidden('players')){require(boxes.clock1&&boxes.clock2,'brak widocznych zegarów');if(minimalDesktop||owner){
             require(inside(boxes.players,boxes.dock),'zegary poza prawym panelem');
             require(boxes.clock1?.width>=48&&boxes.clock2?.width>=48,'zegary nieczytelne w panelu');
           }else require(!boxes.players||!boxes.board||boxes.players.y+boxes.players.height<=boxes.board.y+3,'zegary zachodzą na planszę');}
@@ -74,7 +78,17 @@ export async function readChessLayout(page){
           require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
         }else{
           require(boxes.dock.y>=boxes.board.y+boxes.board.height-2,'panel nie leży pod planszą');
-          if(minimalMobile){
+          if(minimalMobile&&owner){
+            const header=layout.querySelector('.boardarea > .chess-mobile-heading');
+            require(!!rect(header),'brak mobilnego nagłówka');
+            require(!!boxes.players&&boxes.players.y>=boxes.board.y+boxes.board.height-2,'zegary mobilne muszą być w panelu pod szachownicą');
+            require(boxes.board.width>=innerWidth-2,'szachownica mobilna nie wypełnia szerokości ekranu');
+            const squares=[...document.querySelectorAll('#board>.chess-square')];
+            require(squares.length===64,'mobilna plansza musi mieć 64 pola');
+            require(squares.filter(el=>el.querySelector('.chess-coordinate-rank')).length===8,'cyfry nie są wewnątrz ośmiu lewych pól');
+            require(squares.filter(el=>el.querySelector('.chess-coordinate-file')).length===8,'litery nie są wewnątrz ośmiu dolnych pól');
+            require(document.documentElement.scrollWidth<=innerWidth+2,'mobilny interfejs wychodzi poza ekran');
+          }else if(minimalMobile){
             const mobileMode=layout.querySelector('.boardarea > .chess-mobile-mode');
             const header=layout.querySelector('.boardarea > .chess-mobile-heading');
             const modeBox=rect(mobileMode),headerBox=rect(header);
@@ -93,6 +107,21 @@ export async function readChessLayout(page){
         }
         for(const [a,b] of (approved?[]:[['settings','status'],['status','match'],['match','tools']]))
           require(!overlap(boxes[a],boxes[b]),'kolizja '+a+' / '+b);
+        if(owner){
+          // Top row: both clocks, envelope (live badge) and profile, without overlaps.
+          const top=layout.querySelector('.side-dock > .cc-top'),mail=rect(top?.querySelector('.cc-mail')),profile=rect(top?.querySelector('.cc-profile'));
+          const badge=rect(top?.querySelector('.cc-mail-badge'));
+          require(!!mail&&!!profile&&inside(mail,boxes.dock)&&inside(profile,boxes.dock),'brak koperty lub profilu w górnym wierszu panelu');
+          for(const [name,box] of [['koperta',mail],['profil',profile],['licznik',badge]])
+            for(const clock of [boxes.clock1,boxes.clock2])require(!overlap(box,clock),name+' nachodzi na zegar');
+          require(!overlap(mail,profile),'koperta nachodzi na profil');
+          const tabs=[...document.querySelectorAll('#match-panel .dock-tabs > .dock-tab')].filter(e=>rect(e)).map(e=>e.textContent.trim());
+          require(tabs.join('|')==='Czat|Ruchy|Info','zakładki muszą mieć kolejność Czat | Ruchy | Info');
+          const tools=[...document.querySelectorAll('.side-dock > .cc-tools > .cc-tool')].filter(e=>rect(e));
+          require(tools.length===5,'pod czatem musi być dokładnie pięć ikon konfiguracji');
+          require(tools.every(e=>e.getAttribute('aria-label')&&e.title&&inside(rect(e),boxes.dock)),'ikony konfiguracji bez opisu lub poza panelem');
+          require(!boxes.match||tools.every(e=>rect(e).y>=boxes.match.y+boxes.match.height-2),'ikony konfiguracji muszą leżeć pod oknem rozmowy');
+        }
         const history=elements.match.classList.contains('moves-only');
         if(history){
           require(boxes.moves?.height>100,'historia ruchów zwinięta do jednego wiersza');

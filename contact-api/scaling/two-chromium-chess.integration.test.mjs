@@ -185,7 +185,14 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   assert.equal(await page.locator('#training-mode').isEnabled(),true);
   assert.equal(await page.locator('#online-mode').isEnabled(),true);
   assert.equal(await page.locator('#chat-input').isEnabled(),true);
+  // CHESS-CONSOLE-OWNER-P1 (#814): during a live match the accepted-games list is not a
+  // permanent block above the chat; Online "Nowa gra" opens it in the "Partie online" sheet.
+  assert.equal(await page.locator('#online-settings').isVisible(),false);
+  await page.locator('.chess-owner-online-new').click();
   assert.equal(await page.locator('#online-settings').isVisible(),true);
+  assert.equal(await page.locator('.chess-owner-online-new').getAttribute('aria-expanded'),'true');
+  await page.locator('#cc-sheet-online .cc-sheet-close').click();
+  assert.equal(await page.locator('#online-settings').isVisible(),false);
   const boardFrame=await page.locator('.boardframe').boundingBox();
   assert.ok(boardFrame&&boardFrame.width>=490,'full viewport board should be at least 490px wide');
  }
@@ -320,6 +327,8 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(new URL(sender.url()).searchParams.get('match'),new URL(receiver.url()).searchParams.get('match'),'accepted invitation must navigate both participants into one match');
  // Offline appointment: use persisted presence (privacy-respecting friend status).
  await db.query("UPDATE gracz_public_identity.online_presence SET last_seen=now()-interval '1 hour' WHERE account_id=$1",[users[1].id]);
+ // Inside a live match the invitation clock lives in the "Partie online" sheet (Nowa gra).
+ await sender.locator('.chess-owner-online-new').click();
  await sender.locator('#create-room').click();
  const offline=sender.locator('#chess-invite-friends .chess-invite-friend').filter({hasText:users[1].nickname});
  await offline.waitFor({state:'visible'});
