@@ -272,7 +272,20 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
    'after checkmate neither player may move');
  }
  await pages[0].locator('#history-tab').click();
- await pages[0].waitForFunction(()=>document.querySelector('#moves-list')?.textContent.includes('e4'));
+ await pages[0].waitForFunction(()=>document.querySelectorAll('#moves-list .chess-move-row').length===7);
+ // Replay server-verified moves without mutating the actual live match.
+ await pages[0].locator('#moves-list .chess-move-row[data-ply="1"]').click();
+ assert.equal(await pages[0].locator('#board').getAttribute('data-review-ply'),'1');
+ assert.equal(await pages[0].locator('#board .chess-square').nth(index('e4')).locator('svg').getAttribute('data-piece'),'P');
+ assert.equal(await pages[0].locator('#board .chess-square').nth(index('e5')).locator('svg').count(),0);
+ await pages[0].locator('#moves-list .chess-move-row[data-ply="2"]').click();
+ assert.equal(await pages[0].locator('#board').getAttribute('data-review-ply'),'2');
+ assert.equal(await pages[0].locator('#board .chess-square').nth(index('e5')).locator('svg').getAttribute('data-piece'),'p');
+ await pages[0].locator('.chess-history-action[data-action="live"]').click();
+ assert.equal(await pages[0].locator('#board').getAttribute('data-review-ply'),'live');
+ await waitForPosition(pages[0],state);
+ const stillFinal=await read(base,users[0].token,id);
+ assert.equal(stillFinal.match.version,version,'history review does not mutate online match');
  await pages[0].locator('#chat-tab').click();
  // Reconnect restores the final persisted position with a full snapshot.
  await pages[1].reload({waitUntil:'domcontentloaded'});
