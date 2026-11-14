@@ -1546,6 +1546,9 @@ const chessMobileTopbarCss=String.raw`
  body.chess-console .chess-mobile-topbar .chess-mobile-brand-icon{
   color:#fff;flex:0 0 auto;line-height:1;font:normal clamp(20px,6.5vw,30px)/1 Georgia,serif
  }
+ body.chess-console .chess-mobile-topbar .chess-mobile-brand-icon svg{
+  display:block!important;width:26px!important;height:26px!important;fill:currentColor!important
+ }
  body.chess-console .chess-mobile-topbar .chess-mobile-brand-link{
   flex:0 1 auto!important;min-width:0!important;color:#fff!important;text-decoration:none!important;
   letter-spacing:0!important;white-space:nowrap!important;
@@ -1630,6 +1633,7 @@ const chessMobileTopbarJs=String.raw`
 (function(){
  const NS='http://www.w3.org/2000/svg';
  const icons={
+  knight:'<path d="M5.5 20h13v-2H5.5v2Zm1-3h11.2c1.5-2.9 1.5-5.1-.7-7.7L13.8 5l-3.2-.6L9.2 2.3 7.4 5.8 3 9.2l1.2 3.1 3.5-.4C7.4 13.5 7 15.3 6.5 17Z" fill="currentColor"/><circle cx="10.4" cy="7.7" r="1" fill="#00595d"/>',
   profile:'<circle cx="12" cy="7.5" r="4.2" fill="currentColor"/><path d="M3 21c0-4.4 3.7-7.3 9-7.3s9 2.9 9 7.3" fill="currentColor"/>',
   mail:'<rect x="2.5" y="5" width="19" height="14" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="m3.5 6 8.5 7 8.5-7" stroke="currentColor" stroke-width="2" fill="none"/>',
   menu:'<path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" fill="none"/>',
@@ -1662,7 +1666,8 @@ const chessMobileTopbarJs=String.raw`
   brandLine.className='chess-mobile-brand-line';
   const knight=document.createElement('span');
   knight.className='chess-mobile-brand-icon';
-  knight.textContent='♞';
+  knight.append(svg('knight'));
+
   knight.setAttribute('aria-hidden','true');
   const brand=document.createElement('a');
   brand.href='https://gracz.pl/';
