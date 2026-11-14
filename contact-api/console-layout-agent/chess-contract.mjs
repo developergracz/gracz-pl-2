@@ -79,7 +79,8 @@ export async function readChessLayout(page){
             const header=layout.querySelector('.boardarea > .chess-mobile-heading');
             const modeBox=rect(mobileMode),headerBox=rect(header);
             require(!!modeBox&&!!headerBox,'brak mobilnego nagłówka lub trybów');
-            require(!!modeBox&&!!boxes.players&&modeBox.y+modeBox.height<=boxes.players.y+2,'tryby mobilne nie są nad zegarami');
+            require(!!modeBox&&!!boxes.players&&boxes.players.y+boxes.players.height<=modeBox.y+2,'zatwierdzone zegary mobilne muszą być nad trybami');
+            require(!!modeBox&&!!boxes.board&&modeBox.y+modeBox.height<=boxes.board.y+2,'tryby mobilne muszą być nad szachownicą');
             require(!!boxes.players&&boxes.players.y+boxes.players.height<=boxes.board.y+2,'zegary mobilne nie są nad szachownicą');
             require(boxes.board.width>=innerWidth-2,'szachownica mobilna nie wypełnia szerokości ekranu');
             const squares=[...document.querySelectorAll('#board>.chess-square')];
