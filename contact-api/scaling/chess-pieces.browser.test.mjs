@@ -50,30 +50,34 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
      {nickname:'Archiwum',unread:7,archived:true}]})
   }));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
+  // CHESS-CONSOLE-OWNER-P1: one envelope + profile in the console's top row on every viewport.
+  const badge=page.locator('.side-dock .cc-top .cc-mail-badge');
+  await badge.waitFor({state:'visible'});
+  assert.equal(await badge.textContent(),'4','red badge uses live unread count, not a hardcoded number');
+  assert.equal(await page.locator('.side-dock .cc-mail').getAttribute('href'),'/konto/panel/?sekcja=messages');
+  assert.equal(await page.locator('.side-dock .cc-profile').getAttribute('href'),'/konto/panel/?sekcja=profile');
+  assert.equal(await page.locator('.cc-mail:visible').count(),1,'exactly one envelope entry point');
+  assert.equal(await page.locator('.chess-mobile-mode-symbol').count(),2);
   if(viewport.width<800){
-   const badge=page.locator('.chess-mobile-mail-badge');
-   await badge.waitFor({state:'visible'});
-   assert.equal(await badge.textContent(),'4','red badge uses live unread count, not a hardcoded number');
-   assert.equal(await page.locator('.chess-mobile-mail-link').getAttribute('href'),'/konto/panel/?sekcja=messages');
-   assert.equal(await page.locator('.chess-mobile-header-action').first().getAttribute('href'),'/konto/panel/?sekcja=profile');
    assert.equal(await page.locator('.chess-mobile-brand-link').textContent(),'GRACZ.PL');
    assert.equal(await page.locator('.chess-mobile-game-name').textContent(),'Szachy');
-   assert.equal(await page.locator('.chess-mobile-mode-symbol').count(),2);
+   assert.equal(await page.locator('.chess-mobile-topbar .chess-mobile-mail-link').count(),0,'no second envelope in the phone header');
    const boxes=await page.evaluate(()=>{
     const rect=q=>{const r=document.querySelector(q).getBoundingClientRect();return {top:r.top,bottom:r.bottom}};
-    return [rect('.chess-mobile-topbar'),rect('.chess-mobile-mode'),rect('.boardarea>.players'),rect('#board')];
+    return [rect('.chess-mobile-topbar'),rect('#board'),rect('.side-dock .cc-top'),rect('.side-dock .mode')];
    });
-   for(let i=0;i<boxes.length-1;i++)assert.ok(boxes[i].bottom<=boxes[i+1].top+2,'mobile header, modes, clocks and board are ordered');
+   for(let i=0;i<boxes.length-1;i++)assert.ok(boxes[i].bottom<=boxes[i+1].top+2,'mobile header, board, clocks row and modes are ordered');
    assert.equal(await page.locator('.chess-mobile-menu-panel').isVisible(),false,'menu starts closed');
    await page.locator('.chess-mobile-menu-toggle').click();
    assert.equal(await page.locator('.chess-mobile-menu-panel a:visible').count(),4);
    await page.keyboard.press('Escape');
    assert.equal(await page.locator('.chess-mobile-menu').evaluate(el=>el.open),false);
-   unread=0;
-   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-   await badge.waitFor({state:'hidden'});
-   assert.equal(await badge.textContent(),'','zero unread messages must not show a red counter');
   }
+  unread=0;
+  // Returning from the inbox (back/forward cache) re-reads the real count.
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+  await badge.waitFor({state:'hidden'});
+  assert.equal(await badge.textContent(),'','zero unread messages must not show a red counter');
   // The owner's approved minimal design has neither decorative arc nor gold panel rail.
   const decoration=await page.locator('.boardarea').evaluate(el=>{
    const arc=getComputedStyle(el,'::after');

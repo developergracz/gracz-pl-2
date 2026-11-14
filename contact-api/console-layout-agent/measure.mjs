@@ -61,6 +61,14 @@ function localServer() {
     const url = new URL(req.url,'http://127.0.0.1');
     try {
       for(const handler of handlers) if(handler(req,res,url))return;
+      // Fixed local inbox fixture (no accounts): the chess envelope shows a real-format,
+      // non-zero badge (3; the archived row is excluded), so every screenshot and geometry
+      // step also checks the red counter. Gomoku and Warcaby do not request this endpoint.
+      if(req.method==='GET'&&url.pathname==='/auth/message-center'){
+        res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+        res.end(JSON.stringify({ok:true,conversations:[{nickname:'fixture',unread:3,archived:false},{nickname:'archiwum',unread:5,archived:true}]}));
+        return;
+      }
       const isApi = url.pathname.startsWith('/auth/');
       res.writeHead(isApi ? 401 : 404, {
         'Content-Type': 'application/json; charset=utf-8',

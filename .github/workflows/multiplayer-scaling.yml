@@ -56,6 +56,18 @@ jobs:
         run: node --test contact-api/scaling/two-chromium-chess.integration.test.mjs
       - name: Premium chess SVG desktop, mobile and promotion acceptance
         run: node --test contact-api/scaling/chess-pieces.browser.test.mjs
+      - name: Chess owner console (unread badge, five icons, actions, tabs, mobile)
+        env:
+          CHESS_SCREENSHOT_DIR: contact-api/scaling/owner-console-screenshots
+        run: node --test contact-api/scaling/chess-owner-console.browser.test.mjs
+      - name: Publish chess owner console acceptance screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chess-owner-console-screenshots
+          path: contact-api/scaling/owner-console-screenshots/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Chess drag & drop (mouse, touch) next to click-to-move
         run: node --test contact-api/scaling/chess-drag.browser.test.mjs
       - name: Chess special rules acceptance

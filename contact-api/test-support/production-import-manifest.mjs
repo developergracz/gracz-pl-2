@@ -61,6 +61,10 @@ export const productionModules=Object.freeze([
   'auth/chess-invitations.mjs',
   'auth/chess-invite-contract.mjs',
   'auth/chess-match.mjs',
+  // Reviewed chess owner console (#814): static same-origin CSS/JS strings, no imports; the browser
+  // only reads the existing authenticated GET /auth/message-center for an unread count and stores
+  // validated appearance choices in localStorage. No new endpoint, write or external asset.
+  'auth/chess-owner-console.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.
   'routes/gomoku-ai-chat-route.mjs',
