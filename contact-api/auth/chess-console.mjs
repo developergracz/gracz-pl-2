@@ -1593,6 +1593,9 @@ const chessMobileTopbarCss=String.raw`
   padding:4px!important;border:1px solid #337e7c!important;border-radius:0!important;
   background:#06454b!important;box-shadow:0 4px 12px #002c3033!important
  }
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu:not([open]) .chess-mobile-menu-panel{
+  display:none!important
+ }
  body.chess-console .chess-mobile-topbar .chess-mobile-menu-panel a{
   display:block!important;min-height:37px!important;padding:10px 12px!important;
   color:#fff!important;text-decoration:none!important;background:transparent!important;
