@@ -70,8 +70,11 @@ export async function readChessLayout(page){
             require(boxes.clock1?.width>=48&&boxes.clock2?.width>=48,'zegary nieczytelne w panelu');
           }else require(!boxes.players||!boxes.board||boxes.players.y+boxes.players.height<=boxes.board.y+3,'zegary zachodzą na planszę');}
         if(innerWidth>800){
-          require(boxes.dock.x>=boxes.board.x+boxes.board.width-2,'panel nie leży po prawej stronie planszy');
-          require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
+          require(!!boxes.board&&!!boxes.arena,'plansza lub obszar planszy są niewidoczne');
+          if(boxes.board&&boxes.arena){
+            require(boxes.dock.x>=boxes.board.x+boxes.board.width-2,'panel nie leży po prawej stronie planszy');
+            require(boxes.board.width>=Math.min(boxes.arena.width,boxes.arena.height)-2,'plansza nie wykorzystuje dostępnego miejsca');
+          }
         }else{
           require(boxes.dock.y>=boxes.board.y+boxes.board.height-2,'panel nie leży pod planszą');
           if(minimalMobile){
