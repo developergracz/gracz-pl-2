@@ -205,3 +205,12 @@ test('CHESS-RESULT-P1: existing premium loss dialog is wired only to player loss
  assert.match(app,/if\(mode==='online'\)\{location\.assign\('\/konto\/panel\/'\);return;\}/);
  assert.match(app,/reset\.addEventListener\('click',\(\)=>\{announcedLoss='';hideChessLoss\(\);/);
 });
+
+test('owner-approved chess Online labels and empty chat remain legible on both layouts',()=>{
+  const css=load('/konto/szachy/styl.css').body;
+  assert.ok(css.includes('.side-dock #online-settings :is(h2,h3,p,small,label,legend,span,strong,summary)'));
+  assert.ok(css.includes('color:#074749!important;text-shadow:none!important'));
+  assert.ok(css.includes('.side-dock #match-panel .dock-empty'));
+  assert.ok(css.includes('color:#557377!important'));
+  assert.ok(css.includes('.chess-mobile-heading{display:none!important}'));
+});
