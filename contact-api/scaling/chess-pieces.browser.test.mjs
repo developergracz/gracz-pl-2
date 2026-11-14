@@ -42,7 +42,37 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
  for(const viewport of [{width:1600,height:900},{width:390,height:844}]){
   const context=await browser.newContext({viewport,deviceScaleFactor:2,isMobile:viewport.width<800,hasTouch:viewport.width<800});
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);page.on('pageerror',e=>errors.push(e.message));
+  // Real inbox API contract: count unread from active (not archived) friend conversations.
+  let unread=4;
+  await page.route('**/auth/message-center',route=>route.fulfill({
+   status:200,contentType:'application/json',
+   body:JSON.stringify({ok:true,conversations:[{nickname:'Zawodnik',unread,archived:false},
+     {nickname:'Archiwum',unread:7,archived:true}]})
+  }));
   await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
+  if(viewport.width<800){
+   const badge=page.locator('.chess-mobile-mail-badge');
+   await badge.waitFor({state:'visible'});
+   assert.equal(await badge.textContent(),'4','red badge uses live unread count, not a hardcoded number');
+   assert.equal(await page.locator('.chess-mobile-mail-link').getAttribute('href'),'/konto/panel/?sekcja=messages');
+   assert.equal(await page.locator('.chess-mobile-header-action').first().getAttribute('href'),'/konto/panel/?sekcja=profile');
+   assert.equal(await page.locator('.chess-mobile-brand-link').textContent(),'GRACZ.PL');
+   assert.equal(await page.locator('.chess-mobile-game-name').textContent(),'Szachy');
+   assert.equal(await page.locator('.chess-mobile-mode-symbol').count(),2);
+   const boxes=await page.evaluate(()=>{
+    const rect=q=>{const r=document.querySelector(q).getBoundingClientRect();return {top:r.top,bottom:r.bottom}};
+    return [rect('.chess-mobile-topbar'),rect('.chess-mobile-mode'),rect('.boardarea>.players'),rect('#board')];
+   });
+   for(let i=0;i<boxes.length-1;i++)assert.ok(boxes[i].bottom<=boxes[i+1].top+2,'mobile header, modes, clocks and board are ordered');
+   await page.locator('.chess-mobile-menu-toggle').click();
+   assert.equal(await page.locator('.chess-mobile-menu-panel a:visible').count(),4);
+   await page.keyboard.press('Escape');
+   assert.equal(await page.locator('.chess-mobile-menu').evaluate(el=>el.open),false);
+   unread=0;
+   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+   await badge.waitFor({state:'hidden'});
+   assert.equal(await badge.textContent(),'','zero unread messages must not show a red counter');
+  }
   // The owner's approved minimal design has neither decorative arc nor gold panel rail.
   const decoration=await page.locator('.boardarea').evaluate(el=>{
    const arc=getComputedStyle(el,'::after');
