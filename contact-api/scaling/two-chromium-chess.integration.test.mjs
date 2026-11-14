@@ -95,8 +95,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   return ids.map(id=>{
    const node=document.getElementById(id),outer=node.getBoundingClientRect(),
      boardarea=document.querySelector('.boardarea').getBoundingClientRect();
-   return {id,clipped:node.scrollWidth>node.clientWidth+2,
-     rightOverflow:outer.right>boardarea.right+2,leftOverflow:outer.left<boardarea.left-2,
+   // Centered board: a hidden 0x0 status at the viewport origin is not overflow.
+   const visible=!!(outer.width&&outer.height)&&getComputedStyle(node).display!=='none';
+   return {id,clipped:visible&&node.scrollWidth>node.clientWidth+2,
+     rightOverflow:visible&&outer.right>boardarea.right+2,
+     leftOverflow:visible&&outer.left<boardarea.left-2,
      text:node.textContent};
   });
  });
