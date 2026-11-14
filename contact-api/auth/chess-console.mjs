@@ -1527,4 +1527,233 @@ const approvedOwnerChessJs=String.raw`
 })();
 `;
 
-export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss+minimalChessCss+mobileChessCss+approvedOwnerChessCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs+minimalChessJs+mobileChessJs+approvedOwnerChessJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
+
+const chessMobileTopbarCss=String.raw`
+/* MOBILE-TOPBAR-MAIL-01: approved header, compact modes and real unread badge. */
+@media(max-width:800px){
+ body.chess-console .layout:not(.game-focus)>.boardarea>.chess-mobile-heading.chess-mobile-topbar{
+  box-sizing:border-box!important;display:flex!important;align-items:center!important;
+  justify-content:space-between!important;position:relative!important;z-index:50!important;
+  width:100%!important;height:60px!important;min-height:60px!important;
+  padding:5px 9px!important;gap:5px!important;margin:0!important;
+  background:#00595d!important;color:#fff!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important;overflow:visible!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-brand-line{
+  display:flex;flex:1 1 auto;align-items:center;gap:6px;min-width:0!important;
+  white-space:nowrap!important;overflow:hidden!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-brand-icon{
+  color:#fff;flex:0 0 auto;line-height:1;font:normal clamp(20px,6.5vw,30px)/1 Georgia,serif
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-brand-link{
+  flex:0 1 auto!important;min-width:0!important;color:#fff!important;text-decoration:none!important;
+  letter-spacing:0!important;white-space:nowrap!important;
+  font:800 clamp(13px,3.8vw,19px)/1.1 system-ui,sans-serif!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-brand-divider{
+  display:block;flex:0 0 1px;height:27px;margin:0 3px;background:#bde4e0
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-game-name{
+  flex:0 0 auto;white-space:nowrap!important;color:#fff!important;
+  font:700 clamp(13px,3.8vw,18px)/1.1 system-ui,sans-serif!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-header-actions{
+  display:flex;flex:0 0 auto;align-items:center;gap:1px;margin:0;min-width:0
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-header-action,
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-toggle{
+  box-sizing:border-box!important;display:flex!important;position:relative!important;
+  align-items:center!important;justify-content:center!important;
+  flex:0 0 33px!important;width:33px!important;height:39px!important;min-height:39px!important;
+  margin:0!important;padding:3px!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;background:transparent!important;color:#fff!important;
+  cursor:pointer!important;text-decoration:none!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-header-action svg,
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-toggle svg{
+  display:block!important;width:24px!important;height:24px!important;flex:none!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-mail-badge:not([hidden]){
+  box-sizing:border-box!important;display:flex!important;position:absolute!important;z-index:2!important;
+  align-items:center!important;justify-content:center!important;
+  top:-1px!important;right:-3px!important;min-width:17px!important;height:17px!important;
+  border-radius:12px!important;padding:0 3px!important;border:1px solid #fff!important;
+  background:#e12734!important;color:#fff!important;
+  font:750 10px/1 system-ui,sans-serif!important;letter-spacing:0!important;
+  pointer-events:none!important;box-shadow:none!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-mail-badge[hidden]{display:none!important}
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu{position:static!important;flex:0 0 33px}
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-toggle{list-style:none!important}
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-toggle::-webkit-details-marker{display:none!important}
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-panel{
+  position:absolute!important;top:100%!important;right:5px!important;z-index:110!important;
+  display:grid!important;gap:0!important;min-width:190px!important;max-width:calc(100vw - 12px)!important;
+  padding:4px!important;border:1px solid #337e7c!important;border-radius:0!important;
+  background:#06454b!important;box-shadow:0 4px 12px #002c3033!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-panel a{
+  display:block!important;min-height:37px!important;padding:10px 12px!important;
+  color:#fff!important;text-decoration:none!important;background:transparent!important;
+  font:600 13px/1.3 system-ui,sans-serif!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-panel a:focus-visible,
+ body.chess-console .chess-mobile-topbar .chess-mobile-header-action:focus-visible,
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-toggle:focus-visible{
+  outline:2px solid #fff4ca!important;outline-offset:-2px!important
+ }
+ body.chess-console .chess-mobile-topbar .chess-mobile-menu-panel a:hover{background:#17636a!important}
+ body.chess-console .layout:not(.game-focus)>.boardarea>.chess-mobile-mode .mode-choice{
+  display:flex!important;justify-content:center!important;align-items:center!important;
+  flex-direction:row!important;gap:5px!important;
+  font-size:clamp(13px,4vw,17px)!important
+ }
+ body.chess-console .layout:not(.game-focus)>.boardarea>.chess-mobile-mode .chess-mobile-mode-symbol{
+  display:flex!important;flex:0 0 22px!important;align-items:center!important;justify-content:center!important
+ }
+ body.chess-console .layout:not(.game-focus)>.boardarea>.chess-mobile-mode .chess-mobile-mode-symbol svg{
+  display:block!important;width:21px!important;height:21px!important;fill:none!important
+ }
+}
+body.chess-console .layout.game-focus .chess-mobile-topbar{display:none!important}
+@media(min-width:801px){
+ body.chess-console .chess-mobile-mode-symbol{display:none!important}
+}
+`;
+
+const chessMobileTopbarJs=String.raw`
+/* MOBILE-TOPBAR-MAIL-01: DOM-safe static icons; unread comes from the signed-in inbox. */
+(function(){
+ const NS='http://www.w3.org/2000/svg';
+ const icons={
+  profile:'<circle cx="12" cy="7.5" r="4.2" fill="currentColor"/><path d="M3 21c0-4.4 3.7-7.3 9-7.3s9 2.9 9 7.3" fill="currentColor"/>',
+  mail:'<rect x="2.5" y="5" width="19" height="14" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="m3.5 6 8.5 7 8.5-7" stroke="currentColor" stroke-width="2" fill="none"/>',
+  menu:'<path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" fill="none"/>',
+  computer:'<rect x="2.5" y="3.5" width="19" height="14" rx="1.2" stroke="currentColor" stroke-width="2.1" fill="none"/><path d="M12 18v3M8 21h8" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" fill="none"/>',
+  online:'<circle cx="9" cy="8" r="3.1" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="17.5" cy="9" r="2.5" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M2.5 20v-2c0-3.5 2.5-5.4 6.5-5.4s6.5 1.9 6.5 5.4v2M16 14c3.3-.3 5.5 1.5 5.5 5.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>'
+ };
+ function svg(name){
+  const node=document.createElementNS(NS,'svg');
+  node.setAttribute('viewBox','0 0 24 24');
+  node.setAttribute('focusable','false');
+  node.setAttribute('aria-hidden','true');
+  node.innerHTML=icons[name];
+  return node;
+ }
+ function anchor(href,label,icon){
+  const a=document.createElement('a');
+  a.href=href;
+  a.className='chess-mobile-header-action';
+  a.setAttribute('aria-label',label);
+  a.title=label;
+  a.append(svg(icon));
+  return a;
+ }
+ function init(){
+  const layout=document.querySelector('body.chess-console .layout');
+  const header=layout?.querySelector('.boardarea > .chess-mobile-heading');
+  if(!header||header.dataset.mailHeader==='yes')return;
+  header.classList.add('chess-mobile-topbar');
+  const brandLine=document.createElement('div');
+  brandLine.className='chess-mobile-brand-line';
+  const knight=document.createElement('span');
+  knight.className='chess-mobile-brand-icon';
+  knight.textContent='♞';
+  knight.setAttribute('aria-hidden','true');
+  const brand=document.createElement('a');
+  brand.href='https://gracz.pl/';
+  brand.className='chess-mobile-brand-link';
+  brand.textContent='GRACZ.PL';
+  const divider=document.createElement('span');
+  divider.className='chess-mobile-brand-divider';
+  divider.setAttribute('aria-hidden','true');
+  const name=document.createElement('strong');
+  name.className='chess-mobile-game-name';
+  name.textContent='Szachy';
+  brandLine.append(knight,brand,divider,name);
+  const actions=document.createElement('nav');
+  actions.className='chess-mobile-header-actions';
+  actions.setAttribute('aria-label','Menu szachów');
+  const profile=anchor('/konto/panel/?sekcja=profile','Mój profil','profile');
+  const messages=anchor('/konto/panel/?sekcja=messages','Wiadomości','mail');
+  messages.classList.add('chess-mobile-mail-link');
+  const badge=document.createElement('span');
+  badge.className='chess-mobile-mail-badge';
+  badge.hidden=true;
+  badge.setAttribute('aria-hidden','true');
+  messages.append(badge);
+  const menu=document.createElement('details');
+  menu.className='chess-mobile-menu';
+  const toggle=document.createElement('summary');
+  toggle.className='chess-mobile-menu-toggle';
+  toggle.setAttribute('aria-label','Otwórz menu');
+  toggle.append(svg('menu'));
+  const links=document.createElement('div');
+  links.className='chess-mobile-menu-panel';
+  const items=[
+    ['Strona główna','https://gracz.pl/'],
+    ['Mój panel','/konto/panel/'],
+    ['Wiadomości','/konto/panel/?sekcja=messages'],
+    ['Wszystkie gry','https://gracz.pl/gry/']
+  ];
+  for(const item of items){
+   const a=document.createElement('a');
+   a.href=item[1];a.textContent=item[0];links.append(a);
+  }
+  menu.append(toggle,links);
+  actions.append(profile,messages,menu);
+  header.replaceChildren(brandLine,actions);
+  header.dataset.mailHeader='yes';
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu.open){menu.open=false;toggle.focus();}});
+  document.addEventListener('click',event=>{if(menu.open&&!menu.contains(event.target))menu.open=false;});
+  const training=layout.querySelector('#training-mode');
+  const online=layout.querySelector('#online-mode');
+  for(const pair of [[training,'computer'],[online,'online']]){
+   if(!pair[0]||pair[0].querySelector('.chess-mobile-mode-symbol'))continue;
+   const symbol=document.createElement('span');
+   symbol.className='chess-mobile-mode-symbol';
+   symbol.setAttribute('aria-hidden','true');
+   symbol.append(svg(pair[1]));
+   pair[0].prepend(symbol);
+  }
+  let busy=false;
+  function resetUnread(){
+   badge.hidden=true;badge.textContent='';
+   messages.setAttribute('aria-label','Wiadomości');
+  }
+  async function refreshUnread(){
+   if(busy||document.hidden||!window.matchMedia('(max-width:800px)').matches)return;
+   busy=true;
+   try{
+    const response=await fetch('/auth/message-center',{
+     method:'GET',credentials:'same-origin',cache:'no-store',
+     headers:{Accept:'application/json'}
+    });
+    if(response.status===401||response.status===403){resetUnread();return;}
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data?.ok!==true||!Array.isArray(data.conversations))return;
+    const total=data.conversations.reduce((sum,row)=>{
+     const unread=Number(row.unread);
+     return sum+(row.archived===true||!Number.isFinite(unread)?0:Math.max(0,Math.floor(unread)));
+    },0);
+    if(total===0){resetUnread();return;}
+    badge.textContent=total>99?'99+':String(total);
+    badge.hidden=false;
+    messages.setAttribute('aria-label','Wiadomości — '+total+' nieprzeczytanych');
+   }catch(_error){/* preserve last verified count on transient network errors */}
+   finally{busy=false;}
+  }
+  void refreshUnread();
+  const timer=window.setInterval(refreshUnread,45000);
+  window.addEventListener('focus',refreshUnread);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshUnread();});
+  window.addEventListener('pagehide',()=>window.clearInterval(timer),{once:true});
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+ else init();
+})();
+`;
+
+export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss+minimalChessCss+mobileChessCss+approvedOwnerChessCss+chessMobileTopbarCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs+minimalChessJs+mobileChessJs+approvedOwnerChessJs+chessMobileTopbarJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
