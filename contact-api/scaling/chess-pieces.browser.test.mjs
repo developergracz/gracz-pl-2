@@ -94,11 +94,13 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   assert.equal(await page.locator('#moves-panel').isVisible(),true);
   const historyBounds=await page.locator('#moves-list').evaluate(el=>{
    const dock=el.closest('#match-panel');
+   const nav=dock.querySelector('.chess-history-nav');
    return {height:el.getBoundingClientRect().height,
-    gap:dock.getBoundingClientRect().bottom-el.getBoundingClientRect().bottom};
+    navHeight:nav?.getBoundingClientRect().height||0,
+    gap:dock.getBoundingClientRect().bottom-(nav||el).getBoundingClientRect().bottom};
   });
-  assert.ok(historyBounds.height>100&&historyBounds.gap<24,
-   'Moves should fill the dock to the bottom: '+JSON.stringify(historyBounds));
+  assert.ok(historyBounds.height>100&&historyBounds.navHeight>=30&&historyBounds.gap<24,
+   'Moves and navigation should fill dock to bottom: '+JSON.stringify(historyBounds));
   // Prove that the new chess-specific gate still rejects the original 26px bug.
   const savedStyle=await page.locator('#moves-list').getAttribute('style');
   await page.locator('#moves-list').evaluate(el=>{
