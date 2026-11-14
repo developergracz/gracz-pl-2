@@ -2167,4 +2167,503 @@ body.chess-console #moves-panel .chess-history-columns span:first-child{
 body.chess-console #moves-panel[hidden] .chess-history-columns{display:none!important}
 `;
 
-export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss+minimalChessCss+mobileChessCss+approvedOwnerChessCss+finalApprovedChessPanelCss+chessMobileTopbarCss+chessHistoryFixCss+chessMoveReviewCss+chessHistoryVisibilityCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs+minimalChessJs+mobileChessJs+approvedOwnerChessJs+finalApprovedChessPanelJs+chessMobileTopbarJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
+
+const chessProDesktopCss=String.raw`
+/* CHESS-DESKTOP-PREMIUM-PANEL-01. Mobile console, original board and gameplay remain intact. */
+body.chess-console .chess-pro-utility,
+body.chess-console .chess-pro-tools,
+body.chess-console .chess-pro-choices{display:none}
+@media(min-width:801px){
+ body.chess-console .layout:not(.game-focus)>.boardarea{
+  box-sizing:border-box!important;width:100%!important;max-width:1270px!important;
+  margin:0 auto!important;grid-template-columns:minmax(0,1fr) clamp(380px,28.5vw,460px)!important;
+  gap:28px!important;padding:8px 12px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel{
+  box-sizing:border-box!important;position:relative!important;display:flex!important;
+  flex-direction:column!important;gap:11px!important;align-self:stretch!important;
+  height:100%!important;max-height:100%!important;min-height:0!important;
+  margin:0!important;padding:14px 15px 12px!important;
+  border:0!important;border-radius:22px!important;box-shadow:none!important;
+  background:#fff9ee!important;color:#103d43!important;
+  overflow:hidden!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players{
+  box-sizing:border-box!important;order:0!important;display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  flex:0 0 68px!important;width:calc(100% - 100px)!important;
+  min-height:68px!important;height:68px!important;max-height:68px!important;
+  margin:0!important;padding:0!important;gap:0!important;
+  background:transparent!important;border:0!important;border-radius:0!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player.first{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:center!important;gap:3px!important;
+  width:100%!important;min-width:0!important;height:68px!important;
+  min-height:68px!important;max-height:68px!important;
+  margin:0!important;padding:0 5px!important;background:transparent!important;
+  color:#063c42!important;box-shadow:none!important;border:0!important;border-radius:0!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player.first{
+  border-right:1px solid #d8d4c7!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player strong{
+  font:700 13px/1.2 system-ui,sans-serif!important;color:#143e43!important;
+  max-width:100%!important;text-align:center!important;overflow:hidden!important;
+  white-space:nowrap!important;text-overflow:ellipsis!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player small{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player .player-clock:not([hidden]){
+  box-sizing:border-box!important;display:block!important;flex:0 0 auto!important;
+  height:auto!important;min-height:0!important;max-height:none!important;
+  width:auto!important;min-width:0!important;max-width:100%!important;
+  margin:0!important;padding:0!important;text-align:center!important;
+  background:transparent!important;color:#073d43!important;
+  font:800 clamp(23px,2vw,29px)/1.1 system-ui,sans-serif!important;
+  font-variant-numeric:tabular-nums!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-pro-utility{
+  position:absolute!important;display:flex!important;top:22px!important;right:16px!important;
+  align-items:center!important;justify-content:flex-end!important;gap:7px!important;
+  z-index:7!important;width:89px!important;height:45px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-utility a{
+  box-sizing:border-box!important;position:relative!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 40px!important;width:40px!important;height:42px!important;padding:6px!important;
+  color:#0a3c43!important;background:transparent!important;text-decoration:none!important;
+  border:0!important;border-radius:7px!important;box-shadow:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-utility svg{
+  display:block!important;width:31px!important;height:31px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-unread:not([hidden]){
+  box-sizing:border-box!important;display:flex!important;position:absolute!important;
+  top:-3px!important;right:-1px!important;z-index:3!important;
+  min-width:17px!important;height:17px!important;align-items:center!important;
+  justify-content:center!important;padding:0 3px!important;
+  background:#e92c37!important;color:#fff!important;border-radius:11px!important;
+  border:1px solid #fff!important;box-shadow:none!important;
+  font:800 10px/1 system-ui,sans-serif!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-unread[hidden]{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.sidebar{
+  order:1!important;display:block!important;flex:0 0 auto!important;
+  width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+  margin:0!important;padding:0!important;overflow:visible!important;
+  background:transparent!important;border:0!important;box-shadow:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .mode{
+  box-sizing:border-box!important;display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  width:100%!important;min-height:54px!important;height:54px!important;
+  border:1px solid #e7dcc8!important;border-radius:14px!important;
+  padding:0!important;gap:0!important;overflow:hidden!important;
+  background:#f5ead5!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .mode-choice,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .mode-choice.active{
+  box-sizing:border-box!important;display:flex!important;gap:8px!important;
+  align-items:center!important;justify-content:center!important;
+  height:53px!important;min-height:53px!important;margin:0!important;
+  padding:5px!important;border:0!important;border-radius:12px!important;
+  background:transparent!important;color:#093e43!important;
+  box-shadow:none!important;font:750 clamp(13px,1vw,17px)/1.2 system-ui,sans-serif!important;
+  cursor:pointer!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .mode-choice.active{
+  background:#00857f!important;color:#fff!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-mobile-mode-symbol{
+  box-sizing:border-box!important;display:inline-flex!important;
+  align-items:center!important;justify-content:center!important;
+  flex:0 0 23px!important;width:23px!important;height:23px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-mobile-mode-symbol svg{
+  display:block!important;width:22px!important;height:22px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions{
+  order:2!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  flex:0 0 75px!important;gap:0!important;width:100%!important;
+  height:75px!important;min-height:75px!important;max-height:75px!important;
+  margin:0!important;padding:0!important;background:transparent!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions button,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions button:not([hidden]){
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:center!important;gap:3px!important;
+  min-width:0!important;width:100%!important;height:75px!important;
+  min-height:75px!important;max-height:75px!important;margin:0!important;
+  padding:7px 4px!important;background:transparent!important;color:#103d43!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  font:750 13px/1.2 system-ui,sans-serif!important;cursor:pointer!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions button[hidden]{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions button:not(:first-child){
+  border-left:1px solid #e3dac8!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions svg{
+  display:block!important;flex:0 0 30px!important;width:30px!important;height:30px!important;
+  color:#123f44!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>#match-panel{
+  order:3!important;box-sizing:border-box!important;display:flex!important;
+  flex-direction:column!important;flex:1 1 0!important;min-height:210px!important;
+  width:100%!important;height:auto!important;max-height:none!important;
+  margin:0!important;padding:0!important;gap:0!important;
+  border:0!important;border-radius:0!important;overflow:hidden!important;
+  background:transparent!important;box-shadow:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-header,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .replay-shortcut{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tabs{
+  box-sizing:border-box!important;display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  flex:0 0 53px!important;width:100%!important;height:53px!important;
+  min-height:53px!important;margin:0 0 4px!important;padding:0!important;gap:0!important;
+  border:1px solid #e2dccb!important;border-radius:14px!important;
+  overflow:hidden!important;background:#fff8eb!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tab,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tab.active{
+  box-sizing:border-box!important;display:flex!important;flex-direction:row!important;
+  align-items:center!important;justify-content:center!important;gap:7px!important;
+  width:100%!important;min-width:0!important;height:52px!important;
+  min-height:52px!important;margin:0!important;padding:5px 6px!important;
+  background:transparent!important;color:#173f44!important;border:0!important;
+  border-radius:12px!important;box-shadow:none!important;
+  font:750 clamp(12px,1vw,15px)/1.2 system-ui,sans-serif!important;cursor:pointer!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tab.active{
+  background:#008982!important;color:#fff!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tab svg,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .chess-pro-info-icon{
+  display:block!important;width:22px!important;height:22px!important;flex:0 0 22px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-tab[hidden],
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-content[hidden],
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .chess-final-info[hidden]{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .dock-content,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .chess-final-info{
+  box-sizing:border-box!important;flex:1 1 0!important;min-height:0!important;
+  width:100%!important;height:auto!important;max-height:none!important;
+  padding:5px 0!important;margin:0!important;overflow-y:auto!important;
+  background:#fff9ee!important;color:#173f44!important;border:0!important;
+  border-radius:0!important;box-shadow:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel #chat-messages{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;
+  padding:10px 5px!important;margin:0!important;
+  background:#fff9ee!important;color:#244b51!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-messages:has(>.dock-empty){
+  justify-content:center!important;align-items:center!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-messages>.dock-empty{
+  text-align:center!important;color:#617d82!important;font:500 13px/1.6 system-ui,sans-serif!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-messages>.dock-empty::before{
+  content:"☏";display:block!important;margin:0 auto 7px!important;
+  color:#9aafb0!important;font:400 48px/1 system-ui,sans-serif!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel .mini-chat,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel:not(.moves-only) .mini-chat{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  flex:0 0 65px!important;height:65px!important;min-height:65px!important;
+  width:100%!important;margin:0!important;padding:6px 0!important;
+  background:transparent!important;border:0!important;border-radius:0!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #match-panel.moves-only .mini-chat{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chat-preview,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chat-footnote{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-form{
+  display:block!important;width:100%!important;margin:0!important;padding:0!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chat-compose{
+  display:flex!important;flex-direction:row!important;gap:6px!important;
+  width:100%!important;align-items:center!important;min-height:47px!important;
+  background:transparent!important;border:0!important;box-shadow:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-input{
+  box-sizing:border-box!important;flex:1 1 auto!important;width:auto!important;
+  min-width:0!important;min-height:47px!important;height:47px!important;
+  border:1px solid #e0d9c9!important;border-radius:12px!important;
+  background:#fff!important;color:#274750!important;padding:8px 13px!important;
+  box-shadow:none!important;font:500 13px system-ui,sans-serif!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel #chat-send{
+  box-sizing:border-box!important;display:flex!important;flex:0 0 47px!important;
+  align-items:center!important;justify-content:center!important;
+  width:47px!important;min-width:47px!important;max-width:47px!important;
+  min-height:47px!important;height:47px!important;margin:0!important;padding:8px!important;
+  border:0!important;border-radius:12px!important;background:#008780!important;color:#fff!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-pro-tools{
+  box-sizing:border-box!important;order:4!important;display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:stretch!important;flex:0 0 85px!important;width:100%!important;
+  height:85px!important;min-height:85px!important;max-height:85px!important;
+  margin:0!important;padding:12px 0 0!important;gap:3px!important;
+  border-top:1px solid #dfdacc!important;background:transparent!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-tools button{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:center!important;gap:4px!important;
+  min-width:0!important;width:100%!important;height:67px!important;
+  min-height:67px!important;margin:0!important;padding:2px!important;
+  border:0!important;border-radius:6px!important;
+  background:transparent!important;color:#093b42!important;box-shadow:none!important;
+  font:700 11px/1.2 system-ui,sans-serif!important;cursor:pointer!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-tools svg{
+  display:block!important;width:30px!important;height:30px!important;flex:0 0 30px!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-choices:not([hidden]){
+  box-sizing:border-box!important;position:absolute!important;display:flex!important;
+  flex-direction:column!important;gap:5px!important;z-index:30!important;
+  left:12px!important;right:12px!important;bottom:95px!important;
+  width:auto!important;height:auto!important;max-height:65%!important;
+  overflow-y:auto!important;padding:12px!important;border:1px solid #c3dcd5!important;
+  border-radius:12px!important;background:#fffaf0!important;
+  color:#153f43!important;box-shadow:0 5px 25px #123f4326!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-choices[hidden]{
+  display:none!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-choices button{
+  min-height:34px!important;padding:6px!important;text-align:left!important;
+  border:1px solid #d0e4dc!important;border-radius:7px!important;
+  background:#edf8f2!important;color:#0c4f52!important;cursor:pointer!important;
+  font:700 13px system-ui,sans-serif!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel button:focus-visible,
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel a:focus-visible{
+  outline:2px solid #008780!important;outline-offset:2px!important
+ }
+ body.chess-console .layout[data-chess-board="classic"]:not(.game-focus) .chess-board .chess-square.light{
+  background:#f0e0bd!important
+ }
+ body.chess-console .layout[data-chess-board="classic"]:not(.game-focus) .chess-board .chess-square.dark{
+  background:#a78560!important
+ }
+ body.chess-console .layout[data-chess-board="slate"]:not(.game-focus) .chess-board .chess-square.light{
+  background:#d4dfe3!important
+ }
+ body.chess-console .layout[data-chess-board="slate"]:not(.game-focus) .chess-board .chess-square.dark{
+  background:#668d9b!important
+ }
+ body.chess-console .layout[data-chess-pieces="compact"]:not(.game-focus) .chess-board .chess-piece{
+  width:85%!important;height:85%!important
+ }
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel{
+  background:#102e35!important;color:#e4f4ec!important
+ }
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel #match-panel :is(.dock-content,.chess-final-info,#chat-messages){
+  background:#102e35!important;color:#e4f4ec!important
+ }
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-tools button,
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-utility a,
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel .chess-pro-tools svg{
+  color:#e4f4ec!important
+ }
+ body.chess-console .layout[data-chess-theme="night"]:not(.game-focus) .side-dock.chess-pro-panel #match-panel #chat-messages>.dock-empty{
+  color:#d6e7e0!important
+ }
+ body.chess-console .layout:not(.game-focus):has(#online-mode.active) .side-dock.chess-pro-panel{
+  overflow-y:auto!important
+ }
+}
+`;
+const chessProDesktopJs=String.raw`
+/* CHESS-DESKTOP-PREMIUM-PANEL-01: arrange existing live controls; no duplicated game state. */
+(function(){
+ const NS='http://www.w3.org/2000/svg';
+ const path={
+  mail:'<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3.5 6 8.5 7 8.5-7"/>',
+  profile:'<circle cx="12" cy="7.5" r="3.7"/><path d="M4.5 21v-2c0-3.4 3-5.5 7.5-5.5s7.5 2.1 7.5 5.5v2"/>',
+  add:'<rect x="4.5" y="4.5" width="15" height="15" rx="2"/><path d="M12 8v8M8 12h8"/>',
+  rematch:'<path d="M20 10V5l-4.5 4.5M4 14v5l4.5-4.5"/><path d="M5.5 10a7 7 0 0 1 12.5-3M18.5 14A7 7 0 0 1 6 17"/>',
+  invite:'<path d="m10 13 4-4"/><path d="m8 16-2 2a4 4 0 0 1-5.5-5.8l4-4a4 4 0 0 1 5.5.1M16 8l2-2a4 4 0 0 1 5.5 5.8l-4 4a4 4 0 0 1-5.5-.1"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M9.3 2.9 8.6 5l-2.1 1-2.2-1-2 3.4 1.7 1.6v2.3l-1.7 1.5 2 3.5 2.2-.8 2.1 1 .7 2.1h4l.7-2.1 2.2-1 2.1.8 2-3.5-1.7-1.5v-2.3l1.7-1.6-2-3.4-2.1 1-2.2-1-.7-2.1Z" transform="translate(0 1.2) scale(.94)"/>',
+  board:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/><path d="M3 3h6v6H3ZM15 9h6v6h-6ZM9 15h6v6H9Z" fill="currentColor" stroke="none"/>',
+  pieces:'<path d="M7 21h10M6 18h12l-2-3-1-4a4 4 0 1 0-6 0l-1 4-2 3Z"/><circle cx="12" cy="4" r="2"/>',
+  theme:'<circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M19.8 4.2l-2.1 2.1M6.3 17.7l-2.1 2.1"/>',
+  fullscreen:'<path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/>'
+ };
+ function svg(kind){
+  const el=document.createElementNS(NS,'svg');
+  el.setAttribute('viewBox','0 0 24 24');
+  el.setAttribute('fill','none');el.setAttribute('stroke','currentColor');
+  el.setAttribute('stroke-width','1.8');el.setAttribute('stroke-linecap','round');
+  el.setAttribute('stroke-linejoin','round');el.setAttribute('focusable','false');
+  el.setAttribute('aria-hidden','true');el.innerHTML=path[kind];return el;
+ }
+ function init(){
+  const layout=document.querySelector('body.chess-console .layout');
+  const dock=layout?.querySelector('.boardarea > .side-dock');
+  const players=dock?.querySelector(':scope > .players');
+  const match=dock?.querySelector(':scope > #match-panel');
+  const actions=dock?.querySelector(':scope > .chess-reference-actions');
+  const sidebar=dock?.querySelector(':scope > .sidebar');
+  if(!layout||!dock||!players||!match||!actions||!sidebar||
+     layout.dataset.desktopPremiumPanel==='yes')return;
+  if(window.matchMedia('(max-width:800px)').matches)return;
+  const E=(tag,className,text)=>{
+   const node=document.createElement(tag);if(className)node.className=className;
+   if(text!==undefined)node.textContent=text;return node;
+  };
+  dock.classList.add('chess-pro-panel');
+  const utility=E('nav','chess-pro-utility');
+  utility.setAttribute('aria-label','Profil i wiadomości');
+  const makeLink=(href,name,kind)=>{
+   const a=E('a','');a.href=href;a.title=name;a.setAttribute('aria-label',name);a.append(svg(kind));return a;
+  };
+  const mail=makeLink('/konto/panel/?sekcja=messages','Wiadomości','mail');
+  const unread=E('span','chess-pro-unread');
+  unread.hidden=true;unread.setAttribute('aria-hidden','true');mail.append(unread);
+  utility.append(mail,makeLink('/konto/panel/?sekcja=profile','Mój profil','profile'));
+  dock.insertBefore(utility,players);
+  for(const [selector,kind] of [
+    ['#restart','add'],['.chess-owner-online-new','add'],
+    ['.chess-owner-rematch','rematch'],['.chess-reference-invite','invite']
+  ]){
+   const button=actions.querySelector(selector);
+   if(button&&!button.querySelector('.chess-pro-action-icon')){
+    const graphic=svg(kind);graphic.classList.add('chess-pro-action-icon');button.prepend(graphic);
+   }
+  }
+  const tabs=match.querySelector('.dock-tabs');
+  const chat=match.querySelector('#chat-tab'),moves=match.querySelector('#history-tab');
+  const info=match.querySelector('#chess-final-info-tab');
+  if(tabs&&chat&&moves&&info){
+   tabs.insertBefore(chat,moves);
+   info.setAttribute('aria-label','Informacje');
+   info.textContent='Info';info.prepend(svg('info'));
+  }
+  const footer=E('nav','chess-pro-tools');footer.setAttribute('aria-label','Ustawienia szachów');
+  const choices=E('section','chess-pro-choices');choices.hidden=true;
+  choices.setAttribute('aria-label','Opcje wyglądu szachów');
+  const storageKey='gracz-chess-premium-desktop-v1';
+  const safe={
+   board:['turquoise','classic','slate'],
+   pieces:['standard','compact'],
+   theme:['light','night']
+  };
+  let config={board:'turquoise',pieces:'standard',theme:'light'};
+  try{
+   const saved=JSON.parse(localStorage.getItem(storageKey)||'null');
+   if(saved&&typeof saved==='object'){
+    for(const type of Object.keys(safe))if(safe[type].includes(saved[type]))config[type]=saved[type];
+   }
+  }catch{}
+  function apply(){
+   layout.dataset.chessBoard=config.board;
+   layout.dataset.chessPieces=config.pieces;
+   layout.dataset.chessTheme=config.theme;
+   try{localStorage.setItem(storageKey,JSON.stringify(config));}catch{}
+  }
+  apply();
+  const options={
+   board:[['turquoise','Turkusowa (oryginalna)'],['classic','Klasyczna'],['slate','Stalowa']],
+   pieces:[['standard','Oryginalne figury'],['compact','Mniejsze figury']],
+   theme:[['light','Jasny panel'],['night','Ciemny panel']]
+  };
+  let currentMenu='';
+  const toolButtons=[];
+  function showChoices(type,focus=false){
+   if(currentMenu===type&&!choices.hidden){choices.hidden=true;currentMenu='';return;}
+   currentMenu=type;choices.replaceChildren();
+   const heading=E('strong','',type==='board'?'Kolory planszy':type==='pieces'?'Wygląd figur':'Motyw konsoli');
+   choices.append(heading);
+   for(const [value,label] of options[type]){
+    const button=E('button','',label);
+    button.type='button';button.setAttribute('aria-pressed',String(config[type]===value));
+    button.addEventListener('click',()=>{
+     config[type]=value;apply();choices.hidden=true;currentMenu='';
+    });
+    choices.append(button);
+   }
+   choices.hidden=false;if(focus)choices.querySelector('button')?.focus();
+  }
+  for(const [label,kind,action] of [
+   ['Ustawienia','settings','settings'],['Plansza','board','board'],
+   ['Figury','pieces','pieces'],['Motyw','theme','theme'],['Pełny ekran','fullscreen','fullscreen']
+  ]){
+   const button=E('button','chess-pro-tool');button.type='button';
+   button.title=label;button.setAttribute('aria-label',label);
+   button.append(svg(kind),E('span','',label));footer.append(button);
+   toolButtons.push(button);
+   button.addEventListener('click',()=>{
+    if(action==='settings'){choices.hidden=true;currentMenu='';layout.querySelector('#console-config-open')?.click();return;}
+    if(action==='fullscreen'){
+     choices.hidden=true;currentMenu='';
+     if(document.fullscreenElement)void document.exitFullscreen?.();
+     else if(layout.querySelector('#fullscreen-game'))layout.querySelector('#fullscreen-game').click();
+     else layout.querySelector('#focus-game')?.click();
+     return;
+    }
+    showChoices(action);
+   });
+  }
+  dock.append(footer,choices);
+  document.addEventListener('keydown',event=>{
+   if(event.key==='Escape'&&!choices.hidden){event.preventDefault();choices.hidden=true;currentMenu='';}
+  });
+  document.addEventListener('click',event=>{
+   if(!choices.hidden&&!choices.contains(event.target)&&!footer.contains(event.target)){
+    choices.hidden=true;currentMenu='';
+   }
+  });
+  let loading=false;
+  function hideUnread(){unread.hidden=true;unread.textContent='';mail.setAttribute('aria-label','Wiadomości');}
+  async function refreshUnread(){
+   if(loading||document.hidden||window.matchMedia('(max-width:800px)').matches)return;
+   loading=true;
+   try{
+    const response=await fetch('/auth/message-center',{method:'GET',
+      credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}});
+    if(response.status===401||response.status===403){hideUnread();return;}
+    if(!response.ok)return;
+    const data=await response.json();
+    if(data?.ok!==true||!Array.isArray(data.conversations))return;
+    const total=data.conversations.reduce((sum,row)=>{
+     const count=Number(row.unread);
+     return sum+(row.archived===true||!Number.isFinite(count)?0:Math.max(0,Math.floor(count)));
+    },0);
+    if(total<=0){hideUnread();return;}
+    unread.textContent=total>99?'99+':String(total);
+    unread.hidden=false;mail.setAttribute('aria-label','Wiadomości — '+total+' nieprzeczytanych');
+   }catch(_error){/* Retain only previously verified count on temporary connectivity loss. */}
+   finally{loading=false;}
+  }
+  void refreshUnread();
+  const interval=window.setInterval(refreshUnread,45000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshUnread();});
+  window.addEventListener('focus',refreshUnread);
+  window.addEventListener('pagehide',()=>window.clearInterval(interval),{once:true});
+  layout.dataset.desktopPremiumPanel='yes';
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+ else init();
+ window.matchMedia('(min-width:801px)').addEventListener?.('change',event=>{if(event.matches)init();});
+})();
+`;
+export function serveChessConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const asset={'/konto/szachy':['text/html; charset=utf-8',html],'/konto/szachy/styl.css':['text/css; charset=utf-8',css+referenceLayoutCss+ownerCompactCss+minimalChessCss+mobileChessCss+approvedOwnerChessCss+finalApprovedChessPanelCss+chessMobileTopbarCss+chessHistoryFixCss+chessMoveReviewCss+chessHistoryVisibilityCss+chessProDesktopCss],'/konto/szachy/app.js':['application/javascript; charset=utf-8',js+referenceLayoutJs+ownerCompactJs+minimalChessJs+mobileChessJs+approvedOwnerChessJs+finalApprovedChessPanelJs+chessMobileTopbarJs+chessProDesktopJs],'/konto/szachy/rules.mjs':['application/javascript; charset=utf-8',rulesSource],'/konto/szachy/pieces.mjs':['application/javascript; charset=utf-8',chessPiecesSource],'/konto/szachy/computer.mjs':['application/javascript; charset=utf-8',computerSource],'/konto/szachy/realtime-client.mjs':['application/javascript; charset=utf-8',realtimeClientSource],'/konto/szachy/invitations.css':['text/css; charset=utf-8',invitationCss],'/konto/szachy/invitations.js':['application/javascript; charset=utf-8',invitationJs]}[path];if(!asset)return false;res.writeHead(200,{...headers,'Content-Type':asset[0],'Content-Length':Buffer.byteLength(asset[1])});res.end(asset[1]);return true;}
