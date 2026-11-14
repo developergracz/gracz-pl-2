@@ -298,3 +298,72 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   await ctx.close();
  }
 });
+
+
+test('desktop chess shows approved right panel with live clocks, mailbox, actions and working footer', {timeout:90000}, async t=>{
+ const server=createServer((req,res)=>{
+  const url=new URL(req.url,'http://localhost');
+  if(serveChessConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+  res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:true,items:[],friends:[],challenges:[]}));
+ });
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(()=>{server.close();server.closeAllConnections();});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
+ const ctx=await browser.newContext({viewport:{width:1600,height:900}});t.after(()=>ctx.close());
+ const page=await ctx.newPage();page.setDefaultTimeout(10000);
+ await page.route('**/auth/message-center',route=>route.fulfill({
+  status:200,contentType:'application/json',
+  body:JSON.stringify({ok:true,conversations:[
+   {nickname:'Przeciwnik',unread:3,archived:false},
+   {nickname:'Archiwum',unread:7,archived:true}
+  ]})
+ }));
+ const failures=[];page.on('pageerror',error=>failures.push(error.message));
+ await page.goto('http://127.0.0.1:'+server.address().port+'/konto/szachy/');
+ await page.locator('.side-dock.chess-pro-panel').waitFor({state:'visible'});
+ assert.equal(await page.locator('#board .chess-piece').count(),32,'original 32 pieces remain');
+ const badge=page.locator('.chess-pro-unread');
+ await badge.waitFor({state:'visible'});
+ assert.equal(await badge.textContent(),'3','desktop mailbox uses actual unread count');
+ assert.equal(await page.locator('.chess-pro-utility a').count(),2);
+ assert.deepEqual(await page.locator('.chess-pro-tool').allTextContents(),
+   ['Ustawienia','Plansza','Figury','Motyw','Pełny ekran']);
+ assert.deepEqual(await page.locator('#match-panel .dock-tabs button').allTextContents(),
+   ['Czat','Ruchy','Info']);
+ for(const name of ['Nowa gra','Rewanż','Zaproś do gry']){
+  assert.equal(await page.locator('.chess-reference-actions button:visible').filter({hasText:name}).count(),1);
+ }
+ const geo=await page.evaluate(()=>{
+  const r=selector=>{
+   const b=document.querySelector(selector).getBoundingClientRect();
+   return {x:b.left,y:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height};
+  };
+  return {
+   board:r('#board'),dock:r('.side-dock.chess-pro-panel'),
+   players:r('.side-dock.chess-pro-panel>.players'),
+   mode:r('.side-dock.chess-pro-panel .mode'),
+   actions:r('.side-dock.chess-pro-panel>.chess-reference-actions'),
+   tabs:r('.side-dock.chess-pro-panel .dock-tabs'),
+   tools:r('.side-dock.chess-pro-panel>.chess-pro-tools')
+  };
+ });
+ assert.ok(geo.dock.x>geo.board.right+15,'right panel must be beside the real board: '+JSON.stringify(geo));
+ assert.ok(geo.dock.width<=470,'right panel must remain compact: '+JSON.stringify(geo));
+ assert.ok(geo.players.bottom<=geo.mode.y+3&&geo.mode.bottom<=geo.actions.y+3&&
+   geo.actions.bottom<=geo.tabs.y+3&&geo.tabs.bottom<=geo.tools.y,
+   'visible panel controls must be correctly ordered: '+JSON.stringify(geo));
+ assert.ok(geo.tools.bottom<=geo.dock.bottom+3,'footer must remain inside the panel: '+JSON.stringify(geo));
+ assert.ok(await page.locator('#chat-panel').isVisible(),'chat works inside the new panel');
+ await page.locator('.chess-pro-tool[aria-label="Plansza"]').click();
+ await page.locator('.chess-pro-choices button').filter({hasText:'Klasyczna'}).click();
+ assert.equal(await page.locator('.layout').getAttribute('data-chess-board'),'classic');
+ await page.locator('.chess-pro-tool[aria-label="Figury"]').click();
+ await page.locator('.chess-pro-choices button').filter({hasText:'Mniejsze figury'}).click();
+ assert.equal(await page.locator('.layout').getAttribute('data-chess-pieces'),'compact');
+ await page.locator('.chess-pro-tool[aria-label="Motyw"]').click();
+ await page.locator('.chess-pro-choices button').filter({hasText:'Ciemny panel'}).click();
+ assert.equal(await page.locator('.layout').getAttribute('data-chess-theme'),'night');
+ await page.locator('.chess-pro-tool[aria-label="Ustawienia"]').click();
+ assert.equal(await page.locator('#console-config-modal').isVisible(),true,'settings icon opens existing console configurator');
+ assert.deepEqual(failures,[],'no browser runtime errors in premium desktop console');
+});
