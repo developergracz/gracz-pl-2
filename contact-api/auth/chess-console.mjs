@@ -2490,6 +2490,58 @@ body.chess-console .chess-pro-choices{display:none}
   overflow-y:auto!important
  }
 }
+
+/* CHESS-DESKTOP-PREMIUM-FIX-01 */
+@media(min-width:801px){
+ /* Stable width for 07:00 and time-unlimited — no clock jumps. */
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.players>.player .player-clock:not([hidden]){
+  box-sizing:border-box!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;
+  flex:0 0 90px!important;width:90px!important;min-width:90px!important;max-width:90px!important;
+  height:33px!important;min-height:33px!important;max-height:33px!important;
+  margin:0 auto!important;padding:0!important
+ }
+ /* The former owner action styles applied #restart-specific 30px rules.
+    Give every real button the same readable 75px icon+label column. */
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions
+ button:is(#restart,.chess-owner-rematch,.chess-reference-invite,.chess-owner-online-new):not([hidden]){
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:5px!important;box-sizing:border-box!important;
+  width:100%!important;min-height:75px!important;height:75px!important;max-height:75px!important;
+  margin:0!important;padding:6px 4px!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  background:transparent!important;color:#123f44!important;
+  font:750 13px/1.2 system-ui,sans-serif!important;text-align:center!important
+ }
+ body.chess-console .layout:not(.game-focus) .side-dock.chess-pro-panel>.chess-reference-actions
+ button:is(#restart,.chess-owner-rematch,.chess-reference-invite,.chess-owner-online-new) svg{
+  flex:0 0 29px!important;width:29px!important;height:29px!important;color:#123f44!important
+ }
+ /* Room creation must be available but scroll within a compact slot.
+    It cannot displace the tabs, real chat or bottom tools off-screen. */
+ body.chess-console .layout:not(.game-focus):has(#online-mode.active)
+ .side-dock.chess-pro-panel>.sidebar .console-settings-slot{
+  box-sizing:border-box!important;max-height:180px!important;min-height:0!important;
+  height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;
+  scrollbar-width:thin!important
+ }
+ body.chess-console .layout:not(.game-focus):has(#online-mode.active)
+ .side-dock.chess-pro-panel #online-settings:not([hidden]){
+  box-sizing:border-box!important;max-height:174px!important;min-height:0!important;
+  height:auto!important;overflow-y:auto!important;overflow-x:hidden!important
+ }
+ /* Respect the existing owner configurator's "hide right panel" preset.
+    This must leave the main chessboard square and visible. */
+ body.chess-console .layout.console-hide-dock:not(.game-focus)>.boardarea{
+  grid-template-columns:minmax(0,1fr)!important
+ }
+ body.chess-console .layout.console-hide-dock:not(.game-focus)>.boardarea>.arena{
+  display:flex!important;grid-column:1!important;min-width:0!important
+ }
+ body.chess-console .layout.console-hide-dock:not(.game-focus) .side-dock.chess-pro-panel{
+  display:none!important
+ }
+}
 `;
 const chessProDesktopJs=String.raw`
 /* CHESS-DESKTOP-PREMIUM-PANEL-01: arrange existing live controls; no duplicated game state. */
