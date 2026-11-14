@@ -96,7 +96,10 @@ export async function readChessLayout(page){
         const history=elements.match.classList.contains('moves-only');
         if(history){
           require(boxes.moves?.height>100,'historia ruchów zwinięta do jednego wiersza');
-          require(boxes.moves&&boxes.match&&Math.abs(boxes.match.y+boxes.match.height-boxes.moves.y-boxes.moves.height)<24,'historia nie wypełnia panelu');
+          const historyNav=rect(document.querySelector('#moves-panel .chess-history-nav'));
+          const endY=historyNav?historyNav.y+historyNav.height:(boxes.moves?.y||0)+(boxes.moves?.height||0);
+          require(boxes.moves&&boxes.match&&Math.abs(boxes.match.y+boxes.match.height-endY)<24,'historia z nawigacją nie wypełnia panelu');
+          if(historyNav)require(historyNav.height>=30,'nawigacja po historii jest obcięta');
           require(!boxes.chat&&!boxes.composer,'czat widoczny w zakładce Ruchy');
         }else if(!hidden('chat-history'))require(boxes.chat?.height>100,'lista wiadomości zwinięta');
         // The browser exercises both actions separately; assert real buttons and

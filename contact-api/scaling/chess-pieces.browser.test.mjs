@@ -94,11 +94,13 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   assert.equal(await page.locator('#moves-panel').isVisible(),true);
   const historyBounds=await page.locator('#moves-list').evaluate(el=>{
    const dock=el.closest('#match-panel');
+   const nav=dock.querySelector('.chess-history-nav');
    return {height:el.getBoundingClientRect().height,
-    gap:dock.getBoundingClientRect().bottom-el.getBoundingClientRect().bottom};
+    navHeight:nav?.getBoundingClientRect().height||0,
+    gap:dock.getBoundingClientRect().bottom-(nav||el).getBoundingClientRect().bottom};
   });
-  assert.ok(historyBounds.height>100&&historyBounds.gap<24,
-   'Moves should fill the dock to the bottom: '+JSON.stringify(historyBounds));
+  assert.ok(historyBounds.height>100&&historyBounds.navHeight>=30&&historyBounds.gap<24,
+   'Moves and navigation should fill dock to bottom: '+JSON.stringify(historyBounds));
   // Prove that the new chess-specific gate still rejects the original 26px bug.
   const savedStyle=await page.locator('#moves-list').getAttribute('style');
   await page.locator('#moves-list').evaluate(el=>{
@@ -231,7 +233,33 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   await page.locator('#history-tab').click();
   assert.equal(await page.locator('#moves-panel').isVisible(),true);
   assert.equal(await page.locator('#history-count').textContent(),'2');
-  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['1. e4','d5']);
+  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['e4','d5']);
+  // Select arbitrary plies; the real match must not be mutated.
+  assert.equal(await page.locator('.chess-history-turn').count(),1);
+  assert.equal(await page.locator('.chess-history-number').first().textContent(),'1.');
+  await page.locator('.chess-move-row[data-ply="1"]').click();
+  assert.equal(await page.locator('#board').getAttribute('data-review-ply'),'1');
+  assert.equal(await square('e4 biały pionek').count(),1);
+  assert.equal(await square('d7 czarny pionek').count(),1);
+  assert.equal(await square('d5 puste').count(),1);
+  assert.equal(await page.locator('.chess-square:enabled').count(),0);
+  await page.locator('.chess-move-row[data-ply="2"]').click();
+  assert.equal(await page.locator('#board').getAttribute('data-review-ply'),'2');
+  assert.equal(await square('d5 czarny pionek').count(),1);
+  assert.equal(await page.locator('.chess-move-row.chess-history-selected').getAttribute('data-ply'),'2');
+  await page.locator('.chess-history-action[data-action="first"]').click();
+  assert.equal(await page.locator('#board').getAttribute('data-review-ply'),'0');
+  assert.equal(await square('e2 biały pionek').count(),1);
+  await page.locator('.chess-history-action[data-action="next"]').click();
+  assert.equal(await square('e4 biały pionek').count(),1);
+  await page.locator('.chess-history-action[data-action="last"]').click();
+  assert.equal(await square('d5 czarny pionek').count(),1);
+  await page.locator('.chess-history-action[data-action="prev"]').click();
+  assert.equal(await square('d7 czarny pionek').count(),1);
+  await page.locator('.chess-history-action[data-action="live"]').click();
+  assert.equal(await page.locator('#board').getAttribute('data-review-ply'),'live');
+  assert.equal(await page.locator('.chess-square:enabled').count(),64);
+  assert.equal(await page.locator('.chess-history-action[data-action="pgn"]').isEnabled(),true);
   // Regression: notation previously inherited white text on the pale cream panel.
   const contrast=await page.locator('#moves-list .chess-move-row').first().evaluate(el=>{
    const rgb=color=>(color.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
@@ -250,7 +278,7 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   assert.equal(await square('e4 biały pionek').count(),1,'white move restored after reload');
   assert.equal(await square('d5 czarny pionek').count(),1,'black move restored after reload');
   await page.locator('#history-tab').click();
-  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['1. e4','d5']);
+  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['e4','d5']);
   await page.locator('#restart').click();
   assert.equal(await page.locator('#history-count').textContent(),'0');
   assert.equal(await page.evaluate(()=>localStorage.getItem('gracz-chess-training-history-v1')),null);
