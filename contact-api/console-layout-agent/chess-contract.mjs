@@ -115,11 +115,24 @@ export async function readChessLayout(page){
           for(const [name,box] of [['koperta',mail],['profil',profile],['licznik',badge]])
             for(const clock of [boxes.clock1,boxes.clock2])require(!overlap(box,clock),name+' nachodzi na zegar');
           require(!overlap(mail,profile),'koperta nachodzi na profil');
+          require(!overlap(badge,profile),'licznik nachodzi na profil');
+          require(!badge||inside(badge,boxes.dock),'licznik wychodzi poza panel');
+          if(!hidden('players')){
+            const sides=[...(top?.querySelectorAll('.player .cc-side')||[])];
+            require(sides.map(e=>e.textContent).join('|')==='Czarne|Białe','etykiety zegarów muszą brzmieć Czarne | Białe');
+            require(sides.every(e=>rect(e)&&e.scrollWidth<=e.clientWidth+1),'etykieta zegara jest ucięta');
+          }
           const tabs=[...document.querySelectorAll('#match-panel .dock-tabs > .dock-tab')].filter(e=>rect(e)).map(e=>e.textContent.trim());
           require(tabs.join('|')==='Czat|Ruchy|Info','zakładki muszą mieć kolejność Czat | Ruchy | Info');
           const tools=[...document.querySelectorAll('.side-dock > .cc-tools > .cc-tool')].filter(e=>rect(e));
           require(tools.length===5,'pod czatem musi być dokładnie pięć ikon konfiguracji');
           require(tools.every(e=>e.getAttribute('aria-label')&&e.title&&inside(rect(e),boxes.dock)),'ikony konfiguracji bez opisu lub poza panelem');
+          // The rendered TEXT (not only the button) must fit its button and keep a visible gap.
+          const labels=tools.map(e=>{const label=e.querySelector('.cc-tool-label'),range=document.createRange();
+            range.selectNodeContents(label);const t=range.getBoundingClientRect(),b=e.getBoundingClientRect();
+            return {text:label.textContent,left:t.left,right:t.right,fits:t.left>=b.left-0.5&&t.right<=b.right+0.5};});
+          require(labels.every(l=>l.fits),'etykieta ikony wychodzi poza przycisk: '+labels.filter(l=>!l.fits).map(l=>l.text).join(', '));
+          require(labels.slice(1).every((l,i)=>l.left-labels[i].right>=3),'etykiety ikon stykają się lub nakładają');
           require(!boxes.match||tools.every(e=>rect(e).y>=boxes.match.y+boxes.match.height-2),'ikony konfiguracji muszą leżeć pod oknem rozmowy');
         }
         const history=elements.match.classList.contains('moves-only');

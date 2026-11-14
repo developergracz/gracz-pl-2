@@ -341,3 +341,52 @@ test('Online Rewanż re-invites the same opponent with the same clock through th
  assert.deepEqual(sent[0],{action:'send',nickname:'Rywal',game:'szachy',timeLimitMinutes:5,incrementSeconds:2});
  assert.deepEqual(errors,[]);
 });
+
+test('owner acceptance views: badge 3 and 0, short clock labels and the Online form reachable to its end',{timeout:120000},async t=>{
+ const base=await startServer(t),browser=await launch(t);
+ for(const viewport of [{width:1366,height:768},{width:390,height:844},{width:375,height:667}]){
+  const mobile=viewport.width<800,w=viewport.width;
+  const context=await browser.newContext({viewport,deviceScaleFactor:mobile?2:1,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage(),errors=[];page.setDefaultTimeout(8000);
+  page.on('pageerror',error=>errors.push(error.message));
+  let unread=3;
+  await page.route('**/auth/message-center',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(inbox(unread).body)}));
+  await page.route(url=>url.pathname==='/auth/social/challenges',route=>route.fulfill({status:200,contentType:'application/json',
+   body:JSON.stringify({ok:true,challenges:[{id:MATCH,game:'szachy',status:'accepted',opponent:'Rywal'}]})}));
+  await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
+  const badge=page.locator('.side-dock .cc-top .cc-mail-badge');
+  await page.waitForFunction(()=>document.querySelector('.cc-mail')?.dataset.unread==='3');
+  assert.equal(await badge.textContent(),'3');
+  // Clocks show only the side; the full name stays for screen readers, in the title and in Info.
+  assert.deepEqual(await page.locator('.cc-top .player .cc-side').allTextContents(),['Czarne','Białe']);
+  assert.equal(await page.locator('.cc-top .player.first').getAttribute('title'),'Komputer · Czarne');
+  assert.equal(await page.locator('#black-name').textContent(),'Komputer · Czarne');
+  assert.deepEqual((await readChessLayout(page)).issues,[],'badge 3: no overlap with clocks or profile, labels fit');
+  await page.locator('.side-dock').scrollIntoViewIfNeeded();
+  await snapshot(page,'owner-badge-3-'+w);
+  unread=0;
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+  await badge.waitFor({state:'hidden'});
+  assert.deepEqual((await readChessLayout(page)).issues,[]);
+  await snapshot(page,'owner-badge-0-'+w);
+  // Online: the sheet scrolls inside the panel and its last control stays reachable and usable.
+  await (mobile?page.locator('#online-mode').tap():page.locator('#online-mode').click());
+  const sheet=page.locator('#cc-sheet-online'),body=sheet.locator('.cc-sheet-body'),submit=sheet.locator('#create-room');
+  await sheet.waitFor({state:'visible'});
+  await body.evaluate(el=>{el.scrollTop=el.scrollHeight;});
+  const reach=await page.evaluate(()=>{
+   const body=document.querySelector('#cc-sheet-online .cc-sheet-body'),button=document.getElementById('create-room');
+   const b=body.getBoundingClientRect(),r=button.getBoundingClientRect();
+   return {inside:r.top>=b.top-1&&r.bottom<=b.bottom+1&&r.left>=b.left-1&&r.right<=b.right+1,atEnd:body.scrollTop+body.clientHeight>=body.scrollHeight-1,height:r.height};
+  });
+  assert.ok(reach.inside&&reach.atEnd&&reach.height>=30,'the Online form is reachable to its end: '+JSON.stringify(reach));
+  await page.locator('.side-dock').scrollIntoViewIfNeeded();
+  await snapshot(page,'owner-online-sheet-end-'+w);
+  await (mobile?submit.tap():submit.click());
+  await page.locator('#chess-invite-overlay').waitFor({state:'visible'});
+  await page.locator('#chess-invite-close').click();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal overflow');
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }
+});

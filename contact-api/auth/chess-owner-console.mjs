@@ -123,6 +123,17 @@ body.chess-console.cc-owner #game:not(.game-focus) .cc-top .player strong{
   white-space:nowrap!important;color:var(--cc-ink)!important;text-shadow:none!important;
   font:600 13px/1.2 system-ui,-apple-system,'Segoe UI',sans-serif!important
 }
+body.chess-console.cc-owner #game:not(.game-focus) .cc-top .player>div>strong:not(#cc-none){
+  position:absolute!important;display:block!important;width:1px!important;height:1px!important;margin:-1px!important;
+  padding:0!important;border:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important;
+  white-space:nowrap!important
+}
+body.chess-console.cc-owner #game:not(.game-focus) .cc-top .player>div{position:relative!important}
+body.chess-console.cc-owner .cc-side{
+  display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cc-ink);
+  font:600 14px/1.2 system-ui,-apple-system,'Segoe UI',sans-serif
+}
+body.chess-console.cc-owner #game.game-focus .cc-side{display:none!important}
 body.chess-console.cc-owner #game:not(.game-focus) .cc-top .player-clock{
   display:block!important;position:static!important;box-sizing:border-box!important;
   width:3.3em!important;min-width:3.3em!important;max-width:100%!important;height:auto!important;min-height:0!important;
@@ -296,12 +307,12 @@ body.chess-console.cc-owner[data-cc-theme="dark"] #game #chess-final-info-panel 
 /* Five configuration icons under the conversation. */
 body.chess-console.cc-owner #game.game-focus .cc-tools{display:none!important}
 body.chess-console.cc-owner #game .side-dock>.cc-tools{
-  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;flex:0 0 auto;
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;flex:0 0 auto;
   margin:0;padding:10px 0 0;border-top:1px solid var(--cc-line)
 }
 body.chess-console.cc-owner #game .cc-tool{
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;min-width:0;min-height:60px;
-  margin:0;padding:6px 2px;border:0;border-radius:10px;background:transparent;color:var(--cc-ink);box-shadow:none;cursor:pointer;
+  margin:0;padding:6px 2px;border:0;container-type:inline-size;border-radius:10px;background:transparent;color:var(--cc-ink);box-shadow:none;cursor:pointer;
   font:600 12px/1.15 system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center
 }
 @media (min-width:1300px){body.chess-console.cc-owner #game .cc-tool{font-size:13px}}
@@ -311,7 +322,12 @@ body.chess-console.cc-owner #game .cc-tool:is([aria-expanded="true"],[aria-press
   background:var(--cc-soft);color:var(--cc-accent);box-shadow:inset 0 -3px 0 var(--cc-accent)
 }
 body.chess-console.cc-owner[data-cc-theme="dark"] #game .cc-tool:is([aria-expanded="true"],[aria-pressed="true"]){color:#8fdcd5}
-body.chess-console.cc-owner .cc-tool-label{display:block;max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none}
+/* Label size follows the button width (cqi): with any system font (Inter, Segoe UI, DejaVu Sans)
+   "Ustawienia" fits its fifth of the row; only "Pełny ekran" may wrap, top-aligned like the rest. */
+body.chess-console.cc-owner #game .cc-tool .cc-tool-label{
+  display:block;max-width:100%;overflow-wrap:normal;word-break:normal;hyphens:none;white-space:normal;
+  font-weight:500;font-size:clamp(10px,17cqi,13px);line-height:1.15;letter-spacing:0
+}
 /* In-panel sheets (settings, board, pieces, theme, online games): cover only the content area. */
 body.chess-console.cc-owner #game .cc-sheet{
   position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;box-sizing:border-box;
@@ -565,6 +581,16 @@ export const chessOwnerConsoleJs = String.raw`
   profile.append(icon('profile'));
   account.append(mail,profile);
   top.append(players,account);
+  // Short visible side label ("Czarne" / "Białe"); the full existing name (e.g. "Komputer · Czarne")
+  // stays in the DOM for screen readers and in the card title, and is listed in the Info tab.
+  for(const [id,side] of [['black-name','Czarne'],['white-name','Białe']]){
+   const name=players.querySelector('#'+id),card=name&&name.closest('.player');
+   if(!name||!card||!name.parentElement)continue;
+   const label=E('span','cc-side',side);label.setAttribute('aria-hidden','true');
+   name.insertAdjacentElement('afterend',label);
+   const syncTitle=()=>{const text=name.textContent.trim();if(card.title!==text)card.title=text;};
+   syncTitle();new MutationObserver(syncTitle).observe(name,{childList:true,characterData:true,subtree:true});
+  }
   dock.insertBefore(top,dock.firstChild);
   // Earlier layers move clocks/modes above the board on phones or on resize; the owner's
   // console keeps them in the panel (below the board on phones). Runs after those movers.
