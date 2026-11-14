@@ -2521,13 +2521,13 @@ body.chess-console .chess-pro-choices{display:none}
     It cannot displace the tabs, real chat or bottom tools off-screen. */
  body.chess-console .layout:not(.game-focus):has(#online-mode.active)
  .side-dock.chess-pro-panel>.sidebar .console-settings-slot{
-  box-sizing:border-box!important;max-height:180px!important;min-height:0!important;
+  box-sizing:border-box!important;max-height:134px!important;min-height:0!important;
   height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;
   scrollbar-width:thin!important
  }
  body.chess-console .layout:not(.game-focus):has(#online-mode.active)
  .side-dock.chess-pro-panel #online-settings:not([hidden]){
-  box-sizing:border-box!important;max-height:174px!important;min-height:0!important;
+  box-sizing:border-box!important;max-height:128px!important;min-height:0!important;
   height:auto!important;overflow-y:auto!important;overflow-x:hidden!important
  }
  /* Respect the existing owner configurator's "hide right panel" preset.
