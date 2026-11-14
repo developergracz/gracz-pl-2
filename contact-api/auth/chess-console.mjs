@@ -1547,7 +1547,9 @@ body.chess-console .layout:not(.game-focus) .side-dock>.players>.player .player-
 }
 body.chess-console .layout:not(.game-focus) .side-dock>.sidebar{order:1!important}
 body.chess-console .layout:not(.game-focus) .side-dock>.chess-reference-actions{order:2!important}
-body.chess-console .layout:not(.game-focus) .side-dock>#match-panel{order:3!important;min-height:170px!important}
+body.chess-console .layout:not(.game-focus) .side-dock>#match-panel{
+  order:3!important;min-height:245px!important;overflow:visible!important
+}
 body.chess-console .layout:not(.game-focus):has(#online-mode.active) .side-dock .console-settings-slot,
 body.chess-console .layout:not(.game-focus) .side-dock>.sidebar:has(#online-mode.active) .console-settings-slot{
   display:block!important;height:auto!important;min-height:0!important;max-height:none!important;
@@ -1611,8 +1613,7 @@ body.chess-console .layout:not(.game-focus) .side-dock .chess-final-no-rooms{
   font:500 12px/1.45 system-ui,sans-serif!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock .chess-final-native{
-  position:absolute!important;width:1px!important;height:1px!important;
-  overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important
+  display:none!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock .chess-final-room-card>.textlink{
   display:block!important;margin-top:7px!important;font:600 11px/1.3 system-ui,sans-serif!important;
@@ -1675,7 +1676,7 @@ body.chess-console .layout:not(.game-focus) .side-dock #match-panel .chess-final
   display:none!important
 }
 body.chess-console .layout:not(.game-focus) .side-dock #match-panel .chess-final-info a{color:#006b6a!important}
-body.chess-console .layout:not(.game-focus) .side-dock #match-panel .mini-chat{
+body.chess-console .layout:not(.game-focus) .side-dock #match-panel:not(.moves-only) .mini-chat{
   display:block!important;flex:0 0 auto!important
 }
 @media(min-width:801px){
