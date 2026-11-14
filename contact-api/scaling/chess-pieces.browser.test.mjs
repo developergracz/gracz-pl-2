@@ -178,7 +178,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   // so the computer cannot promote black's pawn while Playwright selects it.
   await page.route('**/app.js',async route=>{
    const response=await route.fetch(),source=await response.text();
-   const hook="opponentSelect.addEventListener('change',updateOpponent);";
+   const hook="opponentSelect.addEventListener('change',()=>{updateOpponent();saveTrainingHistory();});";
    assert.ok(source.includes(hook));
    await route.fulfill({response,body:source.replace(hook,"opponentSelect.value='human';"+hook)});
   });
@@ -203,5 +203,57 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   assert.equal(await page.locator('.chess-promote').count(),0);
   await inspectPieces(page,3);
   await page.close();
+ }
+});
+
+
+test('recorded local chess SAN remains visible and survives reload on desktop/mobile', {timeout:90000},async t=>{
+ const server=createServer((req,res)=>{
+  const url=new URL(req.url,'http://localhost');
+  if(serveChessConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+  res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:true,items:[],friends:[],challenges:[]}));
+ });
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ t.after(()=>{server.close();server.closeAllConnections();});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
+ const base='http://127.0.0.1:'+server.address().port;
+ for(const width of [390,1440]){
+  const ctx=await browser.newContext({viewport:{width,height:width===390?844:900}});
+  const page=await ctx.newPage();page.setDefaultTimeout(10000);
+  await page.goto(base+'/konto/szachy/');
+  await page.locator('.chess-piece').first().waitFor();
+  await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
+  const square=label=>page.getByRole('gridcell',{name:label,exact:true});
+  await square('e2 biały pionek').click();
+  await square('e4 puste').click();
+  await square('d7 czarny pionek').click();
+  await square('d5 puste').click();
+  await page.locator('#history-tab').click();
+  assert.equal(await page.locator('#moves-panel').isVisible(),true);
+  assert.equal(await page.locator('#history-count').textContent(),'2');
+  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['1. e4','d5']);
+  // Regression: notation previously inherited white text on the pale cream panel.
+  const contrast=await page.locator('#moves-list .chess-move-row').first().evaluate(el=>{
+   const rgb=color=>(color.match(/[\d.]+/g)||[]).slice(0,3).map(Number);
+   const lum=color=>{
+    const channels=rgb(color).map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+    return channels[0]*.2126+channels[1]*.7152+channels[2]*.0722;
+   };
+   const a=lum(getComputedStyle(el).color);
+   const b=lum(getComputedStyle(document.querySelector('#moves-list')).backgroundColor);
+   return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+  });
+  assert.ok(contrast>=4.5,'chess SAN text must be legible on the approved pale background: '+contrast);
+  const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('gracz-chess-training-history-v1')));
+  assert.deepEqual(before.moves,['e2e4','d7d5']);
+  await page.reload();await page.locator('.chess-piece').first().waitFor();
+  assert.equal(await square('e4 biały pionek').count(),1,'white move restored after reload');
+  assert.equal(await square('d5 czarny pionek').count(),1,'black move restored after reload');
+  await page.locator('#history-tab').click();
+  assert.deepEqual(await page.locator('#moves-list .chess-move-row').allTextContents(),['1. e4','d5']);
+  await page.locator('#restart').click();
+  assert.equal(await page.locator('#history-count').textContent(),'0');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('gracz-chess-training-history-v1')),null);
+  await ctx.close();
  }
 });

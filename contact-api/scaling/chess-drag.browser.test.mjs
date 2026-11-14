@@ -214,6 +214,9 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   await page.locator('label[for],label.chess-input-mode').filter({hasText:'Przeciąganie (kliknięcie wybiera)'}).click();
   await page.locator('#console-config-done').click();
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+  // The training game now persists. Explicitly reset it for this independent input test.
+  await page.locator('#restart').evaluate(el=>el.click());
+  assert.equal(await moves(page),0);
   assert.equal(await page.evaluate(()=>localStorage.getItem('gracz-chess-input-mode-v1')),'drag');
   await clickMove(page,'e2','e4');
   await page.waitForFunction(()=>document.querySelector('#move-count').textContent==='Ruchy: 2',null,{timeout:12000});
@@ -226,6 +229,8 @@ test('touch drag, input modes, keyboard, focus, fullscreen and zoom',{timeout:12
   // "Sama gra", fullscreen and page zoom keep an exact hit-test.
   await page.evaluate(()=>localStorage.setItem('gracz-chess-input-mode-v1','both'));
   await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
+  await page.locator('#restart').evaluate(el=>el.click());
+  assert.equal(await moves(page),0);
   await openMinimalSettings(page);await page.locator('#focus-game').evaluate(el=>el.click());
   assert.equal(await page.locator('#game').evaluate(e=>e.classList.contains('game-focus')),true);
   await mouseDrag(page,'e2','e4');await noGhost(page);
