@@ -232,8 +232,19 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   const square=label=>page.getByRole('gridcell',{name:label,exact:true});
   await square('e2 biały pionek').click();
   await square('e4 puste').click();
+  // A recorded move should expose the history automatically, not leave Chat selected.
+  await page.locator('#moves-panel').waitFor({state:'visible'});
+  assert.equal(await page.locator('#history-tab').getAttribute('aria-selected'),'true');
+  assert.deepEqual(await page.locator('.chess-history-columns span').allTextContents(),['Nr','Białe','Czarne']);
+  assert.equal(await page.locator('#moves-list .chess-move-row').first().textContent(),'e4');
   await square('d7 czarny pionek').click();
   await square('d5 puste').click();
+  assert.equal(await page.locator('#moves-panel').isVisible(),true);
+  // The player can still open Chat manually without it being replaced by History.
+  await page.locator('#chat-tab').click();
+  assert.equal(await page.locator('#chat-panel').isVisible(),true);
+  await page.locator('#chess-opponent').evaluate(el=>el.dispatchEvent(new Event('change',{bubbles:true})));
+  assert.equal(await page.locator('#chat-panel').isVisible(),true);
   await page.locator('#history-tab').click();
   assert.equal(await page.locator('#moves-panel').isVisible(),true);
   assert.equal(await page.locator('#history-count').textContent(),'2');
@@ -279,6 +290,8 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('gracz-chess-training-history-v1')));
   assert.deepEqual(before.moves,['e2e4','d7d5']);
   await page.reload();await page.locator('.chess-piece').first().waitFor();
+  await page.locator('#moves-panel').waitFor({state:'visible'});
+  assert.equal(await page.locator('#history-tab').getAttribute('aria-selected'),'true','restored chess game opens move history by default');
   assert.equal(await square('e4 biały pionek').count(),1,'white move restored after reload');
   assert.equal(await square('d5 czarny pionek').count(),1,'black move restored after reload');
   await page.locator('#history-tab').click();
