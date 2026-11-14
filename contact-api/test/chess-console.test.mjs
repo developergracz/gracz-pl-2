@@ -214,3 +214,18 @@ test('owner-approved chess Online labels and empty chat remain legible on both l
   assert.ok(css.includes('color:#557377!important'));
   assert.ok(css.includes('.chess-mobile-heading{display:none!important}'));
 });
+
+test('approved chess Online console composes existing live controls without fake public rooms',()=>{
+ const page=load('/konto/szachy/'),style=load('/konto/szachy/styl.css'),app=load('/konto/szachy/app.js');
+ assert.equal(page.status,200);
+ assert.match(style.body,/chess-final-grid/);
+ assert.match(style.body,/chess-final-room-card/);
+ assert.match(style.body,/chess-final-create-card/);
+ assert.match(style.body,/grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)!important/);
+ assert.match(app.body,/roomSelect\.value=option\.value;open\.click\(\)/);
+ assert.match(app.body,/new MutationObserver\(renderRooms\)\.observe\(roomSelect/);
+ assert.match(app.body,/time\.dispatchEvent\(new Event\('change'/);
+ assert.match(app.body,/chess-final-info-tab/);
+ assert.match(app.body,/Brak zaakceptowanych partii/);
+ assert.doesNotMatch(app.body,/Pokój ogólny|Turniejowy|Rankingowy|Towarzyski/);
+});
