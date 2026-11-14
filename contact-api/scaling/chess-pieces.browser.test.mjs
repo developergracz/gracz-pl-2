@@ -64,6 +64,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
     return [rect('.chess-mobile-topbar'),rect('.chess-mobile-mode'),rect('.boardarea>.players'),rect('#board')];
    });
    for(let i=0;i<boxes.length-1;i++)assert.ok(boxes[i].bottom<=boxes[i+1].top+2,'mobile header, modes, clocks and board are ordered');
+   assert.equal(await page.locator('.chess-mobile-menu-panel').isVisible(),false,'menu starts closed');
    await page.locator('.chess-mobile-menu-toggle').click();
    assert.equal(await page.locator('.chess-mobile-menu-panel a:visible').count(),4);
    await page.keyboard.press('Escape');
