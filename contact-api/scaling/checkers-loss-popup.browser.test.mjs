@@ -59,7 +59,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await page.locator('#warcaby-loss-close').click();
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false);
  for(const winner of [0,1,3]){
-  await page.evaluate((value,id)=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:6,winner:value,player:1,players:['Ty','Mistrz_Andrzej']}})),winner,priorId);
+  await page.evaluate(({value,id})=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:6,winner:value,player:1,players:['Ty','Mistrz_Andrzej']}})),{value:winner,id:priorId});
   assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,'no popup for non-loss');
  }
  assert.deepEqual(errors,[],'no browser runtime errors');
