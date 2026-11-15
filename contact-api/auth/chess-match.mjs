@@ -45,3 +45,19 @@ export function playChessMatch(state,player,request){
  else if(dead||repetitions>=5)next.winner=3;
  return {state:next};
 }
+
+export function undoLastChessMove(state,requester){
+ // Do not guess the earlier position if the server history was truncated.
+ const moves=state?.history;
+ if(state?.winner!==0||!Array.isArray(moves)||!moves.length||
+    state.moves!==moves.length||moves.at(-1)?.player!==requester)
+  return {error:'BRAK_RUCHU_DO_COFNIECIA'};
+ let previous=initialChessMatch();
+ for(const item of moves.slice(0,-1)){
+  if(item?.player!==previous.turn)return {error:'HISTORIA_NIEPOPRAWNA'};
+  const step=playChessMatch(previous,item.player,{uci:item.uci});
+  if(step.error)return {error:'HISTORIA_NIEPOPRAWNA'};
+  previous=step.state;
+ }
+ return {state:{...state,...previous}};
+}
