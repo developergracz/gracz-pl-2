@@ -229,3 +229,14 @@ test('approved chess Online console composes existing live controls without fake
  assert.match(app.body,/Brak zaakceptowanych partii/);
  assert.doesNotMatch(app.body,/Pokój ogólny|Turniejowy|Rankingowy|Towarzyski/);
 });
+
+test('owner chess console offers four compact actions and consent-only Cofnij',()=>{
+ const app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css');
+ assert.equal(app.status,200);assert.equal(style.status,200);
+ assert.ok(style.body.includes('grid-template-columns:repeat(4,minmax(0,1fr))'),
+   'the same dock has four equal button slots');
+ for(const phrase of ['chess-owner-undo','chess:undo-request','match/undo',
+  'chess-undo-overlay','Akceptuj','Odrzuć']){
+  assert.ok(app.body.includes(phrase),'missing chess consent feature: '+phrase);
+ }
+});
