@@ -249,6 +249,64 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   {player:1,from:'h5',to:'f7'}
  ];
  const index=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
+ // Takeback acceptance against disposable PostgreSQL + two authenticated Chromium
+ // contexts. This test never connects to production accounts or matches.
+ const initialOnlineBoard=state.board.slice();
+ async function waitForOnlineVersion(expected){
+  const deadline=Date.now()+12000;
+  while(Date.now()<deadline){
+   const current=await read(base,users[0].token,id);
+   if(current.status===200&&current.match.version>=expected){
+    assert.equal(current.match.version,expected,'exactly one authoritative update');
+    state=current.match.state;version=current.match.version;
+    return current.match;
+   }
+   await new Promise(resolve=>setTimeout(resolve,120));
+  }
+  assert.fail('timed out waiting for online match version '+expected);
+ }
+ const requester=pages[0].locator('#chess-owner-undo');
+ const responder=pages[1].locator('#chess-undo-overlay');
+ assert.equal(await requester.isDisabled(),true,'cannot undo before any move');
+ assert.equal(await pages[1].locator('#chess-owner-undo').isDisabled(),true,'opponent cannot undo before a move');
+ await pages[0].locator('#board .chess-square').nth(index('e2')).click();
+ await pages[0].locator('#board .chess-square').nth(index('e4')).click();
+ await waitForOnlineVersion(version+1);
+ assert.equal(state.history.length,1);
+ assert.equal(state.history[0].uci,'e2e4');
+ await Promise.all(pages.map(page=>waitForPosition(page,state)));
+ await pages[0].waitForFunction(()=>document.querySelector('#chess-owner-undo')?.disabled===false);
+ assert.equal(await pages[1].locator('#chess-owner-undo').isDisabled(),true,'opponent may not undo requester move');
+ await requester.click();
+ let pending=await waitForOnlineVersion(version+1);
+ assert.equal(pending.undoRequest.requester,1);
+ assert.equal(pending.state.history.length,1,'request never rewrites moves');
+ assert.equal(pending.state.clock.since,null,'consent request pauses the chess clock');
+ await responder.waitFor({state:'visible',timeout:10000});
+ assert.match(await responder.innerText(),/prosi o cofnięcie/i);
+ assert.equal(await requester.isDisabled(),true,'cannot send overlapping undo requests');
+ await Promise.all(pages.map(page=>waitForPosition(page,state)));
+ await responder.locator('.chess-undo-reject').click();
+ await waitForOnlineVersion(version+1);
+ assert.equal(state.history.length,1,'rejection retains original move');
+ assert.equal(state.history[0].uci,'e2e4');
+ assert.ok(state.clock.since,'rejecting a request resumes the game clock');
+ await responder.waitFor({state:'hidden',timeout:10000});
+ await pages[0].waitForFunction(()=>document.querySelector('#chess-owner-undo')?.disabled===false);
+ await requester.click();
+ pending=await waitForOnlineVersion(version+1);
+ assert.equal(pending.undoRequest.requester,1);
+ await responder.waitFor({state:'visible',timeout:10000});
+ await responder.getByRole('button',{name:'Akceptuj'}).click();
+ await waitForOnlineVersion(version+1);
+ assert.equal(state.history.length,0,'consented takeback removes last move');
+ assert.equal(state.turn,1,'requester can play again');
+ assert.deepEqual(state.board,initialOnlineBoard,'both players return to initial position');
+ assert.ok(state.clock.since,'consented rollback resumes the game clock');
+ await responder.waitFor({state:'hidden',timeout:10000});
+ await Promise.all(pages.map(page=>waitForPosition(page,state)));
+ assert.equal(await requester.isDisabled(),true,'undo is unavailable after move is removed');
+
  // Once synchronized, browser GET snapshots are blocked: updates must arrive over WebSocket.
  for(const page of pages)await page.route('**/auth/match?*',route=>route.abort());
  for(const step of opening){
