@@ -21,7 +21,7 @@ const js="'use strict';\n(()=>{const $=id=>document.getElementById(id),matchId=n
 // Result-only integration: one state signal after the original renderer finishes.
 // Nothing in the board markup, styling, move engine, chat or sidebar is changed.
 const checkersResultHook='renderHistory();syncCaptureNotice()}';
-const checkersResultHooked=js.replace(checkersResultHook,'renderHistory();syncCaptureNotice();window.dispatchEvent(new CustomEvent("gracz:warcaby:position",{detail:{mode,matchId,version:current.version??0,player:current.player,winner:s.winner,players:current.players}}))}');
+const checkersResultHooked=js.replace(checkersResultHook,'renderHistory();syncCaptureNotice();if(typeof window!=="undefined"&&typeof CustomEvent!=="undefined"&&typeof window.dispatchEvent==="function")window.dispatchEvent(new CustomEvent("gracz:warcaby:position",{detail:{mode,matchId,version:current.version??0,player:current.player,winner:s.winner,players:current.players}}))}');
 if(checkersResultHooked===js)throw Error('CHECKERS_RESULT_HOOK_MISSING');
 const checkersWithLossHtml=html.replace('</body>',checkersLossHtml+'</body>');
 const checkersWithLossCss=css+'\n'+checkersLossCss;
