@@ -311,3 +311,34 @@ test('pending consent pauses both clocks, but its expiry reliably resumes the ac
  assert.ok(read.body.match.state.clock.remaining[0]>=409000,
   'elapsed from consent expiry is accounted on the next server settlement');
 });
+
+test('Chess Online undo requires explicit consent of the other verified participant',async()=>{
+ const f=fixture({game:'szachy'});
+ const get=t=>f.call(t,'GET','/auth/match?id='+challenge);
+ const play=(t,v,uci)=>f.call(t,'POST','/auth/match',{id:challenge,version:v,move:{uci}});
+ const undo=(t,v,action,requestId)=>f.call(t,'POST','/auth/match/undo',{id:challenge,version:v,action,requestId});
+ assert.equal((await get(tokenA)).status,200);
+ assert.equal((await undo(tokenA,0,'request')).status,409);
+ assert.equal((await play(tokenA,0,'e2e4')).status,200);
+ assert.equal((await undo(tokenB,1,'request')).status,409);
+ const request=await undo(tokenA,1,'request');assert.equal(request.status,200);
+ const offer=request.body.match.undoRequest;
+ assert.equal(offer.requester,1);assert.equal(offer.requesterName,'GraczA');
+ assert.equal(request.body.match.state.board[68],'P','request does not change chessboard');
+ assert.equal((await play(tokenB,2,'e7e5')).body.error,'OCZEKUJE_NA_DECYZJE');
+ assert.equal((await undo(tokenA,2,'accept',offer.id)).status,409,'self-accept forbidden');
+ assert.equal((await undo(tokenB,1,'accept',offer.id)).status,409,'stale acceptance forbidden');
+ assert.equal((await undo(tokenB,2,'accept','not-the-request')).status,409);
+ const accepted=await undo(tokenB,2,'accept',offer.id);assert.equal(accepted.status,200);
+ assert.equal(accepted.body.match.undoRequest,null);
+ assert.equal(accepted.body.match.state.board[68],'.');
+ assert.equal(accepted.body.match.state.board[100],'P');
+ assert.equal(accepted.body.match.state.moves,0);
+ assert.equal(accepted.body.match.state.turn,1);
+ assert.equal((await play(tokenA,3,'d2d4')).status,200,'play resumes');
+ const pending=await undo(tokenA,4,'request');assert.equal(pending.status,200);
+ const rejected=await undo(tokenB,5,'reject',pending.body.match.undoRequest.id);
+ assert.equal(rejected.status,200);
+ assert.equal(rejected.body.match.state.board[67],'P','rejection keeps the piece');
+ assert.equal(rejected.body.match.state.moves,1);
+});
