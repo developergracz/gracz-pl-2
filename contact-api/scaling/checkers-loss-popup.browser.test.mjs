@@ -5,6 +5,7 @@ import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {chromium} from 'playwright';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
+import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 
 test('Warcaby loss shows the modal and only real authorized options, without changing the board', {timeout:60000}, async t=>{
  const priorId='11111111-1111-4111-8111-111111111111';
@@ -19,7 +20,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  const invites=[];
  const server=createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
-  if(serveCheckersConsole(req,res,url))return;
+  if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
   const send=(code,data)=>{res.writeHead(code,{'content-type':'application/json'});res.end(JSON.stringify(data));};
   if(url.pathname==='/auth/social/challenges'){
    if(req.method==='GET')return send(200,{ok:true,challenges});
