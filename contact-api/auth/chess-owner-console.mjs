@@ -192,9 +192,9 @@ body.chess-console.cc-owner #game:not(.game-focus) .side-dock .mode-choice .ches
   display:inline-flex!important;flex:0 0 24px!important;width:24px!important;height:24px!important;align-items:center!important;justify-content:center!important
 }
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock .mode-choice .chess-mobile-mode-symbol svg{display:block!important;width:24px!important;height:24px!important;fill:none!important}
-/* Three discreet actions: icon + short name, thin separators. */
+/* Four equal actions in the same fixed-width dock. */
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions{
-  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;
   flex:0 0 auto!important;margin:0!important;padding:0!important
 }
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions>button{
@@ -202,7 +202,7 @@ body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-a
   justify-content:center!important;gap:5px!important;box-sizing:border-box!important;width:auto!important;min-width:0!important;
   height:auto!important;min-height:62px!important;margin:0!important;padding:6px 4px!important;border:0!important;
   border-radius:10px!important;background:transparent!important;color:var(--cc-ink)!important;box-shadow:none!important;
-  cursor:pointer;font:650 15px/1.15 system-ui,-apple-system,'Segoe UI',sans-serif!important;text-shadow:none!important
+  cursor:pointer;font:650 clamp(11px,.95vw,14px)/1.15 system-ui,-apple-system,'Segoe UI',sans-serif!important;text-shadow:none!important
 }
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions>button[hidden]{display:none!important}
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions>button:not([hidden])~button:not([hidden])::before{
@@ -210,8 +210,18 @@ body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-a
 }
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions>button:hover:not(:disabled){background:var(--cc-soft)!important}
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions>button:disabled{opacity:.42!important;cursor:not-allowed!important}
-body.chess-console.cc-owner .cc-action-icon{width:28px;height:28px;flex:none}
+body.chess-console.cc-owner .cc-action-icon{width:26px;height:26px;flex:none}
 body.chess-console.cc-owner #game .chess-reference-actions .cc-action-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:inherit!important;color:inherit!important}
+
+body.chess-console .chess-undo-overlay[hidden]{display:none!important}
+body.chess-console .chess-undo-overlay{position:fixed;inset:0;z-index:10055;display:grid;place-items:center;padding:15px;background:rgba(0,17,21,.74)}
+body.chess-console .chess-undo-card{box-sizing:border-box;width:min(420px,100%);border-radius:18px;border:1px solid #d4be91;background:#fbf6e6;color:#00363c;padding:26px 24px;box-shadow:0 14px 50px #001c2050;text-align:center;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+body.chess-console .chess-undo-card h2{font-size:21px;margin:0 0 12px}
+body.chess-console .chess-undo-card p{font-size:15px;line-height:1.5;margin:0 0 22px}
+body.chess-console .chess-undo-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+body.chess-console .chess-undo-choices button{min-height:44px;border-radius:10px;border:1px solid #0a6267;background:#006b6f;color:white;font-weight:700;cursor:pointer}
+body.chess-console .chess-undo-choices .chess-undo-reject{background:transparent;color:#00363c}
+body.chess-console .chess-undo-choices button:disabled{opacity:.55;cursor:wait}
 /* Tabs Czat | Ruchy | Info and the shared content area (same height for every tab). */
 body.chess-console.cc-owner #game:not(.game-focus) .side-dock>#match-panel{
   display:flex!important;flex-direction:column!important;gap:8px!important;position:relative!important;
@@ -509,6 +519,7 @@ export const chessOwnerConsoleJs = String.raw`
   mail:'<rect x="2.8" y="5.2" width="18.4" height="13.6" rx="2.2"/><path d="m3.6 6.6 8.4 6.6 8.4-6.6"/>',
   profile:'<circle cx="12" cy="7.9" r="3.9"/><path d="M4.4 20.6c.7-4.3 3.6-6.6 7.6-6.6s6.9 2.3 7.6 6.6"/>',
   newGame:'<rect x="3.8" y="3.8" width="16.4" height="16.4" rx="3"/><path d="M12 8.2v7.6M8.2 12h7.6"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14"/>',
   rematch:'<path d="M19.4 9.4A7.9 7.9 0 0 0 5.3 7.5"/><path d="M4.6 14.6a7.9 7.9 0 0 0 14.1 1.9"/><path d="M4.9 3.7v4.2h4.2M19.1 20.3v-4.2h-4.2"/>',
   invite:'<path d="M10.1 13.9a4.1 4.1 0 0 0 5.8 0l3-3a4.1 4.1 0 1 0-5.8-5.8l-1.1 1.1"/><path d="M13.9 10.1a4.1 4.1 0 0 0-5.8 0l-3 3a4.1 4.1 0 1 0 5.8 5.8l1.1-1.1"/>',
   chat:'<path d="M3.8 11.4c0-3.9 3.7-6.9 8.2-6.9s8.2 3 8.2 6.9-3.7 6.9-8.2 6.9c-1 0-2-.1-2.9-.4L4.6 19.5l1.3-3.5c-1.3-1.2-2.1-2.8-2.1-4.6Z"/>',
@@ -567,6 +578,8 @@ export const chessOwnerConsoleJs = String.raw`
   const invite=actions&&actions.querySelector('.chess-reference-invite');
   const trainingMode=$('training-mode'),onlineMode=$('online-mode');
   if(!boardarea||!dock||!board||!players||!mode||!sidebar||!actions||!match||!restart||!onlineNew||!rematch||!invite||!trainingMode||!onlineMode)return;
+  const takeback=E('button','chess-owner-undo');takeback.id='chess-owner-undo';
+  takeback.type='button';takeback.disabled=true;actions.append(takeback);
   layout.dataset.ownerConsole='yes';
 
   // ---- top row: clocks + envelope + profile ----
@@ -662,12 +675,14 @@ export const chessOwnerConsoleJs = String.raw`
   window.addEventListener('pagehide',()=>{window.clearInterval(unreadTimer);unreadTimer=0;});
   window.addEventListener('pageshow',event=>{startUnreadTimer();if(event.persisted)void refreshUnread(true);});
 
-  // ---- three actions ----
+  // ---- four compact actions ----
   function decorate(button,name,label){
    button.replaceChildren(icon(name,'cc-action-icon'),E('span','cc-action-label',label));
   }
   decorate(onlineNew,'newGame','Nowa gra');decorate(restart,'newGame','Nowa gra');
   decorate(rematch,'rematch','Rewanż');decorate(invite,'invite','Zaproś');
+  decorate(takeback,'undo','Cofnij');
+  takeback.addEventListener('click',()=>{if(!takeback.disabled)board.dispatchEvent(new Event('chess:undo-request'));});
   restart.title='Nowa partia z bieżącymi ustawieniami';
   onlineNew.title='Nowa partia online: wybierz przyjęte zaproszenie lub zaproś znajomego';
   invite.title='Zaproś znajomego do partii online';
@@ -677,6 +692,10 @@ export const chessOwnerConsoleJs = String.raw`
    const opponent=board.dataset.consoleOpponent||'';
    const can=finished&&(!online||!!opponent);
    rematch.disabled=!can;
+   takeback.disabled=board.dataset.consoleCanUndo!=='true';
+   takeback.title=board.dataset.consoleUndoPending==='true'
+    ?'Prośba o cofnięcie czeka na decyzję przeciwnika'
+    :online?'Poproś przeciwnika o cofnięcie ostatniego ruchu':'Cofnij ostatni ruch lokalny';
    rematch.title=can?(online?'Rewanż: ponowne zaproszenie dla '+opponent:'Rewanż: nowa partia z tymi samymi ustawieniami'):'Rewanż będzie dostępny po zakończeniu partii';
   }
   function chooseOption(id,value){
@@ -968,7 +987,7 @@ export const chessOwnerConsoleJs = String.raw`
    const stateText=modeNow==='online'?($('game-state')?.textContent||'').trim():'';
    if(onlineStatus.textContent!==stateText)onlineStatus.textContent=stateText;
   }
-  new MutationObserver(syncAll).observe(board,{attributes:true,attributeFilter:['data-console-mode','data-console-game','data-console-opponent','data-console-limit','data-console-increment']});
+  new MutationObserver(syncAll).observe(board,{attributes:true,attributeFilter:['data-console-mode','data-console-game','data-console-opponent','data-console-limit','data-console-increment','data-console-can-undo','data-console-undo-pending']});
   const state=$('game-state');
   if(state)new MutationObserver(syncAll).observe(state,{childList:true,characterData:true,subtree:true});
   const historyCount=$('history-count');

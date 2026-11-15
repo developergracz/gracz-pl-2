@@ -254,7 +254,8 @@ test('actions, tabs and Info follow the real game: Rewanż only after a finished
  await page.goto(base+'/konto/szachy/');await page.locator('.chess-piece').first().waitFor();
  await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
  const actions=page.locator('.side-dock > .chess-reference-actions > button:visible');
- assert.deepEqual(await actions.allTextContents(),['Nowa gra','Rewanż','Zaproś']);
+ assert.deepEqual(await actions.allTextContents(),['Nowa gra','Rewanż','Zaproś','Cofnij']);
+ assert.equal(await page.locator('#chess-owner-undo').isDisabled(),true,'no move to undo before first move');
  const rematch=page.locator('.chess-owner-rematch');
  assert.equal(await rematch.isDisabled(),true,'Rewanż is blocked during a game');
  assert.equal(await rematch.getAttribute('title'),'Rewanż będzie dostępny po zakończeniu partii');
@@ -294,7 +295,7 @@ test('actions, tabs and Info follow the real game: Rewanż only after a finished
  await sheet.locator('.chess-final-room-name',{hasText:'Szachy · Rywal'}).waitFor();
  assert.equal(await sheet.locator('#create-room-friend').isVisible(),false,'the real friend picker replaces a free-text nickname');
  assert.doesNotMatch(await sheet.textContent(),/Turniejowy|Rankingowy|Pokój ogólny/);
- assert.deepEqual(await actions.allTextContents(),['Nowa gra','Rewanż','Zaproś']);
+ assert.deepEqual(await actions.allTextContents(),['Nowa gra','Rewanż','Zaproś','Cofnij']);
  await sheet.locator('.cc-sheet-close').click();
  await sheet.waitFor({state:'hidden'});
  await page.locator('.chess-owner-online-new').click();

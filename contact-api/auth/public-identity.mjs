@@ -9,7 +9,7 @@ import {ensureAddressBookSchema,createAddressBookRouter} from './address-book.mj
 import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-profile.mjs';
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
-import {initialChessMatch,playChessMatch} from './chess-match.mjs';
+import {initialChessMatch,playChessMatch,undoLastChessMove} from './chess-match.mjs';
 import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
@@ -673,7 +673,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       }
 
       if(isUndo){
-        if(match.game!=='gomoku')return bad(res,400,'COFANIE_TYLKO_GOMOKU'),true;
+        if(!['gomoku','szachy'].includes(match.game))return bad(res,400,'COFANIE_NIEDOSTEPNE'),true;
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
         if(match.state.winner)return bad(res,409,'PARTIA_ZAKONCZONA'),true;
         const existing=activeUndo(match.state);
@@ -689,11 +689,23 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         if(body.action==='request'){
           if(existing)return bad(res,409,'PROSBA_JUZ_WYSLANA'),true;
           const history=match.state?.history;
-          const target=Array.isArray(history)?[...history].reverse().find(
-            item=>item.player===player&&Number.isInteger(item.to)&&match.state.board[item.to]===player):null;
-          if(!target)return bad(res,409,'BRAK_RUCHU_DO_COFNIECIA'),true;
+          let targetTo=-1;
+          if(match.game==='szachy'){
+           const last=Array.isArray(history)?history.at(-1):null;
+           // Require the very last halfmove to belong to the requester.
+           if(last?.player!==player||match.state.moves!==history.length||
+              typeof last.uci!=='string'||!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(last.uci))
+            return bad(res,409,'BRAK_RUCHU_DO_COFNIECIA'),true;
+           const square=last.uci.slice(2,4);
+           targetTo=(8-Number(square[1]))*16+'abcdefgh'.indexOf(square[0]);
+          }else{
+           const target=Array.isArray(history)?[...history].reverse().find(
+             item=>item.player===player&&Number.isInteger(item.to)&&match.state.board[item.to]===player):null;
+           if(!target)return bad(res,409,'BRAK_RUCHU_DO_COFNIECIA'),true;
+           targetTo=target.to;
+          }
           next={...match.state,undo:{
-            id:randomUUID(),requester:player,targetTo:target.to,
+            id:randomUUID(),requester:player,targetTo,
             createdAt:new Date().toISOString()
           }};
           if(next.clock){
@@ -708,20 +720,31 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
           next={...match.state};
           delete next.undo;
           if(body.action==='accept'){
-            const target=existing.targetTo,history=next.history;
-            if(!Array.isArray(history)||next.board?.[target]!==existing.requester)
-              return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
-            const removed=history.map(item=>item.player).lastIndexOf(existing.requester);
-            if(removed<0||history[removed].to!==target)
-              return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
-            const board=next.board.slice();board[target]=0;
-            const remaining=history.filter((_,i)=>i!==removed)
-              .map((item,i)=>({...item,number:i+1}));
-            next.board=board;next.history=remaining;
-            next.moves=board.filter(Boolean).length;
-            next.turn=existing.requester;
-            next.winner=evaluateGomokuBoard(board);
-            next.last=remaining.length?remaining[remaining.length-1].to:-1;
+            if(match.game==='szachy'){
+              const last=next.history?.at(-1);
+              const square=last?.uci?.slice(2,4)||'';
+              const targetTo=/^[a-h][1-8]$/.test(square)
+                ?(8-Number(square[1]))*16+'abcdefgh'.indexOf(square[0]):-1;
+              if(targetTo!==existing.targetTo)return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+              const undone=undoLastChessMove(next,existing.requester);
+              if(undone.error)return bad(res,409,undone.error),true;
+              next=undone.state;
+            }else{
+              const target=existing.targetTo,history=next.history;
+              if(!Array.isArray(history)||next.board?.[target]!==existing.requester)
+                return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+              const removed=history.map(item=>item.player).lastIndexOf(existing.requester);
+              if(removed<0||history[removed].to!==target)
+                return bad(res,409,'PROSBA_NIEAKTUALNA'),true;
+              const board=next.board.slice();board[target]=0;
+              const remaining=history.filter((_,i)=>i!==removed)
+                .map((item,i)=>({...item,number:i+1}));
+              next.board=board;next.history=remaining;
+              next.moves=board.filter(Boolean).length;
+              next.turn=existing.requester;
+              next.winner=evaluateGomokuBoard(board);
+              next.last=remaining.length?remaining[remaining.length-1].to:-1;
+            }
             // Consent undo reclaims the bonus granted for the withdrawn stone.
             if(next.clock&&Number.isInteger(next.clock.incrementMs)&&next.clock.incrementMs>0){
              const clockRemaining=[...next.clock.remaining];

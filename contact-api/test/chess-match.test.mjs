@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialChessMatch,playChessMatch} from '../auth/chess-match.mjs';
+import {initialChessMatch,playChessMatch,undoLastChessMove} from '../auth/chess-match.mjs';
 test('chess match state starts with 32 pieces and white to move',()=>{
  const s=initialChessMatch();
  assert.equal(s.turn,1);assert.equal(s.board.length,128);
@@ -29,4 +29,17 @@ test('authoritative match finishes on checkmate and rejects subsequent moves',()
 test('reject malformed chess match state',()=>{
  const broken={...initialChessMatch(),board:Array(64).fill('.')};
  assert.deepEqual(playChessMatch(broken,1,{uci:'e2e4'}),{error:'NIEPRAWIDLOWY_STAN'});
+});
+
+test('takeback reconstructs the correct legal chess position from history',()=>{
+ let state=initialChessMatch();
+ for(const [player,uci] of [[1,'e2e4'],[2,'e7e5'],[1,'g1f3']])
+  state=playChessMatch(state,player,{uci}).state;
+ assert.deepEqual(undoLastChessMove(state,2),{error:'BRAK_RUCHU_DO_COFNIECIA'});
+ const restored=undoLastChessMove(state,1).state;
+ const expected=playChessMatch(playChessMatch(initialChessMatch(),1,{uci:'e2e4'}).state,2,{uci:'e7e5'}).state;
+ assert.deepEqual(restored,expected);
+ assert.equal(restored.turn,1);
+ assert.ok(playChessMatch(restored,1,{uci:'f1c4'}).state);
+ assert.deepEqual(undoLastChessMove({...state,moves:301},1),{error:'BRAK_RUCHU_DO_COFNIECIA'});
 });
