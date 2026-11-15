@@ -25,5 +25,5 @@ const checkersResultHooked=js.replace(checkersResultHook,'renderHistory();syncCa
 if(checkersResultHooked===js)throw Error('CHECKERS_RESULT_HOOK_MISSING');
 const checkersWithLossHtml=html.replace('</body>',checkersLossHtml+'</body>');
 const checkersWithLossCss=css+'\n'+checkersLossCss;
-const checkersWithLossJs=checkersResultHooked+'\n'+checkersLossJs;
+const checkersWithLossJs=checkersLossJs+'\n'+checkersResultHooked;
 export function serveCheckersConsole(req,res,url){if(req.method!=='GET')return false;const path=url.pathname.replace(/\/+$/,'')||'/';const output={'/konto/warcaby':['text/html; charset=utf-8',checkersWithLossHtml],'/konto/warcaby/styl.css':['text/css; charset=utf-8',checkersWithLossCss],'/konto/warcaby/app.js':['application/javascript; charset=utf-8',checkersWithLossJs],'/konto/warcaby/rules.mjs':['application/javascript; charset=utf-8',trainingRules],'/konto/warcaby/bot.mjs':['application/javascript; charset=utf-8',trainingBot],'/konto/warcaby/training-ui.mjs':['application/javascript; charset=utf-8',trainingUI]}[path];if(!output)return false;res.writeHead(200,{...secure,'Content-Type':output[0],'Content-Length':Buffer.byteLength(output[1])});res.end(output[1]);return true;}
