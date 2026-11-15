@@ -115,7 +115,16 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   assert.equal(await local.locator('#'+id).isVisible(),true,id+' must remain visible');
  assert.equal(await local.locator('.chess-minimal-more').isVisible(),false);
  assert.equal(await local.locator('.side-dock > .game-tools').isVisible(),false);
- assert.equal(await local.locator('.chess-reference-actions button:visible').count(),3);
+ assert.equal(await local.locator('.chess-reference-actions button:visible').count(),4);
+ const positions=await local.locator('.chess-reference-actions button:visible').evaluateAll(buttons=>
+  buttons.map(button=>{const rect=button.getBoundingClientRect();return {x:rect.x,y:rect.y,width:rect.width,right:rect.right};}));
+ const dockBox=await local.locator('.side-dock').boundingBox();
+ assert.ok(positions.every(position=>Math.abs(position.y-positions[0].y)<2),
+  'all four actions must stay in one row');
+ assert.ok(positions.every(position=>Math.abs(position.width-positions[0].width)<2),
+  'all four actions must have equal width');
+ assert.ok(positions.at(-1).right<=dockBox.x+dockBox.width+2,
+  'Cofnij must fit without widening or overflowing the dock');
  assert.equal(await local.locator('.premium-quick-links .premium-mini-link:visible').count(),0);
  await local.evaluate(()=>{
   for(const [id,value] of [['training-time','1'],['training-increment','2']]){
