@@ -18,8 +18,13 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
   {id:scheduledId,game:'warcaby',status:'accepted',opponent:'Karol_22',timeLimitMinutes:15,incrementSeconds:0,scheduledAt:tomorrow}
  ];
  const invites=[];
+ let injectTrainingLoss=false;
  const server=createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
+  if(injectTrainingLoss&&url.pathname==='/konto/warcaby/training-ui.mjs'){
+   const script="export function setupTraining(a){return {setMode(next){if(next!=='training')return;a.setMode('training');a.setCurrent({type:'training',state:{board:Array(64).fill(0),turn:2,winner:2,moves:37,forced:null,history:[]},players:['Ty','Komputer'],player:1,playable:true,version:42});a.renderBoard();}}}";
+   res.writeHead(200,{'content-type':'application/javascript','cache-control':'no-store'});res.end(script);return;
+  }
   if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
   const send=(code,data)=>{res.writeHead(code,{'content-type':'application/json'});res.end(JSON.stringify(data));};
   if(url.pathname==='/auth/social/challenges'){
@@ -43,7 +48,8 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
  assert.equal(await page.locator('#board').evaluate(el=>el.innerHTML),before,'board must not be touched');
- await page.locator('#warcaby-loss-others').click();
+ assert.equal(await page.locator('#warcaby-loss-lobby').isVisible(),true,'all three sections should open automatically');
+ assert.equal(await page.locator('#warcaby-loss-others').getAttribute('aria-expanded'),'true');
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Zosia_PL'));
  assert.match(await page.locator('#warcaby-loss-tables').innerText(),/Zosia_PL/);
  assert.doesNotMatch(await page.locator('#warcaby-loss-tables').innerText(),/Mistrz_Andrzej/,'current finished game not in live tables');
@@ -59,10 +65,26 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await page.waitForFunction(()=>document.querySelector('#game-result-modal')?.hidden===true);
  await page.locator('#warcaby-loss-close').click();
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false);
+ await old.evaluate(el=>{el.querySelector('.result-card').dataset.result='loss';el.hidden=false;});
+ await page.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false);
+ assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer','training original result provides a fallback');
+ await page.locator('#warcaby-loss-close').click();
  for(const winner of [0,1,3]){
   await page.evaluate(({value,id})=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:6,winner:value,player:1,players:['Ty','Mistrz_Andrzej']}})),{value:winner,id:priorId});
   assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,'no popup for non-loss');
  }
  assert.deepEqual(errors,[],'no browser runtime errors');
  await page.close();
+ // Reproduce a real renderBoard() call after a final losing state instead of dispatching
+ // the popup event directly. The training controller is isolated and disposable.
+ injectTrainingLoss=true;
+ const actual=await browser.newPage({viewport:{width:390,height:844}});
+ const runtimeErrors=[];actual.on('pageerror',e=>runtimeErrors.push(e.message));
+ await actual.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/');
+ await actual.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,{timeout:10000});
+ assert.equal(await actual.locator('#warcaby-loss-name').textContent(),'Komputer');
+ assert.equal(await actual.locator('#warcaby-loss-lobby').isVisible(),true);
+ assert.equal(await actual.locator('#board .square').count(),64);
+ assert.deepEqual(runtimeErrors,[],'real controller rendering never breaks browser runtime');
+ await actual.close();
 });
