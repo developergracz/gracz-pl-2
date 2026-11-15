@@ -50,6 +50,8 @@ jobs:
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
       - name: Two real Chromium windows play Warcaby by clicking squares
         run: node --test contact-api/scaling/two-chromium-windows.integration.test.mjs
+      - name: Warcaby losing-result popup (real match data, no board changes)
+        run: node --test contact-api/scaling/checkers-loss-popup.browser.test.mjs
       - name: Two real Chromium windows play Gomoku by clicking stones
         run: node --test contact-api/scaling/two-chromium-gomoku.integration.test.mjs
       - name: Two real Chromium windows play Szachy via WebSocket
