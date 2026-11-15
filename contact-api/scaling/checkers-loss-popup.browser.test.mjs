@@ -18,7 +18,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
   {id:scheduledId,game:'warcaby',status:'accepted',opponent:'Karol_22',timeLimitMinutes:15,incrementSeconds:0,scheduledAt:tomorrow}
  ];
  const invites=[];
- let injectTrainingLoss=false;
+ let injectTrainingLoss=false,injectOnlineLoss=false;
  const server=createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(injectTrainingLoss&&url.pathname==='/konto/warcaby/training-ui.mjs'){
@@ -32,7 +32,10 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
    const chunks=[];req.on('data',c=>chunks.push(c));req.on('end',()=>{invites.push(JSON.parse(Buffer.concat(chunks).toString()));send(200,{ok:true,id:'44444444-4444-4444-8444-444444444444'});});return;
   }
   if(url.pathname==='/auth/friends/presence')return send(200,{ok:true,friends:[{nickname:'Basia_1',online:true},{nickname:'Nieobecny',online:false}]});
-  if(url.pathname==='/auth/match')return send(404,{ok:false,error:'BRAK_PARTII'});
+  if(url.pathname==='/auth/match'){
+   if(injectOnlineLoss)return send(200,{ok:true,match:{id:priorId,game:'warcaby',player:1,players:['Ty','Mistrz_Andrzej'],playable:true,version:99,state:{board:Array(64).fill(0),turn:2,winner:2,moves:42,forced:null,history:[]}}});
+   return send(404,{ok:false,error:'BRAK_PARTII'});
+  }
   return send(200,{ok:true,items:[],friends:[],challenges:[]});
  });
  server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -87,4 +90,14 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  assert.equal(await actual.locator('#board .square').count(),64);
  assert.deepEqual(runtimeErrors,[],'real controller rendering never breaks browser runtime');
  await actual.close();
+ // A real HTTP match refresh with a terminal state must also open the same popup.
+ injectTrainingLoss=false;injectOnlineLoss=true;
+ const online=await browser.newPage({viewport:{width:1366,height:768}});
+ const onlineErrors=[];online.on('pageerror',e=>onlineErrors.push(e.message));
+ await online.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/?match='+priorId);
+ await online.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,null,{timeout:10000});
+ assert.equal(await online.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
+ assert.equal(await online.locator('#warcaby-loss-lobby').isVisible(),true);
+ assert.deepEqual(onlineErrors,[]);
+ await online.close();
 });
