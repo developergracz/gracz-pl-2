@@ -59,8 +59,14 @@ export async function readChessLayout(page){
           const shown=[...document.querySelectorAll('.chess-reference-actions button')].filter(e=>{
             const r=e.getBoundingClientRect();return r.width>0&&r.height>0;
           });
-          require(shown.length===3,'muszą być dokładnie trzy działania: Nowa gra, Rewanż, Zaproś');
-          require(shown.map(e=>e.textContent.trim()).join('|')===(owner?'Nowa gra|Rewanż|Zaproś':'Nowa gra|Rewanż|Zaproś do gry'),'niewłaściwa kolejność działań');
+          require(shown.length===(owner?4:3),'niewłaściwa liczba działań w prawej konsoli');
+          require(shown.map(e=>e.textContent.trim()).join('|')===(owner?'Nowa gra|Rewanż|Zaproś|Cofnij':'Nowa gra|Rewanż|Zaproś do gry'),'niewłaściwa kolejność działań');
+          if(owner&&shown.length===4){
+            const rects=shown.map(el=>rect(el));
+            require(rects.every(r=>Math.abs(r.y-rects[0].y)<=2),'cztery działania muszą być w jednym rzędzie');
+            require(rects.every(r=>Math.abs(r.width-rects[0].width)<=2),'cztery działania muszą mieć równe szerokości');
+            require(rects.every(r=>inside(r,boxes.dock)),'cztery działania muszą zmieścić się w panelu');
+          }
         }else{
           require(!!boxes.tools!==hidden('tools'),'niewłaściwa widoczność narzędzi');
           require(!!boxes.status!==hidden('status'),'niewłaściwa widoczność komunikatu gry');
