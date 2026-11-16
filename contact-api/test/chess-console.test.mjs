@@ -240,3 +240,16 @@ test('owner chess console offers four compact actions and consent-only Cofnij',(
   assert.ok(app.body.includes(phrase),'missing chess consent feature: '+phrase);
  }
 });
+
+test('CHESS-003 derives online orientation from player color without changing board input or local default',()=>{
+ const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
+ assert.equal(page.status,200);assert.equal(app.status,200);assert.equal(css.status,200);
+ assert.match(app.body,/if\(mode==='online'&&online\?\.state\)orientation=online\.player===2;/);
+ assert.match(app.body,/else if\(mode==='local'\)orientation=false;/);
+ assert.match(app.body,/file=orientation\?7-\(j%8\):j%8,row=orientation\?7-Math\.floor\(j\/8\):Math\.floor\(j\/8\)/);
+ assert.match(app.body,/cell\.dataset\.square=String\(i\)/,'board keeps logical square identity after rotation');
+ assert.match(app.body,/squareAt\(d\.x,d\.y\)/,'pointer hit-testing uses rendered squares');
+ assert.match(app.body,/const to=cancelled\?-1:squareAt\(x,y\)/,'drag destination is a logical square');
+ assert.match(page.body,/id="board"/);
+ assert.match(css.body,/chess-board/);
+});
