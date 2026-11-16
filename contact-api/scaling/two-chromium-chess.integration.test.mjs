@@ -350,6 +350,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   assert.equal(await page.locator('#board .chess-square:not([disabled])').count(),0,
    'after checkmate neither player may move');
  }
+ // CHESS-002: the winner must see an actual result window before browsing move history.
+ await pages[0].locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await pages[0].locator('#chess-feedback-title').innerText(),'Zwycięstwo!');
+ await pages[0].locator('#chess-feedback-review').click();
+ assert.equal(await pages[0].locator('#chess-feedback-overlay').isVisible(),false);
  await pages[0].locator('#history-tab').click();
  await pages[0].waitForFunction(()=>document.querySelectorAll('#moves-list .chess-move-row').length===7);
  // Replay server-verified moves without mutating the actual live match.
