@@ -180,6 +180,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await drawClaim.click();
  assert.match(await local.locator('#game-state').textContent(),/Remis/);
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
+ // CHESS-002: confirm a real draw result, then dismiss before testing other console actions.
+ await local.locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await local.locator('#chess-feedback-title').textContent(),'Remis');
+ await local.locator('#chess-feedback-review').click();
+ assert.equal(await local.locator('#chess-feedback-overlay').isVisible(),false);
  await local.locator('#focus-game').evaluate(el=>el.click());
  assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
  assert.equal(await local.locator('#game').evaluate(x=>x.classList.contains('game-focus')),true);
