@@ -1,0 +1,364 @@
+{
+ "pass": 21,
+ "fail": 3,
+ "notTested": 0,
+ "notImplemented": 1,
+ "results": [
+  {
+   "id": "OB01",
+   "area": "online",
+   "desc": "Zaproszenie przez UI (3 min + 2 s): wysłanie przez A, odbiór i akceptacja przez B, obaj w tej samej partii",
+   "status": "PASS",
+   "actual": {
+    "summary": "Czas partii: 3 minuty · +2 sekundy",
+    "from": "AudWhtf8b0d410c3e4",
+    "matchId": "d73919a6-74a0-4c7d-94c7-51f58a48ded2"
+   }
+  },
+  {
+   "id": "OB02",
+   "area": "online",
+   "desc": "Kolory: A (zapraszający) = białe, B = czarne; nazwy przeciwników poprawne",
+   "status": "PASS",
+   "actual": {
+    "A": 1,
+    "B": 2,
+    "headingA": "Szachy Online — AudWhtf8b0d410c3e4 vs AudBlkc3692a21c779",
+    "headingB": "Szachy Online — AudWhtf8b0d410c3e4 vs AudBlkc3692a21c779"
+   }
+  },
+  {
+   "id": "OB03",
+   "area": "online/plansza",
+   "desc": "Czarne (B) widzą planszę od swojej strony (czarne figury na dole)",
+   "status": "FAIL",
+   "actual": {
+    "bottomRow": "RNBQKBNR",
+    "note": "orientacja zawsze od strony białych; brak przycisku obrotu"
+   }
+  },
+  {
+   "id": "OZ01",
+   "area": "zegary",
+   "desc": "Zegar startuje dopiero po wejściu obu graczy; aktywny zegar białych u obu (3:00)",
+   "status": "PASS",
+   "actual": {
+    "ca": {
+     "white": "02:58",
+     "black": "03:00",
+     "running": [
+      "clock-2"
+     ]
+    },
+    "cb": {
+     "white": "02:58",
+     "black": "03:00",
+     "running": [
+      "clock-2"
+     ]
+    },
+    "since": "2026-11-16T19:31:49.080Z"
+   }
+  },
+  {
+   "id": "OB04",
+   "area": "online",
+   "desc": "Ruch A (klik) → aktualizacja planszy B przez WebSocket; zmiana tury i zegarów u obu",
+   "status": "PASS",
+   "actual": {
+    "latencyMs": 194,
+    "ca": {
+     "white": "02:59",
+     "black": "03:00",
+     "running": [
+      "clock-1"
+     ]
+    },
+    "cb": {
+     "white": "02:59",
+     "black": "03:00",
+     "running": [
+      "clock-1"
+     ]
+    },
+    "serverRemaining": [
+     178877,
+     180000
+    ]
+   }
+  },
+  {
+   "id": "OB05",
+   "area": "online",
+   "desc": "Ruch B (przeciągnięcie) → aktualizacja u A; bonus +2 s",
+   "status": "PASS",
+   "actual": {
+    "remaining": [
+     178877,
+     181080
+    ]
+   }
+  },
+  {
+   "id": "OB06",
+   "area": "online",
+   "desc": "Gracz nie może ruszać na turze przeciwnika (plansza B zablokowana)",
+   "status": "PASS",
+   "actual": {
+    "enabledSquaresB": 0
+   }
+  },
+  {
+   "id": "OE01",
+   "area": "awarie",
+   "desc": "Utrata internetu u B, ruch A, powrót sieci → B synchronizuje się",
+   "status": "PASS",
+   "actual": {
+    "staleWhileOffline": true,
+    "resyncMs": 25
+   }
+  },
+  {
+   "id": "OE02",
+   "area": "awarie",
+   "desc": "Odświeżenie strony B w trakcie partii → identyczna pozycja i zegary z serwera",
+   "status": "PASS",
+   "actual": {
+    "white": "03:01",
+    "black": "02:59",
+    "running": [
+     "clock-1"
+    ]
+   }
+  },
+  {
+   "id": "OE03",
+   "area": "awarie",
+   "desc": "Zerwanie WebSocket → fallback + automatyczne ponowne połączenie; ruch przeciwnika dociera",
+   "status": "PASS",
+   "actual": {
+    "connectionsBefore": 1,
+    "connectionsAfter": 2,
+    "syncMs": 6203
+   }
+  },
+  {
+   "id": "OE04",
+   "area": "awarie",
+   "desc": "Ta sama partia w dwóch kartach A: równoczesne różne ruchy → serwer przyjmuje 1, druga karta dostaje błąd i resynchronizuje",
+   "status": "PASS",
+   "actual": {
+    "serverLast": "d2d4",
+    "history": 7,
+    "notices": [
+     "Szachy online · Czarne na ruchu · Oczekiwanie na przeciwnika",
+     "Szachy online · Czarne na ruchu · Oczekiwanie na przeciwnika"
+    ],
+    "clicks": [
+     null,
+     null
+    ],
+    "tabsEqual": true
+   }
+  },
+  {
+   "id": "OE05",
+   "area": "awarie",
+   "desc": "Spóźniona odpowiedź API (2,5 s) + szybkie kolejne kliknięcia → dokładnie 1 POST, brak podwójnego ruchu",
+   "status": "PASS",
+   "actual": {
+    "posts": 1,
+    "last": "d7d6",
+    "history": 8
+   }
+  },
+  {
+   "id": "OT01",
+   "area": "czat",
+   "desc": "Czat: wysłanie/odbiór, kolejność, tożsamość nadawcy; HTML wyświetlony jako tekst",
+   "status": "PASS",
+   "actual": {
+    "rows": [
+     {
+      "who": "AudWhtf8b0d410c3e4:",
+      "body": "Pierwsza",
+      "own": false
+     },
+     {
+      "who": "Ty:",
+      "body": "Druga",
+      "own": true
+     },
+     {
+      "who": "AudWhtf8b0d410c3e4:",
+      "body": "<img src=x onerror=\"window.__xss=1\"><b>pogrubienie</b>",
+      "own": false
+     }
+    ],
+    "xss": {
+     "flag": null,
+     "imgs": 0,
+     "bold": 0
+    }
+   }
+  },
+  {
+   "id": "OT02",
+   "area": "czat",
+   "desc": "Przełączenie zakładek Czat→Ruchy→Info→Czat nie gubi wiadomości",
+   "status": "PASS",
+   "actual": {
+    "messages": 3
+   }
+  },
+  {
+   "id": "OT03",
+   "area": "czat",
+   "desc": "Rozdzielenie: czat Online nie trafia do lokalnych notatek / GRACZ AI",
+   "status": "PASS",
+   "actual": {
+    "localMessages": []
+   }
+  },
+  {
+   "id": "OS01",
+   "area": "bezpieczeństwo",
+   "desc": "Trzecie konto otwiera URL cudzej partii → brak dostępu, brak danych graczy",
+   "status": "PASS",
+   "actual": {
+    "notice": "Połączenie: PARTIA_NIEDOSTEPNA",
+    "heading": "Szachy Online — wybór pokoju",
+    "enabled": 0,
+    "leaksOpponent": false
+   }
+  },
+  {
+   "id": "OZ02",
+   "area": "zegary",
+   "desc": "Zegar systemowy urządzenia B przesunięty o +60 s → wyświetlany czas vs serwer",
+   "status": "FAIL",
+   "actual": {
+    "runningSide": "white",
+    "trueDisplay": "02:54",
+    "skewedDisplay": "01:54",
+    "differenceSec": 60
+   }
+  },
+  {
+   "id": "OE06",
+   "area": "awarie",
+   "desc": "Utrata sesji B w trakcie gry → ruch odrzucony z komunikatem, brak zmiany stanu",
+   "status": "PASS",
+   "actual": {
+    "notice": "Połączenie: BRAK_SESJI",
+    "enabled": 0,
+    "versionUnchanged": true
+   }
+  },
+  {
+   "id": "OZ03",
+   "area": "zegary",
+   "desc": "Naturalne przekroczenie czasu (partia 1 min, B nie gra): koniec u obu, wynik zgodny, okno przegranej u B, zegary zatrzymane",
+   "status": "PASS",
+   "actual": {
+    "A": "Partia zakończona — wygrywają białe",
+    "B": "Partia zakończona — wygrywają białe",
+    "popupB": true,
+    "popupA": false,
+    "titleB": "Przegrałeś partię.",
+    "clocksA": {
+     "white": "00:59",
+     "black": "00:00",
+     "running": []
+    },
+    "clocksB": {
+     "white": "00:59",
+     "black": "00:00",
+     "running": []
+    },
+    "server": {
+     "winner": 1,
+     "loser": 2
+    }
+   }
+  },
+  {
+   "id": "OZ04",
+   "area": "zegary",
+   "desc": "Wynik po przekroczeniu czasu opisany jako przekroczenie czasu (nie ogólnie)",
+   "status": "FAIL",
+   "actual": "Komunikat: „Partia zakończona — wygrywają białe” — bez przyczyny (czas/mat/remis); okno przegranej: „Przeciwnik wygrał partię online.”"
+  },
+  {
+   "id": "OR01",
+   "area": "wynik",
+   "desc": "Mat online: wynik u obu, okno przegranej automatycznie tylko u przegranego, Rewanż aktywny u obu",
+   "status": "PASS",
+   "actual": {
+    "A": "Partia zakończona — wygrywają białe",
+    "B": "Partia zakończona — wygrywają białe",
+    "popupB": true,
+    "popupA": false,
+    "descB": "Szachy · Przeciwnik wygrał partię online.",
+    "newBtnB": "Wróć do Panelu Gracza",
+    "rematchA": true,
+    "rematchB": true,
+    "san": "Qxf7#",
+    "rematchSelection": {
+     "name": "AudWhtf8b0d410c3e4",
+     "items": [
+      "AudWhtf8b0d410c3e4"
+     ]
+    }
+   }
+  },
+  {
+   "id": "OD01",
+   "area": "remis",
+   "desc": "Zgłoszenie remisu (3-krotne powtórzenie) przez UI Online → remis u obu, brak okna przegranej",
+   "status": "PASS",
+   "actual": {
+    "label": "Zgłoś remis — trzykrotne powtórzenie pozycji",
+    "A": "Partia zakończona — remis",
+    "B": "Partia zakończona — remis",
+    "popupA": false,
+    "popupB": false,
+    "reason": "TRZYKROTNE_POWTORZENIE"
+   }
+  },
+  {
+   "id": "ON01",
+   "area": "funkcje",
+   "desc": "Poddanie partii / propozycja remisu za zgodą w konsoli Online",
+   "status": "NOT IMPLEMENTED",
+   "actual": {
+    "buttons": 0
+   }
+  },
+  {
+   "id": "OE07",
+   "area": "awarie",
+   "desc": "Zamknięcie przeglądarki B i ponowne otwarcie (nowy kontekst, ta sama sesja) → pozycja z serwera",
+   "status": "PASS",
+   "actual": {
+    "version": 11
+   }
+  },
+  {
+   "id": "OX01",
+   "area": "stabilność",
+   "desc": "Brak wyjątków JS (pageerror) u A i B",
+   "status": "PASS",
+   "actual": {
+    "pageErrors": [],
+    "consoleErrors": 14,
+    "consoleSample": [
+     "console: Failed to load resource: the server responded with a status of 409 (Conflict)",
+     "console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+     "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+     "console: WebSocket connection to 'ws://localhost:42879/auth/match/realtime' failed: HTTP Authentication failed; no valid credentials available"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,597 @@
+{
+ "pass": 65,
+ "fail": 0,
+ "results": [
+  {
+   "id": "R01",
+   "area": "ruchy",
+   "desc": "Start: 20 legalnych ruchów",
+   "pass": true,
+   "actual": 20
+  },
+  {
+   "id": "R02",
+   "area": "ruchy",
+   "desc": "Skoczek b1: a3,c3; nie d2 (własna figura)",
+   "pass": true,
+   "actual": [
+    "b1a3",
+    "b1c3"
+   ]
+  },
+  {
+   "id": "R03",
+   "area": "ruchy",
+   "desc": "Gońce zablokowane na starcie (0 ruchów)",
+   "pass": true,
+   "actual": []
+  },
+  {
+   "id": "R04",
+   "area": "ruchy",
+   "desc": "Wieża: blokowanie drogi i bicie",
+   "pass": true,
+   "actual": [
+    "a1a2",
+    "a1a3",
+    "a1a4",
+    "a1a5",
+    "a1b1",
+    "a1c1",
+    "a1d1"
+   ]
+  },
+  {
+   "id": "R05",
+   "area": "ruchy",
+   "desc": "Hetman 27 ruchów z d4 na pustej planszy",
+   "pass": true,
+   "actual": 27
+  },
+  {
+   "id": "R06",
+   "area": "ruchy",
+   "desc": "Król nie może wejść na pole atakowane",
+   "pass": true,
+   "actual": [
+    "e1d1",
+    "e1f1"
+   ]
+  },
+  {
+   "id": "R07",
+   "area": "ruchy",
+   "desc": "Związany skoczek (pin pionowy) nie może się ruszyć",
+   "pass": true,
+   "actual": []
+  },
+  {
+   "id": "R08",
+   "area": "ruchy",
+   "desc": "Związany goniec porusza się tylko wzdłuż linii związania",
+   "pass": true,
+   "actual": [
+    "d2c3"
+   ]
+  },
+  {
+   "id": "R09",
+   "area": "ruchy",
+   "desc": "Pod szachem tylko ruchy usuwające szach",
+   "pass": true,
+   "actual": [
+    "e1e2",
+    "e1f2"
+   ]
+  },
+  {
+   "id": "R10",
+   "area": "ruchy",
+   "desc": "Pion: podwójny ruch zablokowany na polu pośrednim",
+   "pass": true,
+   "actual": []
+  },
+  {
+   "id": "R11",
+   "area": "ruchy",
+   "desc": "Pion nie bije do przodu",
+   "pass": true,
+   "actual": []
+  },
+  {
+   "id": "S01",
+   "area": "roszada",
+   "desc": "Roszada krótka i długa dostępna",
+   "pass": true,
+   "actual": [
+    "e1c1",
+    "e1d1",
+    "e1d2",
+    "e1e2",
+    "e1f1",
+    "e1f2",
+    "e1g1"
+   ]
+  },
+  {
+   "id": "S02",
+   "area": "roszada",
+   "desc": "Brak roszady przez szach (f1 atakowane)",
+   "pass": true,
+   "actual": [
+    "e1c1",
+    "e1d1",
+    "e1f2"
+   ]
+  },
+  {
+   "id": "S03",
+   "area": "roszada",
+   "desc": "Brak roszady gdy król w szachu",
+   "pass": true,
+   "actual": [
+    "e1d1",
+    "e1e2",
+    "e1f1"
+   ]
+  },
+  {
+   "id": "S04",
+   "area": "roszada",
+   "desc": "Roszada długa dozwolona gdy b1 atakowane",
+   "pass": true,
+   "actual": [
+    "e1c1",
+    "e1d1",
+    "e1d2",
+    "e1e2",
+    "e1f1",
+    "e1f2"
+   ]
+  },
+  {
+   "id": "S05",
+   "area": "roszada",
+   "desc": "Brak roszady na atakowane pole docelowe g1",
+   "pass": true,
+   "actual": [
+    "e1d1",
+    "e1d2",
+    "e1e2",
+    "e1f1",
+    "e1f2"
+   ]
+  },
+  {
+   "id": "S06",
+   "area": "roszada",
+   "desc": "Utrata praw po ruchu króla",
+   "pass": true,
+   "actual": {
+    "c": 4
+   }
+  },
+  {
+   "id": "S07",
+   "area": "roszada",
+   "desc": "Utrata prawa tylko po stronie ruszonej wieży",
+   "pass": true,
+   "actual": {
+    "c": 6,
+    "m": [
+     "e1c1"
+    ]
+   }
+  },
+  {
+   "id": "S08",
+   "area": "roszada",
+   "desc": "Utrata prawa po zbiciu wieży w rogu",
+   "pass": true,
+   "actual": {
+    "c": 14
+   }
+  },
+  {
+   "id": "S09",
+   "area": "roszada",
+   "desc": "Wykonanie roszady przenosi wieżę",
+   "pass": true,
+   "actual": "ok"
+  },
+  {
+   "id": "E01",
+   "area": "en passant",
+   "desc": "Bicie w przelocie tylko bezpośrednio po ruchu o 2 pola",
+   "pass": true,
+   "actual": {
+    "ok1": true,
+    "ok2": true
+   }
+  },
+  {
+   "id": "E02",
+   "area": "en passant",
+   "desc": "Bicie w przelocie usuwa właściwego piona",
+   "pass": true,
+   "actual": "ok"
+  },
+  {
+   "id": "E03",
+   "area": "en passant",
+   "desc": "En passant odsłaniający szach po linii poziomej — nielegalny",
+   "pass": true,
+   "actual": [
+    "a5a6",
+    "a5b6",
+    "a5b5",
+    "a5a4",
+    "a5b4",
+    "e5e6"
+   ]
+  },
+  {
+   "id": "E04",
+   "area": "en passant",
+   "desc": "En passant jako obrona przed szachem pionem",
+   "pass": true,
+   "actual": [
+    "c5b6",
+    "c5c6",
+    "c5d6",
+    "c5b5",
+    "c5d5",
+    "c5b4",
+    "c5c4",
+    "c5d4",
+    "e4d3"
+   ]
+  },
+  {
+   "id": "P01",
+   "area": "promocja",
+   "desc": "Promocja na H, W, G, S",
+   "pass": true,
+   "actual": [
+    "e7e8b",
+    "e7e8n",
+    "e7e8q",
+    "e7e8r"
+   ]
+  },
+  {
+   "id": "P02",
+   "area": "promocja",
+   "desc": "Promocja z biciem + SAN z szachem",
+   "pass": true,
+   "actual": "exd8=Q+"
+  },
+  {
+   "id": "P03",
+   "area": "promocja",
+   "desc": "Podpromocja na skoczka z szachem (e8=N+)",
+   "pass": true,
+   "actual": "e8=N+"
+  },
+  {
+   "id": "P04",
+   "area": "promocja",
+   "desc": "Czarna promocja tworzy czarną figurę",
+   "pass": true,
+   "actual": "r"
+  },
+  {
+   "id": "P05",
+   "area": "promocja",
+   "desc": "Ruch na ostatnią linię bez litery promocji odrzucony",
+   "pass": true,
+   "actual": null
+  },
+  {
+   "id": "C01",
+   "area": "szach/mat",
+   "desc": "Podwójny szach — wyłącznie ruch królem",
+   "pass": true,
+   "actual": [
+    "e1e2",
+    "e1d1",
+    "e1f1"
+   ]
+  },
+  {
+   "id": "C02",
+   "area": "szach/mat",
+   "desc": "Mat szewczyka (białe wygrywają)",
+   "pass": true,
+   "actual": "Mat — białe wygrywają"
+  },
+  {
+   "id": "C03",
+   "area": "szach/mat",
+   "desc": "Mat głupca (czarne wygrywają)",
+   "pass": true,
+   "actual": "Mat — czarne wygrywają"
+  },
+  {
+   "id": "C04",
+   "area": "pat",
+   "desc": "Pat — remis",
+   "pass": true,
+   "actual": "Pat — remis"
+  },
+  {
+   "id": "D01",
+   "area": "remis",
+   "desc": "K vs K — brak materiału",
+   "pass": true,
+   "actual": "Remis — brak materiału matującego"
+  },
+  {
+   "id": "D02",
+   "area": "remis",
+   "desc": "K+S vs K — brak materiału",
+   "pass": true,
+   "actual": "Remis — brak materiału matującego"
+  },
+  {
+   "id": "D03",
+   "area": "remis",
+   "desc": "K+G vs K+G jednopolowe — brak materiału",
+   "pass": true,
+   "actual": "Remis — brak materiału matującego"
+  },
+  {
+   "id": "D04",
+   "area": "remis",
+   "desc": "K+G vs K+G różnopolowe — gra trwa",
+   "pass": true,
+   "actual": ""
+  },
+  {
+   "id": "D05",
+   "area": "remis",
+   "desc": "K+S+S vs K — gra trwa (FIDE)",
+   "pass": true,
+   "actual": ""
+  },
+  {
+   "id": "D06",
+   "area": "remis",
+   "desc": "K+P vs K — gra trwa",
+   "pass": true,
+   "actual": ""
+  },
+  {
+   "id": "D07",
+   "area": "remis",
+   "desc": "50 ruchów: zgłaszalne przy half=100, nie automatyczne",
+   "pass": true,
+   "actual": {
+    "claim": "50_RUCHOW",
+    "auto": ""
+   }
+  },
+  {
+   "id": "D08",
+   "area": "remis",
+   "desc": "50 ruchów: half=99 niezgłaszalne",
+   "pass": true,
+   "actual": ""
+  },
+  {
+   "id": "D09",
+   "area": "remis",
+   "desc": "75 ruchów: remis automatyczny przy half=150",
+   "pass": true,
+   "actual": "Remis — 75 ruchów"
+  },
+  {
+   "id": "D10",
+   "area": "remis",
+   "desc": "Mat ma pierwszeństwo przed regułą 75 ruchów",
+   "pass": true,
+   "actual": "Mat — białe wygrywają"
+  },
+  {
+   "id": "D11",
+   "area": "remis",
+   "desc": "3-krotne powtórzenie zgłaszalne po 2 cyklach",
+   "pass": true,
+   "actual": {
+    "claim": "TRZYKROTNE_POWTORZENIE",
+    "winner": 0
+   }
+  },
+  {
+   "id": "D12",
+   "area": "remis",
+   "desc": "Po 1 cyklu zgłoszenie odrzucone",
+   "pass": true,
+   "actual": "REMIS_NIEDOSTEPNY"
+  },
+  {
+   "id": "D13",
+   "area": "remis",
+   "desc": "Zgłoszenie remisu (serwer) → winner=3 + drawReason",
+   "pass": true,
+   "actual": {
+    "winner": 3,
+    "reason": "TRZYKROTNE_POWTORZENIE"
+   }
+  },
+  {
+   "id": "D14",
+   "area": "remis",
+   "desc": "Zgłoszenie przez gracza nie na ruchu → odrzucone",
+   "pass": true,
+   "actual": "NIE_TWOJA_TURA"
+  },
+  {
+   "id": "D15",
+   "area": "remis",
+   "desc": "5-krotne powtórzenie → remis automatyczny",
+   "pass": true,
+   "actual": {
+    "winner": 3,
+    "moves": 16
+   }
+  },
+  {
+   "id": "D16",
+   "area": "remis",
+   "desc": "4-krotne powtórzenie → partia trwa",
+   "pass": true,
+   "actual": 0
+  },
+  {
+   "id": "D17",
+   "area": "remis",
+   "desc": "Pozycje z różnymi prawami roszady są różne",
+   "pass": true,
+   "actual": {
+    "claim": "",
+    "c": 0
+   }
+  },
+  {
+   "id": "M01",
+   "area": "stan",
+   "desc": "Po 1.e4: tura czarnych, ep=e3, half=0, full=1, SAN e4",
+   "pass": true,
+   "actual": {
+    "turn": 2,
+    "ep": 84,
+    "half": 0,
+    "full": 1
+   }
+  },
+  {
+   "id": "M02",
+   "area": "stan",
+   "desc": "Po 1.e4 e5 2.Sf3: half=1, full=2, ep=-1",
+   "pass": true,
+   "actual": {
+    "half": 1,
+    "full": 2,
+    "ep": -1
+   }
+  },
+  {
+   "id": "M03",
+   "area": "stan",
+   "desc": "Ruch figurą przeciwnika → odrzucony",
+   "pass": true,
+   "actual": "NIEDOZWOLONY_RUCH"
+  },
+  {
+   "id": "M04",
+   "area": "stan",
+   "desc": "Ruch w imieniu przeciwnika → NIE_TWOJA_TURA",
+   "pass": true,
+   "actual": "NIE_TWOJA_TURA"
+  },
+  {
+   "id": "M05",
+   "area": "stan",
+   "desc": "Ruch po macie → PARTIA_ZAKONCZONA",
+   "pass": true,
+   "actual": {
+    "winner": 2,
+    "err": "PARTIA_ZAKONCZONA"
+   }
+  },
+  {
+   "id": "M06",
+   "area": "stan",
+   "desc": "Złośliwe dane (obiekt, długi tekst, SQL, wielkie litery, null) → odrzucone",
+   "pass": true,
+   "actual": [
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH",
+    "NIEDOZWOLONY_RUCH"
+   ]
+  },
+  {
+   "id": "M07",
+   "area": "stan",
+   "desc": "Uszkodzony stan (dwa białe króle) → NIEPRAWIDLOWY_STAN",
+   "pass": true,
+   "actual": "NIEPRAWIDLOWY_STAN"
+  },
+  {
+   "id": "M08",
+   "area": "stan",
+   "desc": "Pat w partii online → winner=3",
+   "pass": true,
+   "actual": 3
+  },
+  {
+   "id": "M09",
+   "area": "stan",
+   "desc": "K vs K po biciu (online) → winner=3",
+   "pass": true,
+   "actual": 3
+  },
+  {
+   "id": "M10",
+   "area": "stan",
+   "desc": "Mat (online) → winner = gracz matujący",
+   "pass": true,
+   "actual": {
+    "winner": 1,
+    "san": "Qxf7#"
+   }
+  },
+  {
+   "id": "U01",
+   "area": "cofanie",
+   "desc": "Cofnięcie własnego ostatniego ruchu",
+   "pass": true,
+   "actual": {
+    "turn": 1,
+    "moves": 2
+   }
+  },
+  {
+   "id": "U02",
+   "area": "cofanie",
+   "desc": "Cofnięcie ruchu przeciwnika → odrzucone",
+   "pass": true,
+   "actual": "BRAK_RUCHU_DO_COFNIECIA"
+  },
+  {
+   "id": "U03",
+   "area": "cofanie",
+   "desc": "Cofnięcie roszady przywraca prawa roszady",
+   "pass": true,
+   "actual": 15
+  },
+  {
+   "id": "U04",
+   "area": "cofanie",
+   "desc": "Cofnięcie po zakończeniu partii → odrzucone",
+   "pass": true,
+   "actual": "BRAK_RUCHU_DO_COFNIECIA"
+  },
+  {
+   "id": "H01",
+   "area": "historia",
+   "desc": "Partia >300 półruchów: przycinanie historii — skutki",
+   "pass": true,
+   "actual": {
+    "seed": 1,
+    "moves": 330,
+    "historyLen": 300,
+    "firstHistoryNumber": 31,
+    "positions": 300,
+    "undoAfter300": "BRAK_RUCHU_DO_COFNIECIA",
+    "stateJsonBytes": 57453
+   }
+  }
+ ]
+}

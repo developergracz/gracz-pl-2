@@ -1,0 +1,134 @@
+{
+ "mode": "quick",
+ "levels": [
+  {
+   "ui": "normal",
+   "engine": "beginner",
+   "label": "Początkujący",
+   "maxMs": 450,
+   "positions": 60,
+   "illegal": 0,
+   "nulls": 0,
+   "budgetHitPct": 0,
+   "p50": 4,
+   "p95": 6,
+   "max": 7
+  },
+  {
+   "ui": "hard",
+   "engine": "normal",
+   "label": "Normalny (domyślny)",
+   "maxMs": 450,
+   "positions": 60,
+   "illegal": 0,
+   "nulls": 0,
+   "budgetHitPct": 0,
+   "p50": 11,
+   "p95": 19,
+   "max": 23
+  },
+  {
+   "ui": "expert",
+   "engine": "hard",
+   "label": "Zaawansowany",
+   "maxMs": 450,
+   "positions": 60,
+   "illegal": 0,
+   "nulls": 0,
+   "budgetHitPct": 0,
+   "p50": 120,
+   "p95": 221,
+   "max": 306
+  },
+  {
+   "ui": "master",
+   "engine": "master",
+   "label": "Najmocniejszy lokalny",
+   "maxMs": 750,
+   "positions": 60,
+   "illegal": 0,
+   "nulls": 0,
+   "budgetHitPct": 15,
+   "p50": 464,
+   "p95": 753,
+   "max": 756
+  }
+ ],
+ "terminal": {
+  "stalemateReturns": null,
+  "mateReturns": [
+   7,
+   6,
+   "",
+   ""
+  ],
+  "badInput": null,
+  "badTurn": null
+ },
+ "tactics": [
+  {
+   "name": "mate-in-1 (Qg7#)",
+   "fen": "6k1/5ppp/8/8/8/8/5PPP/3Q2K1 w - - 0 1",
+   "normal": "OK d1d8",
+   "hard": "OK d1d8",
+   "expert": "OK d1d8",
+   "master": "OK d1d8"
+  },
+  {
+   "name": "mate-in-1 black back rank",
+   "fen": "3r2k1/8/8/8/8/8/5PPP/6K1 b - - 0 1",
+   "normal": "OK d8d1",
+   "hard": "OK d8d1",
+   "expert": "OK d8d1",
+   "master": "OK d8d1"
+  },
+  {
+   "name": "free queen capture",
+   "fen": "4k3/8/8/3q4/8/8/8/3RK3 w - - 0 1",
+   "normal": "OK d1d5",
+   "hard": "OK d1d5",
+   "expert": "OK d1d5",
+   "master": "OK d1d5"
+  },
+  {
+   "name": "avoid hanging queen (only safe retreats)",
+   "fen": "4k3/8/8/8/3r4/8/3Q4/4K3 w - - 0 1",
+   "normal": "OK d2d4",
+   "hard": "OK d2d4",
+   "expert": "OK d2d4",
+   "master": "OK d2d4"
+  },
+  {
+   "name": "promotion",
+   "fen": "8/P6k/8/8/8/8/8/K7 w - - 0 1",
+   "normal": "OK a7a8q",
+   "hard": "OK a7a8q",
+   "expert": "OK a7a8q",
+   "master": "OK a7a8q"
+  },
+  {
+   "name": "escape check",
+   "fen": "4k3/8/8/8/8/8/4r3/4K3 w - - 0 1",
+   "normal": "OK e1e2",
+   "hard": "OK e1e2",
+   "expert": "OK e1e2",
+   "master": "OK e1e2"
+  },
+  {
+   "name": "mate-in-2 (Qd8+ Rxd8 Rxd8#)",
+   "fen": "2r3k1/5ppp/8/8/8/8/5PPP/3QR1K1 w - - 0 1",
+   "normal": "MISS f2f4",
+   "hard": "MISS f2f4",
+   "expert": "MISS d1c2",
+   "master": "MISS f2f4"
+  },
+  {
+   "name": "fork knight (Nc7+ wins rook)",
+   "fen": "r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1",
+   "normal": "MISS b5d4",
+   "hard": "MISS b5d4",
+   "expert": "OK b5c7",
+   "master": "OK b5c7"
+  }
+ ]
+}

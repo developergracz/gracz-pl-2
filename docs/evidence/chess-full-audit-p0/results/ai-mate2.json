@@ -1,0 +1,50 @@
+[
+ {
+  "fen": "3K4/7k/8/8/8/2R3R1/8/8 w - - 0 1",
+  "solution": "c3c4",
+  "normal": "MISS d8c8",
+  "hard": "MISS d8c8",
+  "expert": "OK c3c4",
+  "master": "OK c3c4"
+ },
+ {
+  "fen": "8/8/7k/8/8/8/2R4K/7R w - - 0 1",
+  "solution": "c2g2",
+  "normal": "MISS c2c3",
+  "hard": "MISS c2c7",
+  "expert": "OK c2g2",
+  "master": "OK c2g2"
+ },
+ {
+  "fen": "8/8/6R1/8/8/8/2RK4/5k2 w - - 0 1",
+  "solution": "c2c4",
+  "normal": "OK d2c1",
+  "hard": "OK d2c1",
+  "expert": "OK c2c4",
+  "master": "OK c2c4"
+ },
+ {
+  "fen": "7R/2K5/8/8/5R2/8/8/4k3 w - - 0 1",
+  "solution": "h8h2",
+  "normal": "MISS c7b8",
+  "hard": "MISS c7b8",
+  "expert": "OK h8h2",
+  "master": "OK h8h2"
+ },
+ {
+  "fen": "K2k4/8/8/8/1R6/8/8/7R w - - 0 1",
+  "solution": "b4b7",
+  "normal": "MISS b4b5",
+  "hard": "MISS b4b8",
+  "expert": "OK b4b7",
+  "master": "OK b4b7"
+ },
+ {
+  "fen": "5R2/k7/8/6K1/6R1/8/8/8 w - - 0 1",
+  "solution": "g4b4",
+  "normal": "MISS g5h6",
+  "hard": "MISS g5h6",
+  "expert": "OK g4b4",
+  "master": "OK g4b4"
+ }
+]

@@ -1,0 +1,22 @@
+{
+ "pass": 0,
+ "fail": 1,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "L11",
+   "area": "limity",
+   "desc": "Brak WebSocket → polling co 4 s przez 14 min (zegar strony przyspieszony): przekroczenie limitów GET czatu/partii",
+   "status": "FAIL",
+   "actual": {
+    "chatRequests": 214,
+    "chat429": 34,
+    "matchRequests": 246,
+    "match429": 6,
+    "chatStatus": "Czat: ZBYT_WIELE_PROB",
+    "notice": "Połączenie: ZBYT_WIELE_PROB"
+   }
+  }
+ ]
+}

@@ -1,0 +1,25 @@
+TAP version 13
+# CHESS_TWO_CHROMIUM_WINDOWS_PASS {
+#   clickedMoves: 7,
+#   contexts: 2,
+#   version: 14,
+#   clock: '5m+2s',
+#   transport: 'WebSocket',
+#   winner: 1,
+#   checkmate: true
+# }
+# Subtest: two isolated Chromium windows play chess by clicking squares with WebSocket updates and reconnect
+ok 1 - two isolated Chromium windows play chess by clicking squares with WebSocket updates and reconnect
+  ---
+  duration_ms: 17248.593706
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17722.095843

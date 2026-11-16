@@ -1,0 +1,135 @@
+{
+ "pass": 1,
+ "fail": 10,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "V01-desktop",
+   "area": "komunikaty",
+   "desc": "[desktop] Szach: widoczna informacja „SZACH” lub wyróżnienie króla",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Gra lokalna — Czarne na ruchu · SZACH.",
+    "visible": [],
+    "kingClass": "chess-square light black-piece chess-draggable"
+   }
+  },
+  {
+   "id": "V02-desktop",
+   "area": "komunikaty",
+   "desc": "[desktop] Wygrana z komputerem: widoczny komunikat wyniku",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Mat — białe wygrywają",
+    "visible": []
+   }
+  },
+  {
+   "id": "V03-desktop",
+   "area": "komunikaty",
+   "desc": "[desktop] Pat: widoczny komunikat remisu",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Pat — remis",
+    "visible": []
+   }
+  },
+  {
+   "id": "V04-desktop",
+   "area": "komunikaty",
+   "desc": "[desktop] Czyja tura w partii bez zegara: widoczna informacja",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Gra lokalna — Czarne na ruchu.",
+    "visible": [],
+    "clocks": [
+     "∞",
+     "∞",
+     0
+    ]
+   }
+  },
+  {
+   "id": "V01-telefon",
+   "area": "komunikaty",
+   "desc": "[telefon] Szach: widoczna informacja „SZACH” lub wyróżnienie króla",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Gra lokalna — Czarne na ruchu · SZACH.",
+    "visible": [],
+    "kingClass": "chess-square light black-piece chess-draggable"
+   }
+  },
+  {
+   "id": "V02-telefon",
+   "area": "komunikaty",
+   "desc": "[telefon] Wygrana z komputerem: widoczny komunikat wyniku",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Mat — białe wygrywają",
+    "visible": []
+   }
+  },
+  {
+   "id": "V03-telefon",
+   "area": "komunikaty",
+   "desc": "[telefon] Pat: widoczny komunikat remisu",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Pat — remis",
+    "visible": []
+   }
+  },
+  {
+   "id": "V04-telefon",
+   "area": "komunikaty",
+   "desc": "[telefon] Czyja tura w partii bez zegara: widoczna informacja",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Gra lokalna — Czarne na ruchu.",
+    "visible": [],
+    "clocks": [
+     "∞",
+     "∞",
+     0
+    ]
+   }
+  },
+  {
+   "id": "V05",
+   "area": "komunikaty",
+   "desc": "Tryb „Sama gra” (focus): pasek stanu widoczny",
+   "status": "PASS",
+   "actual": {
+    "visible": [
+     {
+      "el": "game-state",
+      "text": "Gra lokalna — Czarne na ruchu · SZACH."
+     }
+    ]
+   }
+  },
+  {
+   "id": "V06",
+   "area": "komunikaty",
+   "desc": "Online: odrzucony ruch (np. nieaktualna wersja/limit) — widoczna informacja dla gracza",
+   "status": "FAIL",
+   "actual": {
+    "inDomOnly": "Ruch nieprzyjęty: ODSWIEZ_PARTIE",
+    "visible": []
+   }
+  },
+  {
+   "id": "V07",
+   "area": "komunikaty",
+   "desc": "Online: remis (zgłoszony) — widoczny wynik dla obu graczy",
+   "status": "FAIL",
+   "actual": {
+    "visibleA": [],
+    "visibleB": [],
+    "domA": "Partia zakończona — remis"
+   }
+  }
+ ]
+}

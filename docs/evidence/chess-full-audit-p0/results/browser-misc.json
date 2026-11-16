@@ -1,0 +1,120 @@
+{
+ "pass": 7,
+ "fail": 1,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "Z10",
+   "area": "zegary",
+   "desc": "Kolory i progi zegara: aktywny, ≤30 s ostrzeżenie, ≤10 s krytyczny; kontrast cyfr",
+   "status": "PASS",
+   "actual": {
+    "a": {
+     "black": {
+      "cls": "player-clock clock-warning clock-running",
+      "color": "rgb(178, 95, 0)",
+      "bg": "rgba(0, 0, 0, 0)",
+      "font": "30px",
+      "weight": "800"
+     },
+     "white": {
+      "cls": "player-clock",
+      "color": "rgb(10, 58, 61)",
+      "bg": "rgba(0, 0, 0, 0)",
+      "font": "30px",
+      "weight": "800"
+     }
+    },
+    "critical": "player-clock clock-warning clock-running clock-critical"
+   }
+  },
+  {
+   "id": "P01",
+   "area": "wydajność",
+   "desc": "Długa partia lokalna (330 półruchów): czas render() po ruchu i koszt cyklicznego updateClocks (CPU w spoczynku)",
+   "status": "PASS",
+   "actual": {
+    "moved": true,
+    "clickToRenderMs": 72,
+    "mainThreadBusyLongGamePct": 1.6,
+    "mainThreadBusyShortGamePct": 1.3
+   }
+  },
+  {
+   "id": "P02",
+   "area": "wydajność",
+   "desc": "Brak wycieku: 300 przejść po historii nie zwiększa liczby węzłów DOM ani listenerów; sterta stabilna",
+   "status": "PASS",
+   "actual": {
+    "domBefore": 1893,
+    "domAfter": 1893,
+    "listenersBefore": 586,
+    "listenersAfter": 586,
+    "heapBeforeMB": 2.8,
+    "heapAfterMB": 3.1
+   }
+  },
+  {
+   "id": "P03",
+   "area": "wydajność",
+   "desc": "Render pełnej planszy: liczba przebudowanych pól na jeden ruch",
+   "status": "PASS",
+   "actual": {
+    "squaresRecreatedForSelectAndMove": 128,
+    "note": "render() odtwarza 64 przyciski + SVG przy każdym kliknięciu/zaznaczeniu"
+   }
+  },
+  {
+   "id": "B20",
+   "area": "plansza",
+   "desc": "Powiększenie 200% (800×450 CSS px, DPR 2): przeciąganie myszą trafia w poprawne pole",
+   "status": "FAIL",
+   "actual": {
+    "f3": "."
+   }
+  },
+  {
+   "id": "K20",
+   "area": "konsola",
+   "desc": "Online „Nowa gra” otwiera arkusz „Partie online” z prawdziwą listą przyjętych partii (bez fikcyjnych pokoi)",
+   "status": "PASS",
+   "actual": {
+    "visible": true,
+    "rows": [
+     "Szachy · AudIng09dc1fdc33d1"
+    ],
+    "empty": null
+   }
+  },
+  {
+   "id": "K21",
+   "area": "konsola",
+   "desc": "Zakładka Info pokazuje rzeczywiste dane partii (tryb, przeciwnik, czas 10+5, posunięcia)",
+   "status": "PASS",
+   "actual": {
+    "mode": "Online — partia ze znajomym",
+    "opponent": "AudIng09dc1fdc33d1",
+    "state": "Szachy online · Białe na ruchu · Twój ruch",
+    "clock": "10 min + 5 s na ruch",
+    "moves": "0"
+   }
+  },
+  {
+   "id": "K22",
+   "area": "konsola",
+   "desc": "Link „Zasady i pomoc” w zakładce Info (warstwa mountApprovedPanel) — cel linku",
+   "status": "PASS",
+   "actual": [
+    {
+     "t": "Pełne zasady gry w szachy (Wikipedia)",
+     "h": "https://pl.wikipedia.org/wiki/Szachy"
+    },
+    {
+     "t": "Moje partie i zaproszenia w Panelu Gracza",
+     "h": "/konto/panel/?sekcja=play"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "pass": 0,
+ "fail": 2,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "L10",
+   "area": "limity/zegary",
+   "desc": "Skutek limitu: po 80 ruchach w 15 min gracz w nowej partii 1 min nie może ruszyć (429) i przegrywa na czas",
+   "status": "FAIL",
+   "actual": {
+    "movesPlayedInFirstGame": 160,
+    "noticeAfterMoveAttempt": "Ruch nieprzyjęty: ZBYT_WIELE_PROB",
+    "historyAfterAttempt": 0,
+    "final": "Partia zakończona — wygrywają czarne",
+    "winner": 2,
+    "timeoutLoser": 1,
+    "loserPopupShown": true
+   }
+  },
+  {
+   "id": "H10",
+   "area": "historia",
+   "desc": "Online >300 półruchów: lista ruchów (numeracja), przegląd pozycji, PGN",
+   "status": "FAIL",
+   "actual": {
+    "count": "300",
+    "firstRow": "1. Nf3 Qxa4",
+    "enabledReview": 0,
+    "disabledReview": 300,
+    "serverFirstEntry": {
+     "number": 31,
+     "san": "Nf3"
+    },
+    "pgnStart": "1. Nf3 Qxa4 2. Bd2 Nf6 3. Kc1 gxf4 4. h4"
+   }
+  }
+ ]
+}

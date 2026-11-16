@@ -1,0 +1,12 @@
+{"white":"beginner","black":"random","result":"1-0","sec":0}
+{"white":"random","black":"beginner","result":"0-1","sec":0}
+{"white":"master","black":"random","result":"1-0","sec":13}
+{"white":"random","black":"master","result":"0-1","sec":11}
+{"white":"normal","black":"beginner","result":"1-0","sec":0}
+{"white":"beginner","black":"normal","result":"0-1","sec":0}
+{"white":"hard","black":"normal","result":"1-0","sec":4}
+{"white":"normal","black":"hard","result":"1/2 3-fold","sec":7}
+{"white":"master","black":"hard","result":"1-0","sec":28}
+{"white":"hard","black":"master","result":"0-1","sec":27}
+{"white":"master","black":"beginner","result":"1-0","sec":13}
+{"white":"beginner","black":"master","result":"0-1","sec":10}

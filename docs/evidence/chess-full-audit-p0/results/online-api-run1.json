@@ -1,0 +1,541 @@
+{
+ "pass": 46,
+ "fail": 1,
+ "results": [
+  {
+   "id": "O01",
+   "area": "online",
+   "desc": "Zaproszenie wysłane przez API i zaakceptowane przez drugie konto",
+   "pass": true,
+   "actual": {
+    "id": "89fc2ba4-1005-462d-b199-fad75e682e8e"
+   }
+  },
+  {
+   "id": "O02",
+   "area": "online",
+   "desc": "Pierwsze otwarcie tworzy partię; A=gracz 1 (białe); zegar nie startuje przed wejściem B",
+   "pass": true,
+   "actual": {
+    "player": 1,
+    "clock": {
+     "ready": [
+      true,
+      false
+     ],
+     "since": null,
+     "limitMs": 300000,
+     "remaining": [
+      300000,
+      300000
+     ],
+     "incrementMs": 2000
+    }
+   }
+  },
+  {
+   "id": "O03",
+   "area": "zegary",
+   "desc": "Ruch przed wejściem przeciwnika (partia na czas) odrzucony",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "ok": false,
+    "error": "OCZEKIWANIE_NA_GRACZA"
+   }
+  },
+  {
+   "id": "O04",
+   "area": "zegary",
+   "desc": "Wejście B: player=2 (czarne), ready=[true,true], zegar startuje (since ustawione), 5:00/5:00",
+   "pass": true,
+   "actual": {
+    "ready": [
+     true,
+     true
+    ],
+    "since": "2026-11-16T19:11:31.759Z",
+    "limitMs": 300000,
+    "remaining": [
+     300000,
+     300000
+    ],
+    "incrementMs": 2000
+   }
+  },
+  {
+   "id": "S01",
+   "area": "bezpieczeństwo",
+   "desc": "Trzecie konto (znajomy A) nie może odczytać cudzej partii",
+   "pass": true,
+   "actual": {
+    "status": 404,
+    "error": "PARTIA_NIEDOSTEPNA"
+   }
+  },
+  {
+   "id": "S02",
+   "area": "bezpieczeństwo",
+   "desc": "Trzecie konto nie może wykonać ruchu w cudzej partii",
+   "pass": true,
+   "actual": {
+    "status": 404,
+    "error": "PARTIA_NIEDOSTEPNA"
+   }
+  },
+  {
+   "id": "S03",
+   "area": "bezpieczeństwo",
+   "desc": "Ruch w imieniu przeciwnika (czarne na turze białych) odrzucony",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "ok": false,
+    "error": "NIE_TWOJA_TURA"
+   }
+  },
+  {
+   "id": "S04",
+   "area": "bezpieczeństwo",
+   "desc": "Białe próbują ruszyć figurę czarnych → odrzucone",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "ok": false,
+    "error": "NIEDOZWOLONY_RUCH"
+   }
+  },
+  {
+   "id": "S05",
+   "area": "spójność",
+   "desc": "Nieaktualna wersja partii → 409 ODSWIEZ_PARTIE",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "ok": false,
+    "error": "ODSWIEZ_PARTIE"
+   }
+  },
+  {
+   "id": "S06",
+   "area": "spójność",
+   "desc": "4 równoczesne żądania ruchu z tą samą wersją → dokładnie 1 przyjęte, historia=1",
+   "pass": true,
+   "actual": {
+    "statuses": [
+     "200:e2e4",
+     "409:ODSWIEZ_PARTIE",
+     "409:ODSWIEZ_PARTIE",
+     "409:ODSWIEZ_PARTIE"
+    ],
+    "history": [
+     "e2e4"
+    ],
+    "version": 3
+   }
+  },
+  {
+   "id": "S07",
+   "area": "spójność",
+   "desc": "Powtórzone (zdublowane) żądanie po sukcesie → odrzucone (409)",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "error": "ODSWIEZ_PARTIE"
+   }
+  },
+  {
+   "id": "Z01",
+   "area": "zegary",
+   "desc": "Po ruchu białych: aktywny zegar czarnych, bonus +2 s doliczony białym, since odświeżone",
+   "pass": true,
+   "actual": {
+    "remaining": [
+     301971,
+     300000
+    ],
+    "turn": 2
+   }
+  },
+  {
+   "id": "S08",
+   "area": "bezpieczeństwo",
+   "desc": "POST z obcym Origin (CSRF) → 403",
+   "pass": true,
+   "actual": {
+    "status": 403,
+    "error": "NIEDOZWOLONE_POCHODZENIE"
+   }
+  },
+  {
+   "id": "S09",
+   "area": "bezpieczeństwo",
+   "desc": "POST bez nagłówka Origin → 403",
+   "pass": true,
+   "actual": {
+    "status": 403
+   }
+  },
+  {
+   "id": "S10",
+   "area": "bezpieczeństwo",
+   "desc": "Brak sesji → 401",
+   "pass": true,
+   "actual": {
+    "status": 401,
+    "error": "BRAK_SESJI"
+   }
+  },
+  {
+   "id": "S11",
+   "area": "bezpieczeństwo",
+   "desc": "Sfałszowany token sesji → 401",
+   "pass": true,
+   "actual": {
+    "status": 401
+   }
+  },
+  {
+   "id": "S12",
+   "area": "bezpieczeństwo",
+   "desc": "Nieprawidłowy identyfikator partii → 400",
+   "pass": true,
+   "actual": {
+    "status": 400,
+    "error": "BLEDNY_IDENTYFIKATOR"
+   }
+  },
+  {
+   "id": "S13",
+   "area": "bezpieczeństwo",
+   "desc": "Zbyt duże body (>MAX_BODY) → odrzucone (400 lub zerwanie połączenia), stan bez zmian",
+   "pass": true,
+   "actual": {
+    "status": "connection-reset",
+    "error": "UND_ERR_SOCKET",
+    "versionUnchanged": true
+   }
+  },
+  {
+   "id": "S14",
+   "area": "bezpieczeństwo",
+   "desc": "Niepoprawny JSON → 400",
+   "pass": true,
+   "actual": {
+    "status": 400,
+    "error": "BLEDNE_DANE"
+   }
+  },
+  {
+   "id": "N01",
+   "area": "funkcje",
+   "desc": "Poddanie partii (resign) — brak w API",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "error": "NIEDOZWOLONY_RUCH",
+    "note": "NOT IMPLEMENTED"
+   }
+  },
+  {
+   "id": "N02",
+   "area": "funkcje",
+   "desc": "Propozycja remisu za zgodą (offer/accept) — brak w API",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "error": "NIEDOZWOLONY_RUCH",
+    "note": "NOT IMPLEMENTED"
+   }
+  },
+  {
+   "id": "T01",
+   "area": "czat",
+   "desc": "Wiadomość z HTML/skryptem zapisana i zwrócona jako surowy tekst (renderowanie sprawdzane w przeglądarce)",
+   "pass": true,
+   "actual": {
+    "sent": 200,
+    "body": "<img src=x onerror=\"window.__xss=1\"><script>window.__xss=2</script>&lt;b&gt;"
+   }
+  },
+  {
+   "id": "T02",
+   "area": "czat",
+   "desc": "Wiadomość >600 znaków → 400",
+   "pass": true,
+   "actual": {
+    "status": 400,
+    "error": "POPRAW_WIADOMOSC"
+   }
+  },
+  {
+   "id": "T03",
+   "area": "czat",
+   "desc": "Znaki sterujące → 400",
+   "pass": true,
+   "actual": {
+    "status": 400
+   }
+  },
+  {
+   "id": "T04",
+   "area": "czat",
+   "desc": "Trzecie konto nie czyta i nie pisze na czacie cudzej partii",
+   "pass": true,
+   "actual": {
+    "get": 404,
+    "post": 404
+   }
+  },
+  {
+   "id": "W01",
+   "area": "websocket",
+   "desc": "WS z obcego Origin odrzucony",
+   "pass": true,
+   "actual": {
+    "status": 403
+   }
+  },
+  {
+   "id": "W02",
+   "area": "websocket",
+   "desc": "WS bez sesji odrzucony",
+   "pass": true,
+   "actual": {
+    "status": 401
+   }
+  },
+  {
+   "id": "W03",
+   "area": "websocket",
+   "desc": "Subskrypcja cudzej partii przez WS → zamknięcie 1008 bez danych",
+   "pass": true,
+   "actual": {
+    "code": 1008,
+    "msgs": 0
+   }
+  },
+  {
+   "id": "W04",
+   "area": "websocket",
+   "desc": "Subskrypcja własnej partii → snapshot z seq=1 i czatem",
+   "pass": true,
+   "actual": {
+    "types": [
+     "snapshot",
+     "heartbeat",
+     "heartbeat",
+     "heartbeat"
+    ],
+    "seq": 1,
+    "version": 3
+   }
+  },
+  {
+   "id": "W05",
+   "area": "websocket",
+   "desc": "Zalew wiadomości WS (>8/10 s) → zamknięcie 1008",
+   "pass": true,
+   "actual": {
+    "code": 1008,
+    "reason": "rate limit"
+   }
+  },
+  {
+   "id": "W06",
+   "area": "websocket",
+   "desc": "Ruch → delta WS (baseVersion→version, zmiany planszy, dopisana historia)",
+   "pass": true,
+   "actual": {
+    "baseVersion": 3,
+    "version": 4,
+    "changes": [
+     [
+      20,
+      "."
+     ],
+     [
+      52,
+      "p"
+     ]
+    ],
+    "bytes": 1073
+   }
+  },
+  {
+   "id": "S15",
+   "area": "bezpieczeństwo",
+   "desc": "Wygaśnięta sesja w trakcie gry → ruch 401",
+   "pass": true,
+   "actual": {
+    "status": 401,
+    "error": "BRAK_SESJI"
+   }
+  },
+  {
+   "id": "W07",
+   "area": "websocket",
+   "desc": "Wygaśnięta sesja → istniejący WS zostaje zamknięty przy rekonsyliacji",
+   "pass": true,
+   "actual": {
+    "code": 1008,
+    "state": 3
+   }
+  },
+  {
+   "id": "U01",
+   "area": "cofanie",
+   "desc": "Prośba o cofnięcie wstrzymuje zegar (since=null)",
+   "pass": true,
+   "actual": {
+    "status": 200,
+    "since": null
+   }
+  },
+  {
+   "id": "U02",
+   "area": "cofanie",
+   "desc": "Przy oczekującej prośbie ruch przeciwnika zablokowany (OCZEKUJE_NA_DECYZJE)",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "ok": false,
+    "error": "OCZEKUJE_NA_DECYZJE"
+   }
+  },
+  {
+   "id": "U03",
+   "area": "cofanie",
+   "desc": "Wnioskodawca nie może sam zaakceptować własnej prośby",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "error": "PROSBA_NIEAKTUALNA"
+   }
+  },
+  {
+   "id": "U04",
+   "area": "cofanie",
+   "desc": "Akceptacja przez przeciwnika cofa ruch, tura wraca do białych, zegar wznowiony, bonus odebrany",
+   "pass": true,
+   "actual": {
+    "hist": [
+     "e2e4",
+     "e7e5"
+    ],
+    "turn": 1,
+    "remaining": [
+     298644,
+     298800
+    ]
+   }
+  },
+  {
+   "id": "U05",
+   "area": "cofanie",
+   "desc": "Nieodebrana prośba wygasa po 3 min; zegar liczony od chwili wygaśnięcia",
+   "pass": true,
+   "actual": {
+    "undo": null,
+    "sinceAgoMs": 20007
+   }
+  },
+  {
+   "id": "Z02",
+   "area": "zegary",
+   "desc": "Przekroczenie czasu finalizowane przez serwer przy odczycie; wynik zgodny u obu graczy",
+   "pass": true,
+   "actual": {
+    "winnerA": 1,
+    "winnerB": 1,
+    "loser": 2,
+    "remaining": [
+     300638,
+     0
+    ]
+   }
+  },
+  {
+   "id": "Z03",
+   "area": "zegary",
+   "desc": "Ruch po przekroczeniu czasu odrzucony",
+   "pass": true,
+   "actual": {
+    "status": 409,
+    "error": "PARTIA_ZAKONCZONA"
+   }
+  },
+  {
+   "id": "Z04",
+   "area": "zegary",
+   "desc": "FIDE 6.9: białe przekraczają czas, czarne mają samego króla → powinien być remis",
+   "pass": false,
+   "actual": {
+    "winner": 2,
+    "note": "winner 2 = czarne wygrywają mimo samego króla"
+   }
+  },
+  {
+   "id": "S16",
+   "area": "bezpieczeństwo",
+   "desc": "Po zablokowaniu znajomego ruchy w partii są zablokowane",
+   "pass": true,
+   "actual": {
+    "status": 403,
+    "error": "PARTIA_ZABLOKOWANA"
+   }
+  },
+  {
+   "id": "L01",
+   "area": "limity",
+   "desc": "Limit 80 ruchów POST na konto w stałym oknie 15 min — ruch 81. gracza odrzucony 429",
+   "pass": true,
+   "actual": {
+    "ply": 161,
+    "player": "H",
+    "moveNumberOfPlayer": 81,
+    "error": "ZBYT_WIELE_PROB"
+   }
+  },
+  {
+   "id": "L02",
+   "area": "limity",
+   "desc": "Limit GET czatu = 180 / 15 min (polling awaryjny co 4 s = 225 / 15 min)",
+   "pass": true,
+   "actual": {
+    "firstRejectedRequest": 181
+   }
+  },
+  {
+   "id": "L03",
+   "area": "limity",
+   "desc": "Limit GET partii = 240 / 15 min (polling awaryjny co 4 s = 225 / 15 min + wymuszone odświeżenia)",
+   "pass": true,
+   "actual": {
+    "firstRejectedRequest": 241
+   }
+  },
+  {
+   "id": "D01",
+   "area": "remis",
+   "desc": "Zgłoszenie remisu (3-krotne powtórzenie) przez API: winner=3, zegar zatrzymany",
+   "pass": true,
+   "actual": {
+    "status": 200,
+    "winner": 3,
+    "since": null
+   }
+  },
+  {
+   "id": "P01",
+   "area": "wydajność",
+   "desc": "Rozmiar stanu JSONB długiej partii w PostgreSQL",
+   "pass": true,
+   "actual": {
+    "challenge_id": "cce043ba-5c0d-421b-a349-1195998ce3a4",
+    "bytes": 4078,
+    "positions": 161
+   }
+  }
+ ]
+}

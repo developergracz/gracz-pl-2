@@ -1,0 +1,10 @@
+import {createGomokuAiChatRoute} from '/home/user/gracz-pl-2/contact-api/routes/gomoku-ai-chat-route.mjs';
+import {Readable} from 'node:stream';
+let captured;
+const route=createGomokuAiChatRoute({apiKey:'audit-fake-key',fetchImpl:async(url,opt)=>{captured=JSON.parse(opt.body);return {ok:true,json:async()=>({choices:[{message:{content:'ok'}}]})};}});
+const req=Readable.from([Buffer.from(JSON.stringify({message:'Jaki ruch mam teraz zagrać?',history:[]}))]);
+Object.assign(req,{method:'POST',headers:{origin:'http://localhost:1','host':'localhost:1','content-type':'application/json'},socket:{remoteAddress:'127.0.0.1'}});
+let status,body;const res={writeHead(c){status=c},setHeader(){},end(b){body=String(b)}};
+await route(req,res,new URL('http://localhost:1/konto/szachy/ai-chat'));
+const sys=captured.messages[0].content;
+console.log(JSON.stringify({status,containsNaN:sys.includes('NaN'),containsChessInstruction:sys.includes('W Szachach i Warcabach nie otrzymujesz'),excerpt:sys.slice(sys.indexOf('wyników.')-20,sys.indexOf('wyników.')+60),second:captured.messages[1].content},null,1));

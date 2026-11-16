@@ -1,0 +1,247 @@
+{
+ "perft": [
+  {
+   "name": "startpos",
+   "depth": 1,
+   "expected": 20,
+   "got": 20,
+   "pass": true,
+   "ms": 2
+  },
+  {
+   "name": "startpos",
+   "depth": 2,
+   "expected": 400,
+   "got": 400,
+   "pass": true,
+   "ms": 5
+  },
+  {
+   "name": "startpos",
+   "depth": 3,
+   "expected": 8902,
+   "got": 8902,
+   "pass": true,
+   "ms": 43
+  },
+  {
+   "name": "startpos",
+   "depth": 4,
+   "expected": 197281,
+   "got": 197281,
+   "pass": true,
+   "ms": 660
+  },
+  {
+   "name": "kiwipete",
+   "depth": 1,
+   "expected": 48,
+   "got": 48,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "kiwipete",
+   "depth": 2,
+   "expected": 2039,
+   "got": 2039,
+   "pass": true,
+   "ms": 8
+  },
+  {
+   "name": "kiwipete",
+   "depth": 3,
+   "expected": 97862,
+   "got": 97862,
+   "pass": true,
+   "ms": 268
+  },
+  {
+   "name": "kiwipete",
+   "depth": 4,
+   "expected": 4085603,
+   "got": 4085603,
+   "pass": true,
+   "ms": 12748
+  },
+  {
+   "name": "pos3",
+   "depth": 1,
+   "expected": 14,
+   "got": 14,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos3",
+   "depth": 2,
+   "expected": 191,
+   "got": 191,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos3",
+   "depth": 3,
+   "expected": 2812,
+   "got": 2812,
+   "pass": true,
+   "ms": 5
+  },
+  {
+   "name": "pos3",
+   "depth": 4,
+   "expected": 43238,
+   "got": 43238,
+   "pass": true,
+   "ms": 75
+  },
+  {
+   "name": "pos4",
+   "depth": 1,
+   "expected": 6,
+   "got": 6,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos4",
+   "depth": 2,
+   "expected": 264,
+   "got": 264,
+   "pass": true,
+   "ms": 1
+  },
+  {
+   "name": "pos4",
+   "depth": 3,
+   "expected": 9467,
+   "got": 9467,
+   "pass": true,
+   "ms": 29
+  },
+  {
+   "name": "pos4",
+   "depth": 4,
+   "expected": 422333,
+   "got": 422333,
+   "pass": true,
+   "ms": 1071
+  },
+  {
+   "name": "pos4m",
+   "depth": 1,
+   "expected": 6,
+   "got": 6,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos4m",
+   "depth": 2,
+   "expected": 264,
+   "got": 264,
+   "pass": true,
+   "ms": 1
+  },
+  {
+   "name": "pos4m",
+   "depth": 3,
+   "expected": 9467,
+   "got": 9467,
+   "pass": true,
+   "ms": 25
+  },
+  {
+   "name": "pos4m",
+   "depth": 4,
+   "expected": 422333,
+   "got": 422333,
+   "pass": true,
+   "ms": 1230
+  },
+  {
+   "name": "pos5",
+   "depth": 1,
+   "expected": 44,
+   "got": 44,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos5",
+   "depth": 2,
+   "expected": 1486,
+   "got": 1486,
+   "pass": true,
+   "ms": 4
+  },
+  {
+   "name": "pos5",
+   "depth": 3,
+   "expected": 62379,
+   "got": 62379,
+   "pass": true,
+   "ms": 166
+  },
+  {
+   "name": "pos5",
+   "depth": 4,
+   "expected": 2103487,
+   "got": 2103487,
+   "pass": true,
+   "ms": 7002
+  },
+  {
+   "name": "pos6",
+   "depth": 1,
+   "expected": 46,
+   "got": 46,
+   "pass": true,
+   "ms": 0
+  },
+  {
+   "name": "pos6",
+   "depth": 2,
+   "expected": 2079,
+   "got": 2079,
+   "pass": true,
+   "ms": 7
+  },
+  {
+   "name": "pos6",
+   "depth": 3,
+   "expected": 89890,
+   "got": 89890,
+   "pass": true,
+   "ms": 265
+  },
+  {
+   "name": "pos6",
+   "depth": 4,
+   "expected": 3894594,
+   "got": 3894594,
+   "pass": true,
+   "ms": 11432
+  }
+ ],
+ "diff": {
+  "games": 400,
+  "positions": 134191,
+  "moveSetMismatch": 0,
+  "sanMismatch": 0,
+  "fenMismatch": 0,
+  "statusMismatch": 0,
+  "insufficientMismatch": 0,
+  "threefoldMismatch": 0,
+  "fiftyMismatch": 0,
+  "promotions": 1080,
+  "ep": 84,
+  "castles": 204,
+  "checks": 7582,
+  "mates": 52,
+  "stalemates": 16,
+  "insufficient": 165
+ },
+ "issues": []
+}

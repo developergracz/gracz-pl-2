@@ -1,0 +1,36 @@
+{
+ "pass": 0,
+ "fail": 2,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "A09-r1",
+   "area": "komputer/wynik",
+   "desc": "Powtórzenie: wygrana, potem 3× (Cofnij + ten sam mat) — bilans wygranych",
+   "status": "FAIL",
+   "actual": {
+    "winsSequence": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  },
+  {
+   "id": "A09-r2",
+   "area": "komputer/wynik",
+   "desc": "Powtórzenie: wygrana, potem 3× (Cofnij + ten sam mat) — bilans wygranych",
+   "status": "FAIL",
+   "actual": {
+    "winsSequence": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ]
+   }
+  }
+ ]
+}

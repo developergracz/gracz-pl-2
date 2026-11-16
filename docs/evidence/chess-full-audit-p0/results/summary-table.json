@@ -1,0 +1,178 @@
+{
+ "areas": {
+  "Silnik szachowy": {
+   "PASS": 99,
+   "FAIL": 0,
+   "NT": 0,
+   "NI": 0,
+   "fails": [],
+   "nt": [],
+   "ni": []
+  },
+  "Komputer": {
+   "PASS": 20,
+   "FAIL": 5,
+   "NT": 0,
+   "NI": 2,
+   "fails": [
+    "ai-chat-system-prompt (NaN) [ai-prompt-nan]",
+    "A04 [browser-local]",
+    "A09 [browser-local]",
+    "A09(powt.) [repeat-a09]",
+    "A09(powt.) [repeat-a09]"
+   ],
+   "nt": [],
+   "ni": [
+    "N10 [browser-local]",
+    "Stockfish (świadomie: własny silnik) [static]"
+   ]
+  },
+  "Online": {
+   "PASS": 27,
+   "FAIL": 4,
+   "NT": 3,
+   "NI": 3,
+   "fails": [
+    "L10 [browser-limit-history]",
+    "L11 [browser-fallback]",
+    "L01 [online-api]",
+    "L02 [online-api]"
+   ],
+   "nt": [
+    "Produkcja gracz-contact-api.onrender.com (sieć zablokowana; gracz.pl/konto/szachy/ = 404) [—]",
+    "Wieloinstancyjna szyna Redis — tylko bazowy test projektu, bez niezależnego scenariusza [—]",
+    "Zaproszenia terminowe + przypomnienia e-mail — tylko bazowy test projektu [—]"
+   ],
+   "ni": [
+    "ON01 [browser-online]",
+    "N01 [online-api]",
+    "N02 [online-api]"
+   ]
+  },
+  "Zegary": {
+   "PASS": 8,
+   "FAIL": 3,
+   "NT": 0,
+   "NI": 0,
+   "fails": [
+    "OZ02 [browser-online]",
+    "OZ04 [browser-online]",
+    "Z04 [online-api]"
+   ],
+   "nt": [],
+   "ni": []
+  },
+  "Plansza i figury": {
+   "PASS": 17,
+   "FAIL": 2,
+   "NT": 0,
+   "NI": 0,
+   "fails": [
+    "B11 [browser-local]",
+    "OB03 [browser-online]"
+   ],
+   "nt": [],
+   "ni": []
+  },
+  "Ruchy i historia": {
+   "PASS": 5,
+   "FAIL": 3,
+   "NT": 0,
+   "NI": 1,
+   "fails": [
+    "H04 [browser-local]",
+    "H06 [browser-local]",
+    "H10 [browser-limit-history]"
+   ],
+   "nt": [],
+   "ni": [
+    "N11 [browser-local]"
+   ]
+  },
+  "Czat": {
+   "PASS": 9,
+   "FAIL": 0,
+   "NT": 1,
+   "NI": 0,
+   "fails": [],
+   "nt": [
+    "Odpowiedzi GRACZ AI z rzeczywistym dostawcą (brak klucza; usługa zewnętrzna) [—]"
+   ],
+   "ni": []
+  },
+  "Przyciski i konfiguracja": {
+   "PASS": 32,
+   "FAIL": 11,
+   "NT": 0,
+   "NI": 0,
+   "fails": [
+    "E-plural [browser-local]",
+    "V01-desktop [browser-visibility]",
+    "V02-desktop [browser-visibility]",
+    "V03-desktop [browser-visibility]",
+    "V04-desktop [browser-visibility]",
+    "V01-telefon [browser-visibility]",
+    "V02-telefon [browser-visibility]",
+    "V03-telefon [browser-visibility]",
+    "V04-telefon [browser-visibility]",
+    "V06 [browser-visibility]",
+    "V07 [browser-visibility]"
+   ],
+   "nt": [],
+   "ni": []
+  },
+  "Mobile": {
+   "PASS": 21,
+   "FAIL": 0,
+   "NT": 1,
+   "NI": 0,
+   "fails": [],
+   "nt": [
+    "Fizyczne urządzenia iOS/Android, Safari (fallback pełnego ekranu iPhone) [—]"
+   ],
+   "ni": []
+  },
+  "Dostępność (WCAG 2.2)": {
+   "PASS": 2,
+   "FAIL": 3,
+   "NT": 1,
+   "NI": 0,
+   "fails": [
+    "W04 [browser-local]",
+    "AXE-desktop [browser-responsive]",
+    "AXE-telefon [browser-responsive]"
+   ],
+   "nt": [
+    "Test z czytnikiem ekranu (NVDA/VoiceOver) [—]"
+   ],
+   "ni": []
+  },
+  "Bezpieczeństwo": {
+   "PASS": 23,
+   "FAIL": 0,
+   "NT": 0,
+   "NI": 0,
+   "fails": [],
+   "nt": [],
+   "ni": []
+  },
+  "Wydajność i stabilność": {
+   "PASS": 6,
+   "FAIL": 0,
+   "NT": 1,
+   "NI": 0,
+   "fails": [],
+   "nt": [
+    "Testy obciążeniowe / pojemność (zakazane na produkcji; brak deklaracji 30 000 graczy) [—]"
+   ],
+   "ni": []
+  }
+ },
+ "total": {
+  "PASS": 269,
+  "FAIL": 31,
+  "NOT TESTED": 7,
+  "NOT IMPLEMENTED": 6
+ },
+ "unmapped": []
+}

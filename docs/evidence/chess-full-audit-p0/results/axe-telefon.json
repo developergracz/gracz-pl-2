@@ -1,0 +1,38 @@
+[
+ {
+  "id": "aria-required-children",
+  "impact": "critical",
+  "nodes": 1,
+  "help": "Certain ARIA roles must contain particular children",
+  "sample": [
+   {
+    "t": "#board",
+    "s": "Fix any of the following:   Element has children which are not allowed: [role=gridcell]"
+   }
+  ]
+ },
+ {
+  "id": "aria-required-parent",
+  "impact": "critical",
+  "nodes": 64,
+  "help": "Certain ARIA roles must be contained by particular parents",
+  "sample": [
+   {
+    "t": "button[aria-label=\"a8 czarna wieża\"]",
+    "s": "Fix any of the following:   Required ARIA parent role not present: row"
+   },
+   {
+    "t": "button[aria-label=\"b8 czarny skoczek\"]",
+    "s": "Fix any of the following:   Required ARIA parent role not present: row"
+   },
+   {
+    "t": "button[aria-label=\"c8 czarny goniec\"]",
+    "s": "Fix any of the following:   Required ARIA parent role not present: row"
+   },
+   {
+    "t": "button[aria-label=\"d8 czarny hetman\"]",
+    "s": "Fix any of the following:   Required ARIA parent role not present: row"
+   }
+  ]
+ }
+]

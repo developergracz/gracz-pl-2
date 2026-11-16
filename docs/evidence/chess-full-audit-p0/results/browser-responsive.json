@@ -1,0 +1,501 @@
+{
+ "pass": 25,
+ "fail": 2,
+ "notTested": 0,
+ "notImplemented": 0,
+ "results": [
+  {
+   "id": "R-1920x1080",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1920×1080: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 1920,
+    "vh": 1080,
+    "hScroll": false,
+    "scrollWidth": 1920,
+    "docHeight": 1080,
+    "board": {
+     "x": 217,
+     "y": 42,
+     "w": 1024,
+     "h": 1024,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 128,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 30
+   }
+  },
+  {
+   "id": "RS-1920x1080",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1920×1080: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 1277,
+    "w": 412,
+    "right": 1689,
+    "vw": 1920,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-1600x900",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1600×900: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 1600,
+    "vh": 900,
+    "hScroll": false,
+    "scrollWidth": 1600,
+    "docHeight": 900,
+    "board": {
+     "x": 147,
+     "y": 42,
+     "w": 844,
+     "h": 844,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 106,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 30
+   }
+  },
+  {
+   "id": "RS-1600x900",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1600×900: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 1027,
+    "w": 412,
+    "right": 1439,
+    "vw": 1600,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "KB-1600",
+   "area": "dostępność",
+   "desc": "Tab 1600px: widoczny wskaźnik fokusu (:focus-visible) na każdym elemencie",
+   "status": "PASS",
+   "actual": {
+    "visited": 69,
+    "withoutIndicator": [],
+    "invisibleFocusTargets": []
+   }
+  },
+  {
+   "id": "R-1366x768",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1366×768: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 1366,
+    "vh": 768,
+    "hScroll": false,
+    "scrollWidth": 1366,
+    "docHeight": 768,
+    "board": {
+     "x": 118,
+     "y": 42,
+     "w": 712,
+     "h": 712,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 89,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 27.32
+   }
+  },
+  {
+   "id": "RS-1366x768",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1366×768: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 866,
+    "w": 368,
+    "right": 1234,
+    "vw": 1366,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-1280x720",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1280×720: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 1280,
+    "vh": 720,
+    "hScroll": false,
+    "scrollWidth": 1280,
+    "docHeight": 720,
+    "board": {
+     "x": 111,
+     "y": 42,
+     "w": 664,
+     "h": 664,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 83,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 25.6
+   }
+  },
+  {
+   "id": "RS-1280x720",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1280×720: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 811,
+    "w": 344,
+    "right": 1155,
+    "vw": 1280,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-1024x768",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1024×768: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 1024,
+    "vh": 768,
+    "hScroll": false,
+    "scrollWidth": 1024,
+    "docHeight": 768,
+    "board": {
+     "x": 17,
+     "y": 100,
+     "w": 596,
+     "h": 596,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 75,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 23
+   }
+  },
+  {
+   "id": "RS-1024x768",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 1024×768: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 649,
+    "w": 344,
+    "right": 993,
+    "vw": 1024,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-768x1024",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 768×1024: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 768,
+    "vh": 1024,
+    "hScroll": false,
+    "scrollWidth": 768,
+    "docHeight": 1523,
+    "board": {
+     "x": 0,
+     "y": 60,
+     "w": 768,
+     "h": 768,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 96,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 23
+   }
+  },
+  {
+   "id": "RS-768x1024",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 768×1024: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 22,
+    "w": 724,
+    "right": 746,
+    "vw": 768,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-390x844",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 390×844: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 390,
+    "vh": 844,
+    "hScroll": false,
+    "scrollWidth": 390,
+    "docHeight": 1143,
+    "board": {
+     "x": 0,
+     "y": 60,
+     "w": 390,
+     "h": 390,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 49,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 23
+   }
+  },
+  {
+   "id": "RS-390x844",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 390×844: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 22,
+    "w": 346,
+    "right": 368,
+    "vw": 390,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "KB-390",
+   "area": "dostępność",
+   "desc": "Tab 390px: widoczny wskaźnik fokusu (:focus-visible) na każdym elemencie",
+   "status": "PASS",
+   "actual": {
+    "visited": 69,
+    "withoutIndicator": [],
+    "invisibleFocusTargets": []
+   }
+  },
+  {
+   "id": "R-375x667",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 375×667: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 375,
+    "vh": 667,
+    "hScroll": false,
+    "scrollWidth": 375,
+    "docHeight": 1128,
+    "board": {
+     "x": 0,
+     "y": 60,
+     "w": 375,
+     "h": 375,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 47,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 23
+   }
+  },
+  {
+   "id": "RS-375x667",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 375×667: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 22,
+    "w": 331,
+    "right": 353,
+    "vw": 375,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "R-320x568",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 320×568: brak poziomego przewijania, plansza kwadratowa i w kadrze, brak nakładania/przycięć kluczowych kontrolek",
+   "status": "PASS",
+   "actual": {
+    "vw": 320,
+    "vh": 568,
+    "hScroll": false,
+    "scrollWidth": 320,
+    "docHeight": 1083,
+    "board": {
+     "x": 0,
+     "y": 60,
+     "w": 320,
+     "h": 320,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "minCell": 40,
+    "overlaps": [],
+    "missing": [],
+    "outside": [],
+    "clipped": [],
+    "clippedText": [],
+    "smallTargets": [],
+    "clockFont": 23
+   }
+  },
+  {
+   "id": "RS-320x568",
+   "area": "mobile/responsywność",
+   "desc": "Viewport 320×568: arkusz Ustawienia mieści się w szerokości ekranu",
+   "status": "PASS",
+   "actual": {
+    "x": 22,
+    "w": 276,
+    "right": 298,
+    "vw": 320,
+    "hScroll": false
+   }
+  },
+  {
+   "id": "KB-320",
+   "area": "dostępność",
+   "desc": "Tab 320px: widoczny wskaźnik fokusu (:focus-visible) na każdym elemencie",
+   "status": "PASS",
+   "actual": {
+    "visited": 69,
+    "withoutIndicator": [],
+    "invisibleFocusTargets": []
+   }
+  },
+  {
+   "id": "AXE-desktop",
+   "area": "dostępność",
+   "desc": "axe-core WCAG 2.x A/AA (desktop 1600×900) — tryb Komputer",
+   "status": "FAIL",
+   "actual": [
+    "aria-required-children(critical):1",
+    "aria-required-parent(critical):64"
+   ]
+  },
+  {
+   "id": "AXE-telefon",
+   "area": "dostępność",
+   "desc": "axe-core WCAG 2.x A/AA (telefon 390×844) — tryb Komputer",
+   "status": "FAIL",
+   "actual": [
+    "aria-required-children(critical):1",
+    "aria-required-parent(critical):64"
+   ]
+  },
+  {
+   "id": "M01",
+   "area": "mobile",
+   "desc": "Dotyk (tap-tap) na telefonie 390×844 wykonuje ruch",
+   "status": "PASS",
+   "actual": {
+    "e4": "P",
+    "count": "Ruchy: 1"
+   }
+  },
+  {
+   "id": "M02",
+   "area": "mobile",
+   "desc": "Zmiana orientacji 390×844 → 844×390: brak poziomego przewijania, plansza widoczna, stan gry zachowany",
+   "status": "PASS",
+   "actual": {
+    "hScroll": false,
+    "board": {
+     "x": 58,
+     "y": 42,
+     "w": 334,
+     "h": 334,
+     "square": true,
+     "inViewportX": true,
+     "fullyAboveFold": true
+    },
+    "overlaps": [],
+    "missing": []
+   }
+  },
+  {
+   "id": "M03",
+   "area": "mobile",
+   "desc": "Pełny ekran na telefonie (lub fallback „Sama gra”)",
+   "status": "PASS",
+   "actual": {
+    "fs": true,
+    "focus": false
+   }
+  },
+  {
+   "id": "M04",
+   "area": "mobile",
+   "desc": "Online 375×667: brak poziomego przewijania, brak nakładania zegarów/ikon",
+   "status": "PASS",
+   "actual": {
+    "hScroll": false,
+    "overlaps": [],
+    "missing": [],
+    "clockFont": 23,
+    "minCell": 47
+   }
+  }
+ ]
+}

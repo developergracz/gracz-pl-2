@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and fullscreen
+ok 1 - premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and fullscreen
+  ---
+  duration_ms: 8411.112766
+  type: 'test'
+  ...
+# Subtest: recorded local chess SAN remains visible and survives reload on desktop/mobile
+ok 2 - recorded local chess SAN remains visible and survives reload on desktop/mobile
+  ---
+  duration_ms: 2891.014662
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11881.486925

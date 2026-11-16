@@ -1,0 +1,47 @@
+PASS O01 Zaproszenie wysłane przez API i zaakceptowane przez drugie konto {"id":"310ca42c-5bbf-4a20-a698-067b8c16d900"}
+PASS O02 Pierwsze otwarcie tworzy partię; A=gracz 1 (białe); zegar nie startuje przed wejściem B {"player":1,"clock":{"ready":[true,false],"since":null,"limitMs":300000,"remaining":[300000,300000],"incrementMs":2000}}
+PASS O03 Ruch przed wejściem przeciwnika (partia na czas) odrzucony {"status":409,"ok":false,"error":"OCZEKIWANIE_NA_GRACZA"}
+PASS O04 Wejście B: player=2 (czarne), ready=[true,true], zegar startuje (since ustawione), 5:00/5:00 {"ready":[true,true],"since":"2026-11-16T19:37:59.207Z","limitMs":300000,"remaining":[300000,300000],"incrementMs":2000}
+PASS S01 Trzecie konto (znajomy A) nie może odczytać cudzej partii {"status":404,"error":"PARTIA_NIEDOSTEPNA"}
+PASS S02 Trzecie konto nie może wykonać ruchu w cudzej partii {"status":404,"error":"PARTIA_NIEDOSTEPNA"}
+PASS S03 Ruch w imieniu przeciwnika (czarne na turze białych) odrzucony {"status":409,"ok":false,"error":"NIE_TWOJA_TURA"}
+PASS S04 Białe próbują ruszyć figurę czarnych → odrzucone {"status":409,"ok":false,"error":"NIEDOZWOLONY_RUCH"}
+PASS S05 Nieaktualna wersja partii → 409 ODSWIEZ_PARTIE {"status":409,"ok":false,"error":"ODSWIEZ_PARTIE"}
+PASS S06 4 równoczesne żądania ruchu z tą samą wersją → dokładnie 1 przyjęte, historia=1 {"statuses":["200:e2e4","409:ODSWIEZ_PARTIE","409:ODSWIEZ_PARTIE","409:ODSWIEZ_PARTIE"],"history":["e2e4"],"version":3}
+PASS S07 Powtórzone (zdublowane) żądanie po sukcesie → odrzucone (409) {"status":409,"error":"ODSWIEZ_PARTIE"}
+PASS Z01 Po ruchu białych: aktywny zegar czarnych, bonus +2 s doliczony białym, since odświeżone {"remaining":[301967,300000],"turn":2}
+PASS S08 POST z obcym Origin (CSRF) → 403 {"status":403,"error":"NIEDOZWOLONE_POCHODZENIE"}
+PASS S09 POST bez nagłówka Origin → 403 {"status":403}
+PASS S10 Brak sesji → 401 {"status":401,"error":"BRAK_SESJI"}
+PASS S11 Sfałszowany token sesji → 401 {"status":401}
+PASS S12 Nieprawidłowy identyfikator partii → 400 {"status":400,"error":"BLEDNY_IDENTYFIKATOR"}
+PASS S13 Zbyt duże body (>MAX_BODY) → odrzucone (400 lub zerwanie połączenia), stan bez zmian {"status":"connection-reset","error":"UND_ERR_SOCKET","versionUnchanged":true}
+PASS S14 Niepoprawny JSON → 400 {"status":400,"error":"BLEDNE_DANE"}
+PASS N01 Poddanie partii (resign) — brak w API {"status":409,"error":"NIEDOZWOLONY_RUCH","note":"NOT IMPLEMENTED"}
+PASS N02 Propozycja remisu za zgodą (offer/accept) — brak w API {"status":409,"error":"NIEDOZWOLONY_RUCH","note":"NOT IMPLEMENTED"}
+PASS T01 Wiadomość z HTML/skryptem zapisana i zwrócona jako surowy tekst (renderowanie sprawdzane w przeglądarce) {"sent":200,"body":"<img src=x onerror=\"window.__xss=1\"><script>window.__xss=2</script>&lt;b&gt;"}
+PASS T02 Wiadomość >600 znaków → 400 {"status":400,"error":"POPRAW_WIADOMOSC"}
+PASS T03 Znaki sterujące → 400 {"status":400}
+PASS T04 Trzecie konto nie czyta i nie pisze na czacie cudzej partii {"get":404,"post":404}
+PASS W01 WS z obcego Origin odrzucony {"status":403}
+PASS W02 WS bez sesji odrzucony {"status":401}
+PASS W03 Subskrypcja cudzej partii przez WS → zamknięcie 1008 bez danych {"code":1008,"msgs":0}
+PASS W04 Subskrypcja własnej partii → snapshot z seq=1 i czatem {"types":["snapshot","heartbeat","heartbeat","heartbeat"],"seq":1,"version":3}
+PASS W05 Zalew wiadomości WS (>8/10 s) → zamknięcie 1008 {"code":1008,"reason":"rate limit"}
+PASS W06 Ruch → delta WS (baseVersion→version, zmiany planszy, dopisana historia) {"baseVersion":3,"version":4,"changes":[[20,"."],[52,"p"]],"bytes":1073}
+PASS S15 Wygaśnięta sesja w trakcie gry → ruch 401 {"status":401,"error":"BRAK_SESJI"}
+PASS W07 Wygaśnięta sesja → istniejący WS zostaje zamknięty przy rekonsyliacji {"code":1008,"state":3}
+PASS U01 Prośba o cofnięcie wstrzymuje zegar (since=null) {"status":200,"since":null}
+PASS U02 Przy oczekującej prośbie ruch przeciwnika zablokowany (OCZEKUJE_NA_DECYZJE) {"status":409,"ok":false,"error":"OCZEKUJE_NA_DECYZJE"}
+PASS U03 Wnioskodawca nie może sam zaakceptować własnej prośby {"status":409,"error":"PROSBA_NIEAKTUALNA"}
+PASS U04 Akceptacja przez przeciwnika cofa ruch, tura wraca do białych, zegar wznowiony, bonus odebrany {"hist":["e2e4","e7e5"],"turn":1,"remaining":[298641,298779]}
+PASS U05 Nieodebrana prośba wygasa po 3 min; zegar liczony od chwili wygaśnięcia {"undo":null,"sinceAgoMs":20006}
+PASS Z02 Przekroczenie czasu finalizowane przez serwer przy odczycie; wynik zgodny u obu graczy {"winnerA":1,"winnerB":1,"loser":2,"remaining":[300634,0]}
+PASS Z03 Ruch po przekroczeniu czasu odrzucony {"status":409,"error":"PARTIA_ZAKONCZONA"}
+FAIL Z04 FIDE 6.9: białe przekraczają czas, czarne mają samego króla → powinien być remis {"winner":2,"note":"winner 2 = czarne wygrywają mimo samego króla"}
+PASS S16 Po zablokowaniu znajomego ruchy w partii są zablokowane {"status":403,"error":"PARTIA_ZABLOKOWANA"}
+PASS L01 Limit 80 ruchów POST na konto w stałym oknie 15 min — ruch 81. gracza odrzucony 429 {"ply":161,"player":"H","moveNumberOfPlayer":81,"error":"ZBYT_WIELE_PROB"}
+PASS L02 Limit GET czatu = 180 / 15 min (polling awaryjny co 4 s = 225 / 15 min) {"firstRejectedRequest":181}
+PASS L03 Limit GET partii = 240 / 15 min (polling awaryjny co 4 s = 225 / 15 min + wymuszone odświeżenia) {"firstRejectedRequest":241}
+PASS D01 Zgłoszenie remisu (3-krotne powtórzenie) przez API: winner=3, zegar zatrzymany {"status":200,"winner":3,"since":null}
+PASS P01 Rozmiar stanu JSONB długiej partii w PostgreSQL {"challenge_id":"3a84c489-467c-4747-82c2-4fd4619ce821","bytes":4078,"positions":161}

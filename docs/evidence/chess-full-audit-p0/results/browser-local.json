@@ -1,0 +1,764 @@
+{
+ "pass": 55,
+ "fail": 7,
+ "notTested": 0,
+ "notImplemented": 2,
+ "results": [
+  {
+   "id": "K00",
+   "area": "konsola",
+   "desc": "Inwentaryzacja widocznych elementów prawej konsoli (tryb Komputer) + nazwy dostępne",
+   "status": "PASS",
+   "actual": {
+    "count": 18,
+    "unnamed": [],
+    "clipped": []
+   }
+  },
+  {
+   "id": "K01",
+   "area": "konsola",
+   "desc": "Domyślny tryb Komputer: aktywny przycisk trybu, 4 akcje, 5 ikon, zakładki Czat|Ruchy|Info",
+   "status": "PASS",
+   "actual": {
+    "mode": "true",
+    "online": "false",
+    "actions": [
+     "Nowa gra",
+     "Rewanż",
+     "Zaproś",
+     "Cofnij"
+    ],
+    "tools": [
+     "settings",
+     "board",
+     "pieces",
+     "theme",
+     "fullscreen"
+    ],
+    "tabs": [
+     "Czat",
+     "Ruchy",
+     "Info"
+    ]
+   }
+  },
+  {
+   "id": "K02",
+   "area": "konsola",
+   "desc": "Rewanż i Cofnij nieaktywne przed pierwszym ruchem",
+   "status": "PASS",
+   "actual": {
+    "rematchDisabled": true,
+    "undoDisabled": true
+   }
+  },
+  {
+   "id": "B01",
+   "area": "plansza",
+   "desc": "64 pola, 32 figury SVG, plansza kwadratowa, a1 ciemne, h1 jasne",
+   "status": "PASS",
+   "actual": {
+    "n": 64,
+    "svg": 32,
+    "ratio": 1,
+    "a1": true,
+    "h1": true,
+    "ext": 0
+   }
+  },
+  {
+   "id": "B02",
+   "area": "plansza",
+   "desc": "Układ początkowy figur zgodny z FEN startowym",
+   "status": "PASS",
+   "actual": "rnbqkbnrpppppppp................................PPPPPPPPRNBQKBNR"
+  },
+  {
+   "id": "B03",
+   "area": "plansza",
+   "desc": "Oznaczenia: cyfry w polach kolumny a, litery w polach 1. linii — wewnątrz pól",
+   "status": "PASS",
+   "actual": {
+    "ranks": "87654321",
+    "files": "abcdefgh",
+    "outside": []
+   }
+  },
+  {
+   "id": "B04",
+   "area": "plansza",
+   "desc": "Pojedyncze kliknięcie zaznacza figurę i pokazuje legalne pola (e2 → e3,e4)",
+   "status": "PASS",
+   "actual": {
+    "selected": 1,
+    "targets": [
+     "e3",
+     "e4"
+    ]
+   }
+  },
+  {
+   "id": "B05",
+   "area": "plansza",
+   "desc": "Kliknięcie pola nielegalnego nie wykonuje ruchu (e2→e5)",
+   "status": "PASS",
+   "actual": {
+    "count": "Ruchy: 0",
+    "e2": "P"
+   }
+  },
+  {
+   "id": "B06",
+   "area": "plansza",
+   "desc": "Figura przeciwnika nie daje się zaznaczyć (e7 na turze białych)",
+   "status": "PASS",
+   "actual": {
+    "selected": 0
+   }
+  },
+  {
+   "id": "B07",
+   "area": "plansza",
+   "desc": "Podwójne kliknięcie pola docelowego wykonuje dokładnie 1 ruch (komputer odpowiada 1 ruchem)",
+   "status": "PASS",
+   "actual": "Ruchy: 2"
+  },
+  {
+   "id": "K03",
+   "area": "konsola",
+   "desc": "Cofnij (komputer): cofa ruch gracza i odpowiedź komputera (2 półruchy)",
+   "status": "PASS",
+   "actual": {
+    "count": "Ruchy: 0",
+    "e2": "P"
+   }
+  },
+  {
+   "id": "B08",
+   "area": "plansza",
+   "desc": "Przeciągnięcie poza planszę → figura wraca, brak ruchu, brak „ducha”",
+   "status": "PASS",
+   "actual": {
+    "ghosts": 0,
+    "count": "Ruchy: 0",
+    "d2": "P"
+   }
+  },
+  {
+   "id": "B09",
+   "area": "plansza",
+   "desc": "Przeciągnięcie na pole nielegalne → powrót figury",
+   "status": "PASS",
+   "actual": "Ruchy: 0"
+  },
+  {
+   "id": "B10",
+   "area": "plansza",
+   "desc": "Zmiana rozmiaru okna podczas trzymania figury → brak zawieszonego stanu",
+   "status": "PASS",
+   "actual": {
+    "ghosts": 0,
+    "d4": "P",
+    "d2": ".",
+    "count": "Ruchy: 2"
+   }
+  },
+  {
+   "id": "A01",
+   "area": "komputer",
+   "desc": "Komputer odpowiada legalnym ruchem po ruchu gracza, notatka stanu poprawna",
+   "status": "PASS",
+   "actual": "Twój ruch — białe."
+  },
+  {
+   "id": "A02",
+   "area": "komputer",
+   "desc": "Nowa gra w trakcie „myślenia” komputera → spóźniony ruch komputera nie trafia do nowej partii",
+   "status": "PASS",
+   "actual": {
+    "count": "Ruchy: 0"
+   }
+  },
+  {
+   "id": "A03",
+   "area": "komputer",
+   "desc": "Przełączenie na Online w trakcie myślenia komputera → brak ruchu w tle; po powrocie partia kontynuowana",
+   "status": "PASS",
+   "actual": {
+    "onlineNotice": "Lista pokoi: BRAK_SESJI",
+    "afterReturn": "Ruchy: 2"
+   }
+  },
+  {
+   "id": "A04",
+   "area": "komputer",
+   "desc": "Blokowanie wątku UI przez obliczenia AI (poziom Najmocniejszy) — długie zadania",
+   "status": "FAIL",
+   "actual": {
+    "longTasks": [
+     756,
+     211,
+     759
+    ],
+    "maxGapMs": 764
+   }
+  },
+  {
+   "id": "A05",
+   "area": "komputer/wynik",
+   "desc": "Komputer matuje (mat głupca) → automatyczne okno przegranej, plansza zablokowana, brak dalszych ruchów",
+   "status": "PASS",
+   "actual": {
+    "title": "Przegrałeś partię.",
+    "desc": "Szachy · Komputer wygrał partię.",
+    "notice": "Mat — czarne wygrywają",
+    "enabled": 0,
+    "moves": "Ruchy: 4",
+    "focus": "game-result-review",
+    "later": "Ruchy: 4"
+   }
+  },
+  {
+   "id": "A06",
+   "area": "wynik",
+   "desc": "Okno przegranej: Escape zamyka, „Rozpocznij nową partię” startuje nową grę",
+   "status": "PASS",
+   "actual": {
+    "escHidden": true,
+    "afterNew": "Ruchy: 0"
+   }
+  },
+  {
+   "id": "A07",
+   "area": "komputer/wynik",
+   "desc": "Gracz matuje komputer (mat szewczyka) → komunikat wygranej, komputer nie wykonuje ruchu, Rewanż aktywny",
+   "status": "PASS",
+   "actual": {
+    "notice": "Mat — białe wygrywają",
+    "moves": "Ruchy: 7",
+    "modal": false,
+    "rematch": true,
+    "wins": "1"
+   }
+  },
+  {
+   "id": "N10",
+   "area": "wynik",
+   "desc": "Okno wyniku po WYGRANEJ / REMISIE (tylko przegrana ma okno)",
+   "status": "NOT IMPLEMENTED",
+   "actual": {
+    "winModalShown": false,
+    "note": "syncChessLoss() obsługuje wyłącznie przegraną"
+   }
+  },
+  {
+   "id": "A09",
+   "area": "komputer/wynik",
+   "desc": "Cofnięcie po zakończonej partii i ponowne zakończenie nie zawyża bilansu",
+   "status": "FAIL",
+   "actual": {
+    "winsBefore": "1",
+    "winsAfterUndoAndRepeat": "2"
+   }
+  },
+  {
+   "id": "A08",
+   "area": "wynik",
+   "desc": "Rewanż (lokalnie) = nowa partia z tymi samymi ustawieniami",
+   "status": "PASS",
+   "actual": "Ruchy: 0"
+  },
+  {
+   "id": "P01",
+   "area": "promocja",
+   "desc": "Promocja w UI: wybór 4 figur, wybrano skoczka (bxa8=N)",
+   "status": "PASS",
+   "actual": {
+    "opts": [
+     "Promocja na hetmana",
+     "Promocja na wieżę",
+     "Promocja na gońca",
+     "Promocja na skoczka"
+    ],
+    "a8": "N",
+    "last": "bxa8=N"
+   }
+  },
+  {
+   "id": "P02",
+   "area": "promocja",
+   "desc": "Czarna promocja z biciem na hetmana (gxh1=Q)",
+   "status": "PASS",
+   "actual": {
+    "h1": "q",
+    "last": "gxh1=Q"
+   }
+  },
+  {
+   "id": "C01",
+   "area": "pat",
+   "desc": "Pat (Loyd, 10 posunięć) → „Pat — remis”, plansza zablokowana",
+   "status": "PASS",
+   "actual": {
+    "notice": "Pat — remis",
+    "enabled": 0,
+    "modal": false
+   }
+  },
+  {
+   "id": "Z01",
+   "area": "zegary",
+   "desc": "Lokalny zegar: przekroczenie czasu → „Koniec czasu — wygrywają białe”, zegar 00:00, stop",
+   "status": "PASS",
+   "actual": {
+    "notice": "Koniec czasu — wygrywają białe",
+    "black": "00:00",
+    "white": "01:00",
+    "running": 0,
+    "draws": "0",
+    "wins": "1",
+    "whiteLater": "01:00"
+   }
+  },
+  {
+   "id": "Z02",
+   "area": "zegary",
+   "desc": "Lokalny zegar: bonus +2 s doliczany po ruchu; zegar startuje po 1. ruchu białych",
+   "status": "PASS",
+   "actual": {
+    "before": [
+     "01:00",
+     "01:00"
+    ],
+    "idle": "01:00",
+    "after": [
+     "01:00",
+     "01:01"
+    ]
+   }
+  },
+  {
+   "id": "H01",
+   "area": "historia",
+   "desc": "Historia: kolumny Nr/Białe/Czarne, numeracja, SAN, wskazanie bieżącego ruchu",
+   "status": "PASS",
+   "actual": {
+    "cols": [
+     "Nr",
+     "Białe",
+     "Czarne"
+    ],
+    "rows": [
+     "1. e4 e5"
+    ],
+    "current": "e5"
+   }
+  },
+  {
+   "id": "H02",
+   "area": "historia",
+   "desc": "Klik wcześniejszego ruchu → pozycja historyczna, plansza tylko do odczytu; „Do gry” wraca",
+   "status": "PASS",
+   "actual": {
+    "enabled": 0,
+    "c": "Ruchy: 2",
+    "live": "live"
+   }
+  },
+  {
+   "id": "H03",
+   "area": "historia",
+   "desc": "PGN: kopiowanie do schowka — format zapisu",
+   "status": "PASS",
+   "actual": {
+    "pgn": "1. e4 e5 *",
+    "note": "brak nagłówków PGN (Event/White/Black/Result); wynik zawsze \"*\""
+   }
+  },
+  {
+   "id": "H04",
+   "area": "historia",
+   "desc": "PGN po zakończonej partii zawiera wynik (1-0/0-1/1/2-1/2)",
+   "status": "FAIL",
+   "actual": "1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7# *"
+  },
+  {
+   "id": "H05",
+   "area": "historia",
+   "desc": "Odświeżenie strony zachowuje partię lokalną (localStorage) i historię",
+   "status": "PASS",
+   "actual": {
+    "c": "Ruchy: 7",
+    "n": "Mat — białe wygrywają"
+   }
+  },
+  {
+   "id": "H06",
+   "area": "historia",
+   "desc": "Klawiatura w historii: ArrowLeft/ArrowRight/Home/End z fokusem na liście ruchów",
+   "status": "FAIL",
+   "actual": {
+    "l1": {
+     "ply": "6",
+     "focus": "6"
+    },
+    "l2": {
+     "ply": "5",
+     "focus": "5"
+    },
+    "h": {
+     "ply": "0",
+     "focus": "BODY"
+    },
+    "r": {
+     "ply": "0",
+     "focus": "BODY"
+    },
+    "e": {
+     "ply": "0",
+     "focus": "BODY"
+    }
+   }
+  },
+  {
+   "id": "N11",
+   "area": "historia",
+   "desc": "Import/eksport FEN, import PGN",
+   "status": "NOT IMPLEMENTED",
+   "actual": "Brak UI/funkcji FEN i importu PGN (tylko kopiowanie ruchów PGN)"
+  },
+  {
+   "id": "I-settings",
+   "area": "ikony",
+   "desc": "Ikona settings otwiera „Ustawienia gry”, Escape zamyka i przywraca fokus",
+   "status": "PASS",
+   "actual": {
+    "vis": true,
+    "t": "Ustawienia gry",
+    "hidden": true,
+    "focus": "settings"
+   }
+  },
+  {
+   "id": "I-board",
+   "area": "ikony",
+   "desc": "Ikona board otwiera „Wygląd planszy”, Escape zamyka i przywraca fokus",
+   "status": "PASS",
+   "actual": {
+    "vis": true,
+    "t": "Wygląd planszy",
+    "hidden": true,
+    "focus": "board"
+   }
+  },
+  {
+   "id": "I-pieces",
+   "area": "ikony",
+   "desc": "Ikona pieces otwiera „Wygląd figur”, Escape zamyka i przywraca fokus",
+   "status": "PASS",
+   "actual": {
+    "vis": true,
+    "t": "Wygląd figur",
+    "hidden": true,
+    "focus": "pieces"
+   }
+  },
+  {
+   "id": "I-theme",
+   "area": "ikony",
+   "desc": "Ikona theme otwiera „Motyw panelu”, Escape zamyka i przywraca fokus",
+   "status": "PASS",
+   "actual": {
+    "vis": true,
+    "t": "Motyw panelu",
+    "hidden": true,
+    "focus": "theme"
+   }
+  },
+  {
+   "id": "I-persist",
+   "area": "ikony",
+   "desc": "Plansza „Orzech”, Figury „Drewniane”, Motyw „Ciemny” — zapis po odświeżeniu, brak wpływu na stan gry; reset przywraca domyślne",
+   "status": "PASS",
+   "actual": {
+    "ds": {
+     "ccBoard": "walnut",
+     "ccPieces": "wood",
+     "ccTheme": "dark"
+    },
+    "ds2": {
+     "ccBoard": "walnut",
+     "ccPieces": "wood",
+     "ccTheme": "dark"
+    },
+    "ds3": {},
+    "sqColor": "rgb(167, 122, 82)",
+    "stateKept": true
+   }
+  },
+  {
+   "id": "I-fullscreen",
+   "area": "ikony",
+   "desc": "Pełny ekran: wejście i wyjście, zmiana etykiety",
+   "status": "PASS",
+   "actual": {
+    "a": {
+     "fs": true,
+     "label": "Zamknij pełny ekran",
+     "focus": false
+    },
+    "b": {
+     "fs": false,
+     "label": "Pełny ekran"
+    }
+   }
+  },
+  {
+   "id": "I-settings",
+   "area": "ikony",
+   "desc": "Ustawienia: zmiana poziomu AI i czasu działa; „Układ konsoli” otwiera studio",
+   "status": "PASS",
+   "actual": {
+    "lvl": true,
+    "time": true,
+    "labels": [
+     "Początkujący",
+     "Normalny",
+     "Zaawansowany",
+     "Najmocniejszy lokalny"
+    ],
+    "studio": true
+   }
+  },
+  {
+   "id": "K04",
+   "area": "konsola",
+   "desc": "Zaproś (bez logowania) → przełącza na Online i otwiera okno zaproszeń lub komunikat logowania",
+   "status": "PASS",
+   "actual": {
+    "online": true,
+    "overlay": true,
+    "note": "Sprawdzanie sesji gracza…",
+    "notice": "Lista pokoi: BRAK_SESJI",
+    "status": "Aby zapraszać znajomych, zaloguj się na Gracz.pl.",
+    "escapeClosesOverlay": true
+   }
+  },
+  {
+   "id": "T01",
+   "area": "czat",
+   "desc": "Czat lokalny (GRACZ AI) — odpowiedź lub czytelny błąd, brak mieszania z Online",
+   "status": "PASS",
+   "actual": {
+    "status": "GRACZ AI jest chwilowo niedostępny.",
+    "msgs": [
+     "Ty: Jak roszować? 19:37"
+    ]
+   }
+  },
+  {
+   "id": "T02",
+   "area": "czat",
+   "desc": "Tryb dwóch graczy lokalnie: notatki lokalne, wstrzyknięty HTML wyświetlany jako tekst",
+   "status": "PASS",
+   "actual": {
+    "img": 0,
+    "text": "<img src=x onerror=\"window.__x=1\">"
+   }
+  },
+  {
+   "id": "W03",
+   "area": "dostępność",
+   "desc": "Plansza klawiaturą: Tab do pola, Enter wybiera figurę i wykonuje ruch",
+   "status": "PASS",
+   "actual": "Ruchy: 1"
+  },
+  {
+   "id": "W04",
+   "area": "dostępność",
+   "desc": "ARIA planszy: role=gridcell wymaga kontenera grid/row",
+   "status": "FAIL",
+   "actual": {
+    "boardRole": "grid",
+    "rows": 0,
+    "cells": 64
+   }
+  },
+  {
+   "id": "B11",
+   "area": "plansza",
+   "desc": "Obracanie szachownicy dostępne w UI",
+   "status": "FAIL",
+   "actual": {
+    "flipButtons": [],
+    "toolbarInDom": false
+   }
+  },
+  {
+   "id": "X01",
+   "area": "stabilność",
+   "desc": "Brak wyjątków JS (pageerror) podczas całej sesji lokalnej",
+   "status": "PASS",
+   "actual": {
+    "pageErrors": [],
+    "consoleErrors": [
+     "console: Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+     "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+   }
+  },
+  {
+   "id": "E-0",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 0 → badge „ukryty”",
+   "status": "PASS",
+   "actual": {
+    "hidden": true,
+    "text": "",
+    "aria": "Wiadomości — brak nieprzeczytanych",
+    "unread": "0"
+   }
+  },
+  {
+   "id": "E-1",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 1 → badge „1”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "1",
+    "aria": "Wiadomości — 1 nieprzeczytana",
+    "unread": "1"
+   }
+  },
+  {
+   "id": "E-2",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 2 → badge „2”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "2",
+    "aria": "Wiadomości — 2 nieprzeczytanych",
+    "unread": "2"
+   }
+  },
+  {
+   "id": "E-9",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 9 → badge „9”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "9",
+    "aria": "Wiadomości — 9 nieprzeczytanych",
+    "unread": "9"
+   }
+  },
+  {
+   "id": "E-99",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 99 → badge „99”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "99",
+    "aria": "Wiadomości — 99 nieprzeczytanych",
+    "unread": "99"
+   }
+  },
+  {
+   "id": "E-100",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 100 → badge „99+”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "99+",
+    "aria": "Wiadomości — 100 nieprzeczytanych",
+    "unread": "100"
+   }
+  },
+  {
+   "id": "E-150",
+   "area": "koperta",
+   "desc": "Licznik nieprzeczytanych = 150 → badge „99+”",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "99+",
+    "aria": "Wiadomości — 150 nieprzeczytanych",
+    "unread": "150"
+   }
+  },
+  {
+   "id": "E-plural",
+   "area": "koperta",
+   "desc": "Odmiana etykiety dla 2 wiadomości (powinno być „2 nieprzeczytane”)",
+   "status": "FAIL",
+   "actual": "Wiadomości — 2 nieprzeczytanych"
+  },
+  {
+   "id": "E-archived",
+   "area": "koperta",
+   "desc": "Rozmowa zarchiwizowana nie jest liczona",
+   "status": "PASS",
+   "actual": {
+    "hidden": true,
+    "text": "",
+    "aria": "Wiadomości — brak nieprzeczytanych",
+    "unread": "0"
+   }
+  },
+  {
+   "id": "E-read",
+   "area": "koperta",
+   "desc": "Odczytanie rozmowy (last_read_at) i powrót do konsoli → licznik 0",
+   "status": "PASS",
+   "actual": {
+    "hidden": true,
+    "text": "",
+    "aria": "Wiadomości — brak nieprzeczytanych",
+    "unread": "0"
+   }
+  },
+  {
+   "id": "E-net",
+   "area": "koperta",
+   "desc": "Błąd sieci → zachowany ostatni zweryfikowany stan (bez fikcyjnego 0)",
+   "status": "PASS",
+   "actual": {
+    "hidden": false,
+    "text": "5",
+    "aria": "Wiadomości — 5 nieprzeczytanych",
+    "unread": "5"
+   }
+  },
+  {
+   "id": "E-other",
+   "area": "koperta",
+   "desc": "Inny użytkownik (C) nie widzi liczby A",
+   "status": "PASS",
+   "actual": "0"
+  },
+  {
+   "id": "E-anon",
+   "area": "koperta",
+   "desc": "Niezalogowany → brak liczby, etykieta „zaloguj się”",
+   "status": "PASS",
+   "actual": {
+    "hidden": true,
+    "aria": "Wiadomości — zaloguj się, aby je zobaczyć",
+    "unread": null
+   }
+  },
+  {
+   "id": "E-link",
+   "area": "koperta",
+   "desc": "Koperta prowadzi do /konto/panel/?sekcja=messages",
+   "status": "PASS",
+   "actual": "/konto/panel/?sekcja=messages"
+  }
+ ]
+}
