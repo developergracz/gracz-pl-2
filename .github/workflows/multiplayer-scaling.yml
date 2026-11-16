@@ -72,6 +72,8 @@ jobs:
           retention-days: 7
       - name: Chess drag & drop (mouse, touch) next to click-to-move
         run: node --test contact-api/scaling/chess-drag.browser.test.mjs
+      - name: CHESS-002 visible check, result and rejected move in Chromium (desktop and mobile)
+        run: node --test contact-api/scaling/chess-feedback.browser.test.mjs contact-api/test/chess-feedback.test.mjs
       - name: Chess special rules acceptance
         run: node --test contact-api/test/chess-special-rules-acceptance.test.mjs
       - name: Chess Online move limiter (CHESS-001) — 200+ legal half-moves, flood 429, two Chromium
