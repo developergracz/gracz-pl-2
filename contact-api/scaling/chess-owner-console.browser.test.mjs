@@ -281,6 +281,10 @@ test('actions, tabs and Info follow the real game: Rewanż only after a finished
  await page.getByRole('gridcell',{name:'a8 puste',exact:true}).click();
  await page.waitForFunction(()=>document.getElementById('board').dataset.consoleGame==='finished');
  assert.equal(await rematch.isEnabled(),true,'Rewanż becomes available after the game');
+ // CHESS-002: a real local checkmate shows the result before inspecting Info.
+ await page.locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.match(await page.locator('#chess-feedback-description').innerText(),/Mat/);
+ await page.locator('#chess-feedback-review').click();
  await page.locator('#chess-final-info-tab').click();
  assert.match(await info('state').textContent(),/Mat/);
  assert.equal(await info('moves').textContent(),'1');
@@ -331,6 +335,10 @@ test('Online Rewanż re-invites the same opponent with the same clock through th
  assert.equal(await rematch.isEnabled(),true);
  assert.equal(await rematch.getAttribute('title'),'Rewanż: ponowne zaproszenie dla Rywal');
  assert.equal(await page.locator('#cc-sheet-online').isVisible(),false,'a live or finished match does not open the lobby by itself');
+ // CHESS-002: server-confirmed winner must see and dismiss the result before Rewanż.
+ await page.locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await page.locator('#chess-feedback-title').textContent(),'Zwycięstwo!');
+ await page.locator('#chess-feedback-review').click();
  await rematch.click();
  await page.locator('#chess-invite-overlay').waitFor({state:'visible'});
  assert.equal(await page.locator('#chess-invite-search').inputValue(),'Rywal');
