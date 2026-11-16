@@ -27,15 +27,17 @@ async function read(base,token,id){
   headers:{Cookie:'__Host-gracz_session='+token,Origin:origin}});
  return {status:r.status,...await r.json()};
 }
-function visible(state){
+function visible(state,black=false){
  const out=[];for(let r=0;r<8;r++)for(let c=0;c<8;c++)out.push(state.board[r*16+c]);
- return out;
+ return black?out.reverse():out;
 }
 async function waitForPosition(page,state){
  await page.waitForFunction(expected=>{
   const squares=[...document.querySelectorAll('#board .chess-square')];
   return squares.length===64&&squares.every((node,i)=>{
-   const piece=node.querySelector('svg.chess-piece'),expectedPiece=expected[i];
+   // Logical square identity is independent of visual orientation.
+   const sq=Number(node.dataset.square),logical=(sq>>4)*8+(sq&7);
+   const piece=node.querySelector('svg.chess-piece'),expectedPiece=expected[logical];
    if(expectedPiece==='.')return !piece&&[...node.children].every(child=>child.classList.contains('chess-coordinate'));
    return piece?.dataset.piece===expectedPiece&&piece.dataset.color===(expectedPiece===expectedPiece.toUpperCase()?'white':'black')&&!!piece.querySelector('path[data-body]');
   });
@@ -107,6 +109,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  }
  await local.locator('#training-mode').click();
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
+ assert.match(await local.locator('#board .chess-square').nth(56).getAttribute('aria-label'),/^a1 /,'local mode retains the standard orientation');
 
  // Owner-approved layout hides unused controls but keeps clock state in the engine.
  for(const id of ['training-settings','training-records','training-time','training-increment'])
@@ -246,6 +249,35 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.ok(result.match.state.clock.since);
  let state=result.match.state,version=result.match.version;
  await Promise.all(pages.map(page=>waitForPosition(page,state)));
+ // CHESS-003: two authenticated players must see opposite board orientations.
+ const corner=page=>page.locator('#board .chess-square').evaluateAll(cells=>({
+  topLeft:cells[0]?.getAttribute('aria-label'),bottomLeft:cells[56]?.getAttribute('aria-label'),
+  topRight:cells[7]?.getAttribute('aria-label'),bottomRight:cells[63]?.getAttribute('aria-label'),
+  bottomRank:cells[56]?.querySelector('.chess-coordinate-rank')?.textContent,
+  bottomFile:cells[56]?.querySelector('.chess-coordinate-file')?.textContent,
+  bottomPiece:cells[56]?.querySelector('svg')?.dataset.piece
+ }));
+ const whites=await corner(pages[0]),blacks=await corner(pages[1]);
+ assert.match(whites.topLeft,/^a8 /);assert.match(whites.bottomLeft,/^a1 /);
+ assert.equal(whites.bottomRank,'1');assert.equal(whites.bottomFile,'a');
+ assert.match(blacks.topLeft,/^h1 /);assert.match(blacks.bottomLeft,/^h8 /);
+ assert.match(blacks.topRight,/^a1 /);assert.match(blacks.bottomRight,/^a8 /);
+ assert.equal(blacks.bottomRank,'8');assert.equal(blacks.bottomFile,'h');
+ assert.equal(blacks.bottomPiece,'r','black pieces are at the near edge');
+ // CHESS-003: same authenticated black seat on a 390px touch device.
+ const mobileCtx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ t.after(async()=>mobileCtx.close());
+ await mobileCtx.addCookies([{name:'__Host-gracz_session',value:users[1].token,
+  url:base.replace('http:','https:')+'/',httpOnly:true,secure:true,sameSite:'Lax'}]);
+ const mobileBlack=await mobileCtx.newPage();
+ await mobileBlack.goto(base+'/konto/szachy/?match='+id,{waitUntil:'domcontentloaded'});
+ await mobileBlack.waitForFunction(()=>document.querySelector('#board')?.dataset.consoleGame==='new'&&
+  document.querySelector('#board .chess-square')?.getAttribute('aria-label')?.startsWith('h1 '),null,{timeout:12000});
+ await waitForPosition(mobileBlack,state);
+ const mobileCorner=await corner(mobileBlack);
+ assert.match(mobileCorner.bottomLeft,/^h8 /);assert.equal(mobileCorner.bottomRank,'8');
+ assert.equal(mobileCorner.bottomFile,'h');assert.equal(mobileCorner.bottomPiece,'r');
+ assert.equal(await mobileBlack.locator('#board .chess-square').count(),64);
  // Scholar's mate: two independent browser users finish a full game.
  const opening=[
   {player:1,from:'e2',to:'e4'},{player:2,from:'e7',to:'e5'},
@@ -254,6 +286,8 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   {player:1,from:'h5',to:'f7'}
  ];
  const index=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
+ const logicalIndex=s=>(8-Number(s[1]))*16+'abcdefgh'.indexOf(s[0]);
+ const square=(page,name)=>page.locator('#board .chess-square[data-square="'+logicalIndex(name)+'"]');
  // Takeback acceptance against disposable PostgreSQL + two authenticated Chromium
  // contexts. This test never connects to production accounts or matches.
  const initialOnlineBoard=state.board.slice();
@@ -316,17 +350,17 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  for(const page of pages)await page.route('**/auth/match?*',route=>route.abort());
  for(const step of opening){
   const active=pages[step.player-1];
-  const from=active.locator('#board .chess-square').nth(index(step.from));
+  const from=square(active,step.from);
   await from.waitFor({state:'visible'});
-  await active.waitForFunction(s=>{const cell=document.querySelectorAll('#board .chess-square')[s];return cell&&!cell.disabled;},index(step.from));
+  await active.waitForFunction(s=>{const cell=document.querySelector('#board .chess-square[data-square="'+s+'"]');return cell&&!cell.disabled;},logicalIndex(step.from));
   if(step.player===2){
    // CHESS-DRAG-P1: black plays by mouse drag & drop through the same authoritative POST.
-   const a=await from.boundingBox(),b=await active.locator('#board .chess-square').nth(index(step.to)).boundingBox();
+   const a=await from.boundingBox(),b=await square(active,step.to).boundingBox();
    await active.mouse.move(a.x+a.width/2,a.y+a.height/2);await active.mouse.down();
    await active.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:10});await active.mouse.up();
   }else{
    await from.click();
-   await active.locator('#board .chess-square').nth(index(step.to)).click();
+   await square(active,step.to).click();
   }
   let observed;
   const deadline=Date.now()+7000;
@@ -374,9 +408,10 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  // Reconnect restores the final persisted position with a full snapshot.
  await pages[1].reload({waitUntil:'domcontentloaded'});
  await waitForPosition(pages[1],state);
+ assert.match((await corner(pages[1])).bottomLeft,/^h8 /,'reconnecting as black preserves orientation');
  const renderedPosition=page=>page.locator('#board .chess-square').evaluateAll(cells=>cells.map(cell=>cell.querySelector('svg')?.dataset.piece||'.'));
  assert.deepEqual(await renderedPosition(pages[0]),visible(state));
- assert.deepEqual(await renderedPosition(pages[1]),visible(state));
+ assert.deepEqual(await renderedPosition(pages[1]),visible(state,true));
 
  // Premium invitations: two separate authenticated browser contexts, no mocked invitation API.
  const sender=await pages[0].context().newPage(),receiver=await pages[1].context().newPage();
