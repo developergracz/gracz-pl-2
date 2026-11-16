@@ -68,6 +68,9 @@ export const productionModules=Object.freeze([
   // only reads the existing authenticated GET /auth/message-center for an unread count and stores
   // validated appearance choices in localStorage. No new endpoint, write or external asset.
   'auth/chess-owner-console.mjs',
+  // CHESS-002: first-party, read-only DOM feedback for game statuses and final results;
+  // no new backend endpoints, external scripts or source of truth.
+  'auth/chess-feedback.mjs',
   // Reviewed optional Groq AI chat: fixed HTTPS endpoint, server-only key, no persistence,
   // same-origin POST, bounded payload, rate and token limits, fail-closed without key.
   'routes/gomoku-ai-chat-route.mjs',
