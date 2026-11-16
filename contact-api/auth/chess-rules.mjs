@@ -128,15 +128,18 @@ export function claimableDraw(s,positions=[]){
  */
 export function chessTimeoutIsDraw(board,prospectiveWinner){
  if(!Array.isArray(board)||board.length!==128||![1,2].includes(prospectiveWinner))return false;
- const pieces={1:[],2:[]};
+ const pieces={1:[],2:[]};let whiteKings=0,blackKings=0;
  for(let i=0;i<128;i++){
   if(!active(i))continue;
   const p=board[i];
   if(typeof p!=='string'||!/^\.$|^[pnbrqkPNBRQK]$/.test(p))return false;
+  if(p==='K')whiteKings++;
+  if(p==='k')blackKings++;
   if(p==='.'||p.toLowerCase()==='k')continue;
   const owner=p===p.toUpperCase()?1:2;
   pieces[owner].push({type:p.toLowerCase(),shade:((i>>4)+(i&7))%2});
  }
+ if(whiteKings!==1||blackKings!==1)return false;
  const winning=pieces[prospectiveWinner],losing=pieces[3-prospectiveWinner];
  if(!winning.length)return true; // A lone king can never deliver check.
  if(winning.some(p=>['p','r','q'].includes(p.type)))return false;
