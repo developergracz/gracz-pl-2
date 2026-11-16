@@ -83,6 +83,9 @@ function fixture({timeLimitMinutes=0,incrementSeconds=0,onGomokuChange,game='gom
   return {status:res.status,body:JSON.parse(res.body)};
  }
  return {router,call,queries,revoke:()=>{revoked=true;},setBlocked:v=>{blocked=v;},setAccepted:v=>{accepted=v;},
+  // Test-only: stage a legal endgame without a long move sequence; router still
+  // validates auth, atomic version updates, and the real timeout decision.
+  setMatchState:update=>{const m=matches.get(challenge);if(!m)throw Error('MATCH_NOT_READY');m.state=update(m.state);},
   clockExpiresIn:ms=>{const m=matches.get(challenge);if(m?.state.clock){
    m.state.clock.since=new Date(Date.now()+ms-m.state.clock.remaining[m.state.turn-1]).toISOString();
   }},
