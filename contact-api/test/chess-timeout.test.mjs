@@ -34,6 +34,7 @@ test('CHESS-005 FIDE 6.9: conservative mating possibility, including helpmates a
  }
  assert.equal(chessTimeoutIsDraw(null,1),false,'invalid board must not award automatic draw');
  assert.equal(chessTimeoutIsDraw(Array(64).fill('.'),1),false,'invalid board size');
+ assert.equal(chessTimeoutIsDraw(Array(128).fill('.'),1),false,'missing kings are invalid');
  assert.equal(chessTimeoutIsDraw(parseFen().b,0),false,'winner must be a player');
 });
 
