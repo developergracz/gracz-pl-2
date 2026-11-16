@@ -48,6 +48,8 @@ jobs:
         run: |
           npm --prefix contact-api install --no-save --no-package-lock --ignore-scripts --no-fund --no-audit playwright@1.58.2
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
+      - name: CHESS-002 visible check, result and rejected move in Chromium (desktop and mobile)
+        run: node --test contact-api/scaling/chess-feedback.browser.test.mjs contact-api/test/chess-feedback.test.mjs
       - name: Two real Chromium windows play Warcaby by clicking squares
         run: node --test contact-api/scaling/two-chromium-windows.integration.test.mjs
       - name: Warcaby losing-result popup (real match data, no board changes)

@@ -180,6 +180,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  await drawClaim.click();
  assert.match(await local.locator('#game-state').textContent(),/Remis/);
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),0);
+ // CHESS-002: confirm a real draw result, then dismiss before testing other console actions.
+ await local.locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await local.locator('#chess-feedback-title').textContent(),'Remis');
+ await local.locator('#chess-feedback-review').click();
+ assert.equal(await local.locator('#chess-feedback-overlay').isVisible(),false);
  await local.locator('#focus-game').evaluate(el=>el.click());
  assert.equal(await local.locator('body').evaluate(x=>x.classList.contains('chess-board-focus')),true);
  assert.equal(await local.locator('#game').evaluate(x=>x.classList.contains('game-focus')),true);
@@ -345,6 +350,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   assert.equal(await page.locator('#board .chess-square:not([disabled])').count(),0,
    'after checkmate neither player may move');
  }
+ // CHESS-002: the winner must see an actual result window before browsing move history.
+ await pages[0].locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await pages[0].locator('#chess-feedback-title').innerText(),'Zwycięstwo!');
+ await pages[0].locator('#chess-feedback-review').click();
+ assert.equal(await pages[0].locator('#chess-feedback-overlay').isVisible(),false);
  await pages[0].locator('#history-tab').click();
  await pages[0].waitForFunction(()=>document.querySelectorAll('#moves-list .chess-move-row').length===7);
  // Replay server-verified moves without mutating the actual live match.
