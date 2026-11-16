@@ -63,6 +63,10 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  const pages=[];
  for(const u of users){
   const ctx=await browser.newContext({viewport:{width:1600,height:900}});
+  // CHESS-004: black's desktop browser has a wall clock 60 seconds ahead.
+  if(u.player===2)await ctx.addInitScript(skew=>{
+   const actualNow=Date.now.bind(Date);Date.now=()=>actualNow()+skew;
+  },60000);
   t.after(async()=>ctx.close());
   await ctx.addCookies([{name:'__Host-gracz_session',value:u.token,url:base.replace('http:','https:')+'/',
    httpOnly:true,secure:true,sameSite:'Lax'}]);
@@ -266,6 +270,10 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.equal(blacks.bottomPiece,'r','black pieces are at the near edge');
  // CHESS-003: same authenticated black seat on a 390px touch device.
  const mobileCtx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ // CHESS-004: mobile black browser is 60 seconds behind the server.
+ await mobileCtx.addInitScript(skew=>{
+  const actualNow=Date.now.bind(Date);Date.now=()=>actualNow()+skew;
+ },-60000);
  t.after(async()=>mobileCtx.close());
  await mobileCtx.addCookies([{name:'__Host-gracz_session',value:users[1].token,
   url:base.replace('http:','https:')+'/',httpOnly:true,secure:true,sameSite:'Lax'}]);
@@ -278,6 +286,24 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.match(mobileCorner.bottomLeft,/^h8 /);assert.equal(mobileCorner.bottomRank,'8');
  assert.equal(mobileCorner.bottomFile,'h');assert.equal(mobileCorner.bottomPiece,'r');
  assert.equal(await mobileBlack.locator('#board .chess-square').count(),64);
+ // CHESS-004: +60s and -60s device time must not change a running server clock.
+ const timeInSeconds=value=>{
+  const match=/^(\d+):(\d\d)$/.exec(value.trim());
+  assert.ok(match,'valid mm:ss clock: '+value);
+  return Number(match[1])*60+Number(match[2]);
+ };
+ async function assertSynchronizedClock(id,participants=[pages[0],pages[1],mobileBlack]){
+  const stamps=await Promise.all(participants.map(p=>p.locator('#'+id).innerText()));
+  const seconds=stamps.map(timeInSeconds);
+  for(const elapsed of seconds.slice(1))assert.ok(Math.abs(seconds[0]-elapsed)<=1,
+   'CHESS-004 '+id+' must be within 1s across +60/-60 skew, saw '+JSON.stringify(stamps));
+ }
+ await assertSynchronizedClock('clock-2'); // White has the opening move.
+ // After calibration even a new local clock adjustment must not affect the online display.
+ await pages[1].evaluate(()=>{
+  const previousNow=Date.now;Date.now=()=>previousNow()+120000;
+ });
+ await assertSynchronizedClock('clock-2');
  // Scholar's mate: two independent browser users finish a full game.
  const opening=[
   {player:1,from:'e2',to:'e4'},{player:2,from:'e7',to:'e5'},
@@ -374,6 +400,11 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
   assert.equal(observed.match.state.history.at(-1).uci,step.from+step.to);
   state=observed.match.state;version=observed.match.version;
   await Promise.all(pages.map(page=>waitForPosition(page,state)));
+  if(step.from==='e2'){
+   await waitForPosition(mobileBlack,state);
+   // The black timer starts via an authenticated WS delta; match GET is blocked.
+   await assertSynchronizedClock('clock-1');
+  }
  }
  assert.equal(state.winner,1,'server must detect white checkmate');
  assert.equal(state.history.length,opening.length);
