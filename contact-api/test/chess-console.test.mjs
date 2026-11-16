@@ -244,8 +244,11 @@ test('owner chess console offers four compact actions and consent-only Cofnij',(
 test('CHESS-003 derives online orientation from player color without changing board input or local default',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),css=load('/konto/szachy/styl.css');
  assert.equal(page.status,200);assert.equal(app.status,200);assert.equal(css.status,200);
- assert.match(app.body,/if\(mode==='online'&&online\?\.state\)orientation=online\.player===2;/);
- assert.match(app.body,/else if\(mode==='local'\)orientation=false;/);
+ assert.match(app.body,/let orientationSource='local'/,'local orientation is the preserved initial default');
+ assert.match(app.body,/nextSource=mode==='online'&&online\?\.state&&\(online\.player===1\|\|online\.player===2\)/);
+ assert.match(app.body,/if\(nextSource!==orientationSource\)\{orientation=nextSource==='online:2'/);
+ assert.match(app.body,/orientationSource=nextSource/);
+ assert.match(app.body,/flip\.addEventListener\('click',\(\)=>\{orientation=!orientation;render\(\)/,'manual local rotation survives rerenders');
  assert.match(app.body,/file=orientation\?7-\(j%8\):j%8,row=orientation\?7-Math\.floor\(j\/8\):Math\.floor\(j\/8\)/);
  assert.match(app.body,/cell\.dataset\.square=String\(i\)/,'board keeps logical square identity after rotation');
  assert.match(app.body,/squareAt\(d\.x,d\.y\)/,'pointer hit-testing uses rendered squares');
