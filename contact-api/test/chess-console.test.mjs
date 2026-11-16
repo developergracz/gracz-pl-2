@@ -256,3 +256,21 @@ test('CHESS-003 derives online orientation from player color without changing bo
  assert.match(page.body,/id="board"/);
  assert.match(css.body,/chess-board/);
 });
+
+test('CHESS-004 uses authoritative serverTime and monotonic elapsed only for Online clocks',()=>{
+ const app=load('/konto/szachy/app.js');
+ assert.equal(app.status,200);
+ assert.match(app.body,/let serverClockAnchor=null/);
+ assert.match(app.body,/typeof timestamp!=='string'/);
+ assert.match(app.body,/const epoch=Date\.parse\(timestamp\);if\(!Number\.isFinite\(epoch\)\)return/);
+ assert.match(app.body,/const receivedAt=performance\.now\(\)/);
+ assert.match(app.body,/epoch:epoch\+Math\.min\(250,elapsed\/2\)/);
+ assert.match(app.body,/onlineNow=\(\)=>serverClockAnchor/);
+ assert.match(app.body,/local\?Date\.now\(\):onlineNow\(\)/);
+ assert.match(app.body,/if\(Number\.isFinite\(elapsed\)\)/);
+ assert.match(app.body,/if\(data\.match\?\.game==='szachy'\)syncServerClock\(data\.serverTime,requestedAt\)/);
+ assert.match(app.body,/syncServerClock\(m\.serverTime\)/);
+ assert.match(app.body,/if\(clock\.active&&clock\.since\)/,'local move clock is unaffected');
+ assert.doesNotMatch(app.body,/Date\.now\(\)-\(local\?source\.since:Date\.parse\(source\.since\)\)/,
+  'the old device-derived online clock is forbidden');
+});
