@@ -154,23 +154,25 @@ test('CHESS-001: two Chromium players over WebSocket after 85+ moves each; a thr
   await page.waitForFunction(()=>document.querySelectorAll('#board .chess-square').length===64);
   pages.push(page);
  }
- const index=s=>(8-Number(s[1]))*8+'abcdefgh'.indexOf(s[0]);
- const piece=(page,s)=>page.locator('#board .chess-square').nth(index(s)).evaluate(c=>c.querySelector('svg')?.dataset.piece||'.');
+ // CHESS-003: both real sessions see different orientations. Always use 0x88 logical square identity.
+ const index=s=>(8-Number(s[1]))*16+'abcdefgh'.indexOf(s[0]);
+ const square=(page,s)=>page.locator('#board .chess-square[data-square="'+index(s)+'"]');
+ const piece=(page,s)=>square(page,s).evaluate(c=>c.querySelector('svg')?.dataset.piece||'.');
  let deadline=Date.now()+10000,row;
  while(Date.now()<deadline&&!(row=await stored(db,id))?.state?.clock?.since)await new Promise(r=>setTimeout(r,100));
  assert.ok(row.state.clock.since,'both browsers joined, clock running');
  for(const page of pages)await page.route('**/auth/match?*',route=>route.abort()); // updates must arrive via WebSocket
  async function click(page,from,to){
-  await page.waitForFunction(s=>!document.querySelectorAll('#board .chess-square')[s].disabled,index(from),{timeout:10000});
-  await page.locator('#board .chess-square').nth(index(from)).click();
-  await page.locator('#board .chess-square').nth(index(to)).click();
+  await page.waitForFunction(s=>!document.querySelector('#board .chess-square[data-square="'+s+'"]').disabled,index(from),{timeout:10000});
+  await square(page,from).click();
+  await square(page,to).click();
  }
  async function nextVersion(v){const end=Date.now()+10000;while(Date.now()<end){const r=await stored(db,id);if(r.version>v)return r;await new Promise(x=>setTimeout(x,100));}throw Error('no update');}
  let s=await stored(db,id);
  for(const [p,from,to] of [[0,'e2','e4'],[1,'e7','e5'],[0,'g1','f3'],[1,'b8','c6']]){
   await click(pages[p],from,to);s=await nextVersion(s.version);
   assert.equal(s.state.history.at(-1).uci,from+to);assert.equal(s.state.winner,0);
-  for(const page of pages)await page.waitForFunction(([sq,v])=>(document.querySelectorAll('#board .chess-square')[sq].querySelector('svg')?.dataset.piece||'.')!=='.',[index(to)],{timeout:10000});
+  for(const page of pages)await page.waitForFunction(s=>(document.querySelector('#board .chess-square[data-square="'+s+'"]')?.querySelector('svg')?.dataset.piece||'.')!=='.',index(to),{timeout:10000});
  }
  assert.ok(s.state.clock.remaining.every(x=>x>45000),'no false time loss after earlier fast games: '+JSON.stringify(s.state.clock.remaining));
  assert.deepEqual(await pages[1].locator('.clock-running').evaluateAll(n=>n.map(x=>x.id)),['clock-2'],'white to move on both screens');
