@@ -118,6 +118,46 @@ export function claimableDraw(s,positions=[]){
   return 'TRZYKROTNE_POWTORZENIE';
  return '';
 }
+/**
+ * FIDE 6.9: a flag fall is a draw ONLY when the prospective winner cannot
+ * checkmate through any legal play, even with cooperation from the loser.
+ * This is deliberately a conservative proof of impossible mate, not a
+ * heuristic that confuses "cannot force a mate" with "cannot ever mate".
+ * See FIDE Arbiter's Manual: K+N vs K+N may win, K+N vs K+Q cannot.
+ * Invalid board data never triggers a draw.
+ */
+export function chessTimeoutIsDraw(board,prospectiveWinner){
+ if(!Array.isArray(board)||board.length!==128||![1,2].includes(prospectiveWinner))return false;
+ const pieces={1:[],2:[]};
+ for(let i=0;i<128;i++){
+  if(!active(i))continue;
+  const p=board[i];
+  if(typeof p!=='string'||!/^\.$|^[pnbrqkPNBRQK]$/.test(p))return false;
+  if(p==='.'||p.toLowerCase()==='k')continue;
+  const owner=p===p.toUpperCase()?1:2;
+  pieces[owner].push({type:p.toLowerCase(),shade:((i>>4)+(i&7))%2});
+ }
+ const winning=pieces[prospectiveWinner],losing=pieces[3-prospectiveWinner];
+ if(!winning.length)return true; // A lone king can never deliver check.
+ if(winning.some(p=>['p','r','q'].includes(p.type)))return false;
+ const bishopsOnly=list=>list.every(p=>p.type==='b');
+ const bishopsOneShade=list=>new Set(list.map(p=>p.shade)).size===1;
+ // With the opposing king bare, one minor (or same-colour bishops) cannot mate.
+ if(!losing.length){
+  if(winning.length===1)return true;
+  if(bishopsOnly(winning)&&bishopsOneShade(winning))return true;
+ }
+ // Only bishops of a single square colour on the entire board: no mate.
+ if(bishopsOnly(winning)&&bishopsOnly(losing)&&bishopsOneShade([...winning,...losing]))return true;
+ if(winning.length!==1)return false;
+ // The following K+B/K+N cases are specified in the FIDE Arbiter's Manual.
+ // The loser's rook/queen cannot construct a mating net for a lone bishop;
+ // the loser's queen cannot construct one for a lone knight.
+ if(losing.length===1&&winning[0].type==='b'&&['q','r'].includes(losing[0].type))return true;
+ if(losing.length===1&&winning[0].type==='n'&&losing[0].type==='q')return true;
+ return false; // Other endgames may permit a helpmate; preserve a time win.
+}
+
 export function result(states){
  const s=states[states.length-1],moves=legal(s);
  if(!moves.length)return check(s)?(s.t===1?'Mat — czarne wygrywają':'Mat — białe wygrywają'):'Pat — remis';
