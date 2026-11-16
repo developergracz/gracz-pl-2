@@ -46,9 +46,14 @@ async function readBody(req,timeoutMs=0){
  });
 }
 
-function allow(key,max=8){
+// CHESS-001: authenticated game moves (POST /auth/match, incl. claimDraw) must never exhaust the
+// generic 15-minute budget during legitimate fast play. They use a short per-account anti-flood
+// window shared by every match and game, so fresh match ids cannot bypass it. 120/60 s is
+// about twice a human's ceiling (each move waits for the opponent's reply); bursts still get 429.
+const GAME_MOVE_WINDOW_MS=60000,GAME_MOVE_LIMIT=120;
+function allow(key,max=8,windowMs=900000){
  const now=Date.now();let state=failures.get(key);
- if(!state||state.until<now){state={until:now+900000,count:0};failures.set(key,state);}
+ if(!state||state.until<now){state={until:now+windowMs,count:0};failures.set(key,state);}
  state.count++;
  if(failures.size>20000){for(const [k,v] of failures){if(v.until<now)failures.delete(k);}if(failures.size>20000)failures.clear();}
  return state.count<=max;
@@ -608,8 +613,10 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         WHERE s.token_digest=$1 AND s.expires_at>now() AND a.verified_at IS NOT NULL LIMIT 1`,[digest(token)]);
       if(!authenticated.rows.length)return bad(res,401,'BRAK_SESJI'),true;
       const actor=authenticated.rows[0].id;
-      if(!req[realtimeRead]&&!allow((isChat?'match-chat-':isUndo?'match-undo-':'game-')+req.method+':'+actor,
-        isChat?(req.method==='GET'?180:40):isUndo?20:(req.method==='GET'?240:80)))
+      const movePost=!isChat&&!isUndo&&req.method==='POST';
+      if(!req[realtimeRead]&&!(movePost?allow('game-move:'+actor,GAME_MOVE_LIMIT,GAME_MOVE_WINDOW_MS):
+        allow((isChat?'match-chat-':isUndo?'match-undo-':'game-')+req.method+':'+actor,
+          isChat?(req.method==='GET'?180:40):isUndo?20:240)))
         return bad(res,429,'ZBYT_WIELE_PROB'),true;
       const matchId=req.method==='GET'?url.searchParams.get('id'):body.id;
       if(typeof matchId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(matchId))
