@@ -118,3 +118,47 @@ test('CHESS-002: server-confirmed winner/draw open new result; loss keeps origin
  assert.deepEqual(errors,[],'no JavaScript runtime errors');
  await ctx.close();
 });
+
+test('CHESS-005: actual local chess timer shows a draw when the opponent has only a king',{timeout:45000},async t=>{
+ const base=await start(t),browser=await launch(t),page=await browser.newPage({viewport:{width:1366,height:768}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ // Use the authentic chess controller with an isolated, test-only starting endgame.
+ // Never change production rules or persisted positions.
+ let rules='',code=0;
+ serveChessConsole({method:'GET'},{writeHead(status){code=status},end(data){rules=String(data)}},
+  new URL(base+'/konto/szachy/rules.mjs'));
+ assert.equal(code,200);
+ const original='export const initial=()=>parseFen();';
+ assert.ok(rules.includes(original));
+ const testRules=rules.replace(original,
+  "export const initial=()=>parseFen('7k/8/8/8/8/8/8/KQ6 w - - 0 1');");
+ await page.route('**/konto/szachy/rules.mjs',route=>route.fulfill({
+  status:200,contentType:'application/javascript',body:testRules
+ }));
+ await page.goto(base+'/konto/szachy/');
+ await page.locator('#board .chess-square').first().waitFor();
+ await page.evaluate(()=>{
+  const human=document.querySelector('#chess-opponent');
+  human.value='human';human.dispatchEvent(new Event('change',{bubbles:true}));
+  const time=document.querySelector('#training-time');
+  time.value='1';time.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await page.waitForFunction(()=>document.querySelector('#clock-2')?.textContent?.trim()==='01:00');
+ const originalRect=await page.locator('#board').boundingBox();
+ await move(page,'a1','a2');
+ await move(page,'h8','g8');
+ await page.waitForFunction(()=>document.querySelector('#move-count')?.textContent?.trim()==='Ruchy: 2');
+ await page.evaluate(()=>{const previous=Date.now.bind(Date);Date.now=()=>previous()+70000;});
+ await page.waitForFunction(()=>document.querySelector('#game-state')?.textContent?.includes('Koniec czasu — remis'),null,{timeout:6000});
+ await page.locator('#chess-feedback-overlay').waitFor({state:'visible'});
+ assert.equal(await page.locator('#chess-feedback-title').innerText(),'Remis');
+ assert.match(await page.locator('#chess-feedback-description').innerText(),/brak możliwości zamatowania/);
+ assert.equal(await page.locator('#game-result-modal').isVisible(),false,'draw is not a loss');
+ assert.equal(await page.locator('#board .chess-square:not([disabled])').count(),0,'finished board cannot accept moves');
+ assert.equal(await page.locator('#record-draws').innerText(),'1','draw counted in local record');
+ const finalRect=await page.locator('#board').boundingBox();
+ assert.ok(Math.abs(originalRect.x-finalRect.x)<2&&Math.abs(originalRect.width-finalRect.width)<2,
+  'chess board geometry remains unchanged by timeout');
+ assert.deepEqual(errors,[]);
+ await page.close();
+});
