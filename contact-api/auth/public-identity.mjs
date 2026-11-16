@@ -10,6 +10,7 @@ import {ensurePremiumProfileSchema,createPremiumProfileRouter} from './premium-p
 import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScrypt } from 'node:crypto';
 import { initialGame, playMove } from './game-engine.mjs';
 import {initialChessMatch,playChessMatch,undoLastChessMove} from './chess-match.mjs';
+import {chessTimeoutIsDraw} from './chess-rules.mjs';
 import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
@@ -137,7 +138,7 @@ function createTimedGame(game,minutes,incrementSeconds=0){
 }
 // Every change to a timed game is guarded by the existing optimistic match version.
 // The browser only displays time; the PostgreSQL-backed state is authoritative.
-function advanceGomokuClock(state,now,joinPlayer=0){
+function advanceGomokuClock(state,now,joinPlayer=0,game=''){
  if(!state?.clock||state.winner)return {state,changed:false,expired:false};
  const clock=state.clock;
  if(!Array.isArray(clock.remaining)||clock.remaining.length!==2||
@@ -164,7 +165,9 @@ function advanceGomokuClock(state,now,joinPlayer=0){
     next.clock.remaining[state.turn-1]=0;
     next.clock.since=null;
     next.clock.timeoutLoser=state.turn;
-    next.winner=state.turn===1?2:1;
+    const prospectiveWinner=state.turn===1?2:1;
+    next.winner=game==='szachy'&&chessTimeoutIsDraw(state.board,prospectiveWinner)?3:prospectiveWinner;
+    if(next.winner===3)next.drawReason='BRAK_MOZLIWOSCI_MATA';
     changed=true;expired=true;
    }
   }
@@ -659,7 +662,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
       // A wall-clock timeout is finalized by the backend even if the browser was closed.
       if(['gomoku','warcaby','szachy'].includes(match.game)&&match.state?.clock){
        for(let attempt=0;attempt<4;attempt++){
-        const tick=advanceGomokuClock(match.state,Date.now(),req.method==='GET'&&!isChat&&!isUndo?player:0);
+        const tick=advanceGomokuClock(match.state,Date.now(),req.method==='GET'&&!isChat&&!isUndo?player:0,match.game);
         if(!tick.changed)break;
         const saved=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
@@ -823,7 +826,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         if(!Number.isInteger(body.version)||body.version!==match.version)
           return bad(res,409,'ODSWIEZ_PARTIE'),true;
         const movedAt=Date.now();
-        const overdue=advanceGomokuClock(match.state,movedAt);
+        const overdue=advanceGomokuClock(match.state,movedAt,0,match.game);
         if(overdue.expired)return bad(res,409,'CZAS_MINAL'),true;
         const result=match.game==='szachy'?playChessMatch(match.state,player,body.move):playMove(match.game,match.state,player,body.move);
         if(result.error)return bad(res,409,result.error),true;
