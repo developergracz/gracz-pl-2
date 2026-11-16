@@ -109,6 +109,7 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  }
  await local.locator('#training-mode').click();
  assert.equal(await local.locator('#board .chess-square:not([disabled])').count(),64);
+ assert.match(await local.locator('#board .chess-square').nth(56).getAttribute('aria-label'),/^a1 /,'local mode retains the standard orientation');
 
  // Owner-approved layout hides unused controls but keeps clock state in the engine.
  for(const id of ['training-settings','training-records','training-time','training-increment'])
@@ -263,6 +264,20 @@ test('two isolated Chromium windows play chess by clicking squares with WebSocke
  assert.match(blacks.topRight,/^a1 /);assert.match(blacks.bottomRight,/^a8 /);
  assert.equal(blacks.bottomRank,'8');assert.equal(blacks.bottomFile,'h');
  assert.equal(blacks.bottomPiece,'r','black pieces are at the near edge');
+ // CHESS-003: same authenticated black seat on a 390px touch device.
+ const mobileCtx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ t.after(async()=>mobileCtx.close());
+ await mobileCtx.addCookies([{name:'__Host-gracz_session',value:users[1].token,
+  url:base.replace('http:','https:')+'/',httpOnly:true,secure:true,sameSite:'Lax'}]);
+ const mobileBlack=await mobileCtx.newPage();
+ await mobileBlack.goto(base+'/konto/szachy/?match='+id,{waitUntil:'domcontentloaded'});
+ await mobileBlack.waitForFunction(()=>document.querySelector('#board')?.dataset.consoleGame==='new'&&
+  document.querySelector('#board .chess-square')?.getAttribute('aria-label')?.startsWith('h1 '),null,{timeout:12000});
+ await waitForPosition(mobileBlack,state);
+ const mobileCorner=await corner(mobileBlack);
+ assert.match(mobileCorner.bottomLeft,/^h8 /);assert.equal(mobileCorner.bottomRank,'8');
+ assert.equal(mobileCorner.bottomFile,'h');assert.equal(mobileCorner.bottomPiece,'r');
+ assert.equal(await mobileBlack.locator('#board .chess-square').count(),64);
  // Scholar's mate: two independent browser users finish a full game.
  const opening=[
   {player:1,from:'e2',to:'e4'},{player:2,from:'e7',to:'e5'},
