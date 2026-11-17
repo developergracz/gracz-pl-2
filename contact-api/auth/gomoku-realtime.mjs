@@ -1,6 +1,7 @@
 import {createMatchEventBus} from './match-event-bus.mjs';
 import {WebSocketServer,WebSocket} from 'ws';
 import {createHash} from 'node:crypto';
+import {claimableDraw} from './chess-rules.mjs';
 
 const endpoints=new Set(['/auth/gomoku/realtime','/auth/match/realtime']);
 const origin='https://gracz-contact-api.onrender.com';
@@ -77,7 +78,15 @@ export function createGomokuRealtime({server,router,maxConnections=4096,heartbea
      let historyFrom=0;
      while(historyFrom<oldHistory.length&&historyFrom<history.length&&
        JSON.stringify(oldHistory[historyFrom])===JSON.stringify(history[historyFrom]))historyFrom++;
-     const {board:ignoredBoard,history:ignoredHistory,...state}=match.state;
+     // CHESS-017: positions can exceed 40 KB in long games. The UI needs only
+     // the authoritative draw-claim availability; the router still keeps full
+     // positions on the server and in reconnect snapshots.
+     const {board:ignoredBoard,history:ignoredHistory,positions:ignoredPositions,...state}=match.state;
+     if(match.game==='szachy'){
+      const chess={b:match.state.board,t:match.state.turn===1?1:-1,
+       c:match.state.c,ep:match.state.ep,half:match.state.half,full:match.state.full};
+      state.claimableDraw=claimableDraw(chess,match.state.positions);
+     }
      if(!send(client,{type:'match',matchId:id,seq:++client.seq,baseVersion:previous.version,version:match.version,
       match:{...match,state},changes,historyFrom,historyAppend:history.slice(historyFrom),serverTime:result.serverTime}))return;
     }
