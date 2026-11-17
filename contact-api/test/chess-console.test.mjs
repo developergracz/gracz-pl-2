@@ -130,7 +130,8 @@ test('chess draw claim is exposed only for valid FIDE local or authenticated onl
  const app=load('/konto/szachy/app.js'),styles=load('/konto/szachy/styl.css');
  assert.match(app.body,/claimButton\.addEventListener\('click'/);
  assert.match(app.body,/claimableDraw\(state,states\.map\(key\)\)/);
- assert.match(app.body,/online\.player===online\.state\.turn&&claimableDraw/);
+ assert.match(app.body,/online\.player===online\.state\.turn&&\(typeof online\.state\.claimableDraw==='string'/);
+ assert.match(app.body,/claimableDraw\(liveState,online\.state\.positions\)/);
  assert.match(app.body,/move:\{claimDraw:true\}/);
  assert.match(app.body,/localDrawReason/);
  assert.match(styles.body,/\.chess-claim-draw\[hidden\]/);
