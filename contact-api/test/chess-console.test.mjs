@@ -274,3 +274,13 @@ test('CHESS-004 uses authoritative serverTime and monotonic elapsed only for Onl
  assert.doesNotMatch(app.body,/Date\.now\(\)-\(local\?source\.since:Date\.parse\(source\.since\)\)/,
   'the old device-derived online clock is forbidden');
 });
+
+test('CHESS-006: disconnected WebSocket uses safe match/chat polling while retaining forced refresh',()=>{
+ const app=load('/konto/szachy/app.js');
+ assert.equal(app.status,200);
+ assert.match(app.body,/if\(mode==='online'&&!realtime\.isReady\(\)\)\{void refreshMatch\(\);void refreshChat\(\);\}\},8000\)/);
+ assert.doesNotMatch(app.body,/if\(mode==='online'&&!realtime\.isReady\(\)\)\{void refreshMatch\(\);void refreshChat\(\);\}\},4000\)/);
+ assert.match(app.body,/onFallback:\(\)=>\{void refreshMatch\(true\);\}/);
+ assert.match(app.body,/document\.addEventListener\('visibilitychange'/);
+ assert.match(app.body,/\$\('refresh-match'\)\?\.addEventListener\('click'/);
+});
