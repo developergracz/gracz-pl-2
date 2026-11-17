@@ -72,6 +72,26 @@ test('All three paths use existing server-only Groq provider with isolated conve
   }
 });
 
+test('CHESS-008: all games receive intact board-safety instructions without NaN',async()=>{
+ for(const [slug,name] of [['gomoku','Gomoku'],['warcaby','Warcaby'],['szachy','Szachy']]){
+  let providerCalls=0;
+  const handle=createGomokuAiChatRoute({apiKey:'test-only-key',fetchImpl:async(_url,options)=>{
+   providerCalls++;
+   const sent=JSON.parse(options.body);
+   const system=sent.messages[0].content;
+   assert.match(system,new RegExp('Aktualna konsola: '+name));
+   assert.match(system,/W Szachach i Warcabach nie otrzymujesz bieżącej planszy; nie twierdź, że ją widzisz/);
+   assert.match(system,/Jeśli partiaZakonczona=true, nie proponuj kolejnego ruchu/);
+   assert.doesNotMatch(system,/NaN|wyników\. NaN|NaNJeśli/);
+   return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})};
+  }});
+  const res=response();
+  assert.equal(await handle(request({message:'Wyjaśnij zasady gry.'}),res,new URL('/konto/'+slug+'/ai-chat',root)),true);
+  assert.equal(res.status,200);
+  assert.equal(providerCalls,1,slug+': one mocked provider call only');
+ }
+});
+
 test('AI rejects cross-origin requests for each game without sending to provider',async()=>{
   let count=0;
   const handle=createGomokuAiChatRoute({apiKey:'key',fetchImpl:async()=>{count++;throw Error('must not call');}});
