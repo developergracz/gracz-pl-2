@@ -4,8 +4,7 @@ import {createGomokuRealtimeClient} from './gomoku-realtime-client.mjs';
 import {invitationHtml,invitationCss,invitationJs} from './chess-invitations.mjs';
 import {chessOwnerConsoleCss,chessOwnerConsoleJs} from './chess-owner-console.mjs';
 import {chessFeedbackHtml,chessFeedbackCss,chessFeedbackJs,withChessFeedbackController} from './chess-feedback.mjs';
-import {readFileSync} from 'node:fs';
-const chessComputerWorkerSource=readFileSync(new URL('./chess-computer-worker.mjs',import.meta.url),'utf8');
+import {chessComputerWorkerSource} from './chess-computer-worker.mjs';
 // Shared premium console shell with isolated chess rules and authenticated multiplayer.
 const headers={'Content-Security-Policy':"default-src 'none'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self' wss://gracz-contact-api.onrender.com; img-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY'};
 const html=getSharedGameConsoleHtml().replaceAll('Gomoku','Szachy').replaceAll('GOMOKU','SZACHY').replace('<body>','<body class="chess-console">').replace('href="/konto/gomoku/styl.css"','href="/konto/gomoku/styl.css"><link rel="stylesheet" href="/konto/szachy/styl.css"').replace('src="/konto/gomoku/app.js"','type="module" src="/konto/szachy/app.js"').replace('class="board" id="board"','class="board chess-board" id="board"').replace('Plansza Szachy 15 na 15','Plansza szachowa 8 na 8').replace('Czarne — zaczynają','Czarne — drugi ruch').replace('<strong id="white-name">Komputer</strong><small>Białe</small>','<strong id="white-name">Białe</strong><small>Białe — zaczynają</small>').replace('</head>','<link rel="stylesheet" href="/konto/szachy/invitations.css"></head>').replace('</body>',invitationHtml+'<script type="module" src="/konto/szachy/invitations.js"></script></body>')
