@@ -28,8 +28,10 @@ test('CHESS-006: 15-minute fallback-only polling stays within real GET limits an
     if(response.status===429)counts.limited++;
     res.writeHead(response.status,{'Content-Type':'application/json','Cache-Control':'no-store'});
     res.end(JSON.stringify(response.body));
-   }catch(err){
-    res.writeHead(500);res.end(JSON.stringify({ok:false,error:String(err)}));
+   }catch{
+    // Test HTTP endpoints must not disclose internal errors or stack traces.
+    res.writeHead(500,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    res.end(JSON.stringify({ok:false,error:'TEST_ROUTER_FAILURE'}));
    }
    return;
   }
