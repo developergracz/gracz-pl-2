@@ -284,3 +284,20 @@ test('CHESS-006: disconnected WebSocket uses safe match/chat polling while retai
  assert.match(app.body,/document\.addEventListener\('visibilitychange'/);
  assert.match(app.body,/\$\('refresh-match'\)\?\.addEventListener\('click'/);
 });
+
+test('CHESS-007: local computer uses a cancellable same-origin worker and validates every move',()=>{
+ const app=load('/konto/szachy/app.js'),worker=load('/konto/szachy/computer-worker.mjs'),page=load('/konto/szachy/');
+ assert.equal(app.status,200);assert.equal(worker.status,200);
+ assert.equal(worker.headers['Content-Type'],'application/javascript; charset=utf-8');
+ assert.match(page.headers['Content-Security-Policy'],/worker-src 'self'/);
+ assert.match(worker.body,/import \{chooseComputerMove\} from '\/konto\/szachy\/computer\.mjs'/);
+ assert.match(worker.body,/self\.postMessage\(\{id,move\}\)/);
+ assert.match(app.body,/new Worker\('\/konto\/szachy\/computer-worker\.mjs',\{type:'module'\}\)/);
+ assert.match(app.body,/worker\.postMessage\(\{id:generation,state:position,level,maxMs\}\)/);
+ assert.match(app.body,/legal\(position\)\.find\(m=>JSON\.stringify\(m\)===JSON\.stringify\(move\)\)/);
+ assert.match(app.body,/computerWorker\.terminate\(\)/);
+ assert.match(app.body,/worker\.onerror=/);
+ assert.match(app.body,/document\.hidden/);
+ assert.match(app.body,/window\.addEventListener\('pagehide'/);
+ assert.match(app.body,/Math\.min\(maxMs,250\)/,'bounded fallback if workers are unavailable');
+});
