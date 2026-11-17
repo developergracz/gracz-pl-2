@@ -1,14 +1,3 @@
-// CHESS-007: run the existing bounded local chess engine off the UI thread.
-// Dedicated same-origin module worker; no Stockfish or external service.
-import {chooseComputerMove} from '/konto/szachy/computer.mjs';
-
-self.onmessage=event=>{
- const {id,state,level,maxMs}=event.data||{};
- if(!Number.isSafeInteger(id)||id<1)return;
- try{
-  const move=chooseComputerMove(state,{level,maxMs});
-  self.postMessage({id,move});
- }catch{
-  self.postMessage({id,error:'COMPUTER_WORKER_FAILURE'});
- }
-};
+// Browser module source is served under /konto/szachy/computer-worker.mjs.
+// The server imports only this string, not a Worker implementation at runtime.
+export const chessComputerWorkerSource="// CHESS-007: run the existing bounded local chess engine off the UI thread.\n// Dedicated same-origin module worker; no Stockfish or external service.\nimport {chooseComputerMove} from '/konto/szachy/computer.mjs';\n\nself.onmessage=event=>{\n const {id,state,level,maxMs}=event.data||{};\n if(!Number.isSafeInteger(id)||id<1)return;\n try{\n  const move=chooseComputerMove(state,{level,maxMs});\n  self.postMessage({id,move});\n }catch{\n  self.postMessage({id,error:'COMPUTER_WORKER_FAILURE'});\n }\n};\n";
