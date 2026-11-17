@@ -284,3 +284,16 @@ test('CHESS-006: disconnected WebSocket uses safe match/chat polling while retai
  assert.match(app.body,/document\.addEventListener\('visibilitychange'/);
  assert.match(app.body,/\$\('refresh-match'\)\?\.addEventListener\('click'/);
 });
+
+test('CHESS-011/012/014: PGN result tags, Home focus and numbered Online history',()=>{
+ const app=load('/konto/szachy/app.js');
+ assert.equal(app.status,200);
+ assert.match(app.body,/\[Event "GRACZ\.PL"\]/);
+ assert.match(app.body,/\[Result /);
+ assert.match(app.body,/stateResult/);
+ assert.match(app.body,/tags\.join\(String\.fromCharCode\(10\)\)/);
+ assert.match(app.body,/historyNav\.addEventListener\('keydown',handleHistoryKey\)/);
+ assert.match(app.body,/if\(historyViewIndex===0\)navButtons\.first\.focus\(\)/);
+ assert.match(app.body,/entryNumbers\[i\]%2===1/);
+ assert.match(app.body,/online\?\.state\?\.history\?\.\[fullTurn\*2\]/);
+});

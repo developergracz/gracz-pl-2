@@ -34,10 +34,11 @@ export function playChessMatch(state,player,request){
  const move=legal(before).find(m=>coord(m[0])+coord(m[1])+m[2]===uci);
  if(!move)return {error:'NIEDOZWOLONY_RUCH'};
  const after=apply(before,move),notation=san(before,move);
- const positions=[...(Array.isArray(state.positions)?state.positions:[]),key(after)].slice(-300);
+ // Preserve enough legal positions for long-game history/replay without unbounded JSONB growth.
+ const positions=[...(Array.isArray(state.positions)?state.positions:[]),key(after)].slice(-1025);
  const next={...state,board:after.b,turn:after.t===1?1:2,c:after.c,ep:after.ep,
   half:after.half,full:after.full,moves:state.moves+1,
-  history:[...(Array.isArray(state.history)?state.history:[]).slice(-299),{player,uci,san:notation,number:state.moves+1}],
+  history:[...(Array.isArray(state.history)?state.history:[]).slice(-1023),{player,uci,san:notation,number:state.moves+1}],
   positions};
  const dead=result([after]);
  const repetitions=positions.filter(x=>x===key(after)).length;
