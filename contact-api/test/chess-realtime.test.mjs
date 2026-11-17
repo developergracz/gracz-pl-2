@@ -60,6 +60,9 @@ test('Chess P4: two authenticated sessions receive initial positions and server-
  assert.ok(delta.changes.length>=2); // e2 cleared, e4 filled.
  assert.equal(delta.match.state.turn,2);
  assert.equal('board' in delta.match.state,false);
+ assert.equal('positions' in delta.match.state,false,'delta excludes bulky repeated positions');
+ assert.equal(delta.match.state.claimableDraw,'','server sends authoritative empty claim flag');
+ assert.ok(Buffer.byteLength(JSON.stringify(delta))<2048,'normal chess move delta stays compact');
  assert.equal(delta.historyAppend.at(-1).san,'e4');
  const stale=await f.post(tokenA,'/auth/match',{id:challenge,version:initialB.match.version,move:{uci:'d2d4'}});
  assert.equal(stale.status,409);
