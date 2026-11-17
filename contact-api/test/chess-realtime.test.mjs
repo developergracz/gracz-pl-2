@@ -60,6 +60,9 @@ test('Chess P4: two authenticated sessions receive initial positions and server-
  assert.ok(delta.changes.length>=2); // e2 cleared, e4 filled.
  assert.equal(delta.match.state.turn,2);
  assert.equal('board' in delta.match.state,false);
+ assert.equal('positions' in delta.match.state,false,'delta excludes bulky repeated positions');
+ assert.equal(delta.match.state.claimableDraw,'','server sends authoritative empty claim flag');
+ assert.ok(Buffer.byteLength(JSON.stringify(delta))<2048,'normal chess move delta stays compact');
  assert.equal(delta.historyAppend.at(-1).san,'e4');
  const stale=await f.post(tokenA,'/auth/match',{id:challenge,version:initialB.match.version,move:{uci:'d2d4'}});
  assert.equal(stale.status,409);
@@ -100,4 +103,19 @@ test('Chess P4: outsider cannot subscribe to another chess match',async t=>{
  const f=await setup(t),outsider=await f.open(tokenC);
  const closed=once(outsider.socket,'close');outsider.subscribe();
  assert.equal((await closed)[0],1008);
+});
+
+test('CHESS-017: 330-ply positions produce a sub-2KB delta while reconnect keeps full snapshot',async t=>{
+ const f=await setup(t),a=await f.open(tokenA);
+ a.subscribe();await a.next('snapshot');
+ f.setMatchState(state=>({...state,positions:Array.from({length:331},(_,i)=>'position-'+i+'-'+('x'.repeat(120)))}));
+ f.hub.notify(challenge);
+ const delta=await a.next('match');
+ assert.equal(delta.match.state.claimableDraw,'');
+ assert.equal('positions' in delta.match.state,false);
+ assert.ok(Buffer.byteLength(JSON.stringify(delta))<2048,'delta should not contain large chess repetition history');
+ a.socket.terminate();
+ const b=await f.open(tokenB);b.subscribe();
+ const snapshot=await b.next('snapshot');
+ assert.equal(snapshot.match.state.positions.length,331,'full reconnect snapshot retains positions');
 });
