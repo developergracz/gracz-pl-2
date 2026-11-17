@@ -130,7 +130,8 @@ test('chess draw claim is exposed only for valid FIDE local or authenticated onl
  const app=load('/konto/szachy/app.js'),styles=load('/konto/szachy/styl.css');
  assert.match(app.body,/claimButton\.addEventListener\('click'/);
  assert.match(app.body,/claimableDraw\(state,states\.map\(key\)\)/);
- assert.match(app.body,/online\.player===online\.state\.turn&&claimableDraw/);
+ assert.match(app.body,/online\.player===online\.state\.turn&&\(typeof online\.state\.claimableDraw==='string'/);
+ assert.match(app.body,/claimableDraw\(liveState,online\.state\.positions\)/);
  assert.match(app.body,/move:\{claimDraw:true\}/);
  assert.match(app.body,/localDrawReason/);
  assert.match(styles.body,/\.chess-claim-draw\[hidden\]/);
@@ -283,4 +284,51 @@ test('CHESS-006: disconnected WebSocket uses safe match/chat polling while retai
  assert.match(app.body,/onFallback:\(\)=>\{void refreshMatch\(true\);\}/);
  assert.match(app.body,/document\.addEventListener\('visibilitychange'/);
  assert.match(app.body,/\$\('refresh-match'\)\?\.addEventListener\('click'/);
+});
+
+test('CHESS-007: local computer uses a cancellable same-origin worker and validates every move',()=>{
+ const app=load('/konto/szachy/app.js'),worker=load('/konto/szachy/computer-worker.mjs'),page=load('/konto/szachy/');
+ assert.equal(app.status,200);assert.equal(worker.status,200);
+ assert.equal(worker.headers['Content-Type'],'application/javascript; charset=utf-8');
+ assert.match(page.headers['Content-Security-Policy'],/worker-src 'self'/);
+ assert.match(worker.body,/import \{chooseComputerMove\} from '\/konto\/szachy\/computer\.mjs'/);
+ assert.match(worker.body,/self\.postMessage\(\{id,move\}\)/);
+ assert.match(app.body,/new Worker\('\/konto\/szachy\/computer-worker\.mjs',\{type:'module'\}\)/);
+ assert.match(app.body,/worker\.postMessage\(\{id:generation,state:position,level,maxMs\}\)/);
+ assert.match(app.body,/legal\(position\)\.find\(m=>JSON\.stringify\(m\)===JSON\.stringify\(move\)\)/);
+ assert.match(app.body,/computerWorker\.terminate\(\)/);
+ assert.match(app.body,/worker\.onerror=/);
+ assert.match(app.body,/document\.hidden/);
+ assert.match(app.body,/window\.addEventListener\('pagehide'/);
+ assert.match(app.body,/Math\.min\(maxMs,250\)/,'bounded fallback if workers are unavailable');
+});
+
+test('CHESS-009/010/013/016: semantic board, results, single ledger and readable errors',()=>{
+ const app=load('/konto/szachy/app.js'),page=load('/konto/szachy/');
+ assert.equal(app.status,200);assert.equal(page.status,200);
+ assert.match(app.body,/board\.setAttribute\('role','group'\)/);
+ assert.doesNotMatch(app.body,/setAttribute\('role','gridcell'\)/);
+ assert.match(app.body,/online\.state\.clock\?\.timeoutLoser\?' \(koniec czasu\)'/);
+ assert.match(app.body,/online\.state\.drawReason/);
+ assert.match(app.body,/Przeciwnik wygrał przez mata/);
+ assert.match(app.body,/CHESS-013: keep completed result counted only once after undo/);
+ assert.doesNotMatch(app.body,/selected=-1;promotion=null;localTimeout=0;localDrawReason='';recorded=false;/);
+ for(const key of ['BRAK_SESJI','PARTIA_NIEDOSTEPNA','ODSWIEZ_PARTIE','ZBYT_WIELE_PROB']){
+  assert.match(app.body,new RegExp(key));
+ }
+ assert.match(app.body,/humanizeChessError\(data\.error\|\|'SYSTEM_NIEDOSTEPNY'\)/);
+ assert.match(app.body,/Sesja aktywna — lista partii dostępna/);
+});
+
+test('CHESS-011/012/014: PGN result tags, Home focus and numbered Online history',()=>{
+ const app=load('/konto/szachy/app.js');
+ assert.equal(app.status,200);
+ assert.match(app.body,/\[Event "GRACZ\.PL"\]/);
+ assert.match(app.body,/\[Result /);
+ assert.match(app.body,/stateResult/);
+ assert.match(app.body,/tags\.join\(String\.fromCharCode\(10\)\)/);
+ assert.match(app.body,/historyNav\.addEventListener\('keydown',handleHistoryKey\)/);
+ assert.match(app.body,/if\(historyViewIndex===0\)navButtons\.first\.focus\(\)/);
+ assert.match(app.body,/entryNumbers\[i\]%2===1/);
+ assert.match(app.body,/online\?\.state\?\.history\?\.\[fullTurn\*2\]/);
 });
