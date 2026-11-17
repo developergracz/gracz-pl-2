@@ -110,7 +110,7 @@ test('CHESS-002: server-confirmed winner/draw open new result; loss keeps origin
  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.consoleGame==='new');
  assert.equal(await page.locator('#chess-feedback-overlay').isVisible(),false);
  await move(page,'e2','e4');
- await page.waitForFunction(()=>document.querySelector('#chess-feedback-pill')?.textContent.includes('ZBYT_WIELE_PROB'));
+ await page.waitForFunction(()=>document.querySelector('#chess-feedback-pill')?.textContent.includes('Zbyt wiele żądań'));
  await page.waitForTimeout(350);
  assert.equal(await page.locator('#chess-feedback-pill').isVisible(),true,'429 error remains visible across refresh');
  assert.equal(await page.locator('#chess-feedback-pill').getAttribute('data-kind'),'error');

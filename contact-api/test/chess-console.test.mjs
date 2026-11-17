@@ -284,3 +284,20 @@ test('CHESS-006: disconnected WebSocket uses safe match/chat polling while retai
  assert.match(app.body,/document\.addEventListener\('visibilitychange'/);
  assert.match(app.body,/\$\('refresh-match'\)\?\.addEventListener\('click'/);
 });
+
+test('CHESS-009/010/013/016: semantic board, results, single ledger and readable errors',()=>{
+ const app=load('/konto/szachy/app.js'),page=load('/konto/szachy/');
+ assert.equal(app.status,200);assert.equal(page.status,200);
+ assert.match(app.body,/board\.setAttribute\('role','group'\)/);
+ assert.doesNotMatch(app.body,/setAttribute\('role','gridcell'\)/);
+ assert.match(app.body,/online\.state\.clock\?\.timeoutLoser\?' \(koniec czasu\)'/);
+ assert.match(app.body,/online\.state\.drawReason/);
+ assert.match(app.body,/Przeciwnik wygrał przez mata/);
+ assert.match(app.body,/CHESS-013: keep completed result counted only once after undo/);
+ assert.doesNotMatch(app.body,/selected=-1;promotion=null;localTimeout=0;localDrawReason='';recorded=false;/);
+ for(const key of ['BRAK_SESJI','PARTIA_NIEDOSTEPNA','ODSWIEZ_PARTIE','ZBYT_WIELE_PROB']){
+  assert.match(app.body,new RegExp(key));
+ }
+ assert.match(app.body,/humanizeChessError\(data\.error\|\|'SYSTEM_NIEDOSTEPNY'\)/);
+ assert.match(app.body,/Sesja aktywna — lista partii dostępna/);
+});
