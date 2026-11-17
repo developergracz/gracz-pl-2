@@ -633,7 +633,7 @@ export const chessOwnerConsoleJs = String.raw`
     const text=total>99?'99+':String(total);
     if(badge.textContent!==text)badge.textContent=text;
     badge.hidden=false;
-    const label='Wiadomości — '+total+' '+(total===1?'nieprzeczytana':'nieprzeczytanych');
+    const label='Wiadomości — '+total+' '+(total===1?'nieprzeczytana':(total%10>=2&&total%10<=4&&(total%100<12||total%100>14))?'nieprzeczytane':'nieprzeczytanych');
     mail.setAttribute('aria-label',label);mail.title=label;
    }else{
     badge.hidden=true;badge.textContent='';

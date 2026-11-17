@@ -277,8 +277,8 @@ test('actions, tabs and Info follow the real game: Rewanż only after a finished
  await page.keyboard.press('Escape');
  await page.locator('#chat-tab').click();
  // Ra8# finishes the real game.
- await page.getByRole('gridcell',{name:'a1 biała wieża',exact:true}).click();
- await page.getByRole('gridcell',{name:'a8 puste',exact:true}).click();
+ await page.getByRole('button',{name:'a1 biała wieża',exact:true}).click();
+ await page.getByRole('button',{name:'a8 puste',exact:true}).click();
  await page.waitForFunction(()=>document.getElementById('board').dataset.consoleGame==='finished');
  assert.equal(await rematch.isEnabled(),true,'Rewanż becomes available after the game');
  // CHESS-002: a real local checkmate shows the result before inspecting Info.

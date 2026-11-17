@@ -43,3 +43,17 @@ test('takeback reconstructs the correct legal chess position from history',()=>{
  assert.ok(playChessMatch(restored,1,{uci:'f1c4'}).state);
  assert.deepEqual(undoLastChessMove({...state,moves:301},1),{error:'BRAK_RUCHU_DO_COFNIECIA'});
 });
+
+test('CHESS-014: server preserves 330 numbered halfmoves and replayable position budget',()=>{
+ const original=initialChessMatch();
+ const state={...original,moves:330,
+  history:Array.from({length:330},(_,i)=>({player:i%2+1,uci:'g1f3',san:'Nf3',number:i+1})),
+  positions:Array.from({length:331},(_,i)=>'pos-'+i)};
+ const outcome=playChessMatch(state,1,{uci:'e2e4'});
+ assert.ok(outcome.state,'authoritative legal move remains accepted');
+ assert.equal(outcome.state.moves,331);
+ assert.equal(outcome.state.history.length,331);
+ assert.equal(outcome.state.history[0].number,1);
+ assert.equal(outcome.state.history.at(-1).number,331);
+ assert.equal(outcome.state.positions.length,332);
+});
