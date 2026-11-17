@@ -59,6 +59,7 @@ export const productionModules=Object.freeze([
   'auth/chess-pieces.mjs',
   'auth/chess-rules.mjs',
   'auth/chess-computer.mjs',
+  'auth/chess-computer-worker.mjs',
   // Reviewed chess invitations: only same-origin friend presence and authenticated friend-only challenges;
   // server validates scheduled time, sender/recipient, message length and privacy before persistence.
   'auth/chess-invitations.mjs',
