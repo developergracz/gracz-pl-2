@@ -56,6 +56,8 @@ jobs:
         run: node --test contact-api/scaling/checkers-loss-popup.browser.test.mjs
       - name: Two real Chromium windows play Gomoku by clicking stones
         run: node --test contact-api/scaling/two-chromium-gomoku.integration.test.mjs
+      - name: CHESS-006 — 15-minute simulated WebSocket outage with real GET limiter in Chromium
+        run: node --test contact-api/scaling/chess-fallback.browser.test.mjs
       - name: Two real Chromium windows play Szachy via WebSocket
         run: node --test contact-api/scaling/two-chromium-chess.integration.test.mjs
       - name: Premium chess SVG desktop, mobile and promotion acceptance
