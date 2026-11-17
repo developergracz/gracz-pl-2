@@ -290,7 +290,7 @@ test('CHESS-009/010/013/016: semantic board, results, single ledger and readable
  assert.equal(app.status,200);assert.equal(page.status,200);
  assert.match(app.body,/board\.setAttribute\('role','group'\)/);
  assert.doesNotMatch(app.body,/setAttribute\('role','gridcell'\)/);
- assert.match(app.body,/online\.state\.timeoutLoser\?' \(koniec czasu\)'/);
+ assert.match(app.body,/online\.state\.clock\?\.timeoutLoser\?' \(koniec czasu\)'/);
  assert.match(app.body,/online\.state\.drawReason/);
  assert.match(app.body,/Przeciwnik wygrał przez mata/);
  assert.match(app.body,/CHESS-013: keep completed result counted only once after undo/);
