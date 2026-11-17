@@ -142,7 +142,7 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   assert.deepEqual(await page.locator('#board .chess-piece').evaluateAll(nodes=>nodes.map(n=>n.dataset.piece)),initial);
   await page.locator('#training-mode').click();
   await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
-  const square=label=>page.getByRole('gridcell',{name:label,exact:true});
+  const square=label=>page.getByRole('button',{name:label,exact:true});
   // Native keyboard activation uses the same cells and labels as pointer moves.
   await square('e2 biały pionek').focus();await page.keyboard.press('Enter');
   assert.equal(await page.locator('.chess-selected').getAttribute('aria-label'),'e2 biały pionek');
@@ -195,8 +195,8 @@ test('premium SVGs fit desktop/mobile/HiDPI, lobby, keyboard moves, capture and 
   });
   await page.goto(base+'/konto/szachy/');await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
   const from=color==='white'?'a7 biały pionek':'a2 czarny pionek',to=color==='white'?'a8':'a1';
-  await page.getByRole('gridcell',{name:from,exact:true}).click();
-  await page.getByRole('gridcell',{name:to+' puste',exact:true}).click();
+  await page.getByRole('button',{name:from,exact:true}).click();
+  await page.getByRole('button',{name:to+' puste',exact:true}).click();
   assert.equal(await page.locator('.chess-promote svg').count(),4);
   const choices=await page.locator('.chess-promote').evaluateAll(buttons=>buttons.map(b=>{
    const r=b.getBoundingClientRect(),s=b.querySelector('svg').getBoundingClientRect();
@@ -229,7 +229,7 @@ test('recorded local chess SAN remains visible and survives reload on desktop/mo
   await page.goto(base+'/konto/szachy/');
   await page.locator('.chess-piece').first().waitFor();
   await page.locator('#chess-opponent').evaluate(el=>{el.value='human';el.dispatchEvent(new Event('change',{bubbles:true}));});
-  const square=label=>page.getByRole('gridcell',{name:label,exact:true});
+  const square=label=>page.getByRole('button',{name:label,exact:true});
   await square('e2 biały pionek').click();
   await square('e4 puste').click();
   // A recorded move should expose the history automatically, not leave Chat selected.

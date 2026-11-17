@@ -74,6 +74,8 @@ jobs:
           path: contact-api/scaling/owner-console-screenshots/
           if-no-files-found: warn
           retention-days: 7
+      - name: CHESS-007 — real Chromium local AI worker responsiveness and cancellation
+        run: node --test contact-api/scaling/chess-computer-worker.browser.test.mjs
       - name: Chess drag & drop (mouse, touch) next to click-to-move
         run: node --test contact-api/scaling/chess-drag.browser.test.mjs
       - name: Chess special rules acceptance

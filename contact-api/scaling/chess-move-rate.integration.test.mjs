@@ -180,13 +180,13 @@ test('CHESS-001: two Chromium players over WebSocket after 85+ moves each; a thr
  for(let i=0;i<120;i++)await call(A,'POST','/auth/match',{id,version:s.version+50,move:{uci:'f1c4'}});
  const before=await stored(db,id);
  await click(pages[0],'f1','c4');
- await pages[0].waitForFunction(()=>/ZBYT_WIELE_PROB/.test(document.getElementById('game-state').textContent),null,{timeout:10000});
+ await pages[0].waitForFunction(()=>/Zbyt wiele żądań/.test(document.getElementById('game-state').textContent),null,{timeout:10000});
  const after=await stored(db,id);
  assert.equal(after.version,before.version,'throttled click does not change the authoritative match');
  assert.equal(after.state.clock.since,before.state.clock.since,'clock keeps running for the side to move (server-authoritative)');
  assert.equal(await piece(pages[0],'f1'),'B','board resynchronised to the server position');
  assert.equal(await piece(pages[0],'c4'),'.');
- assert.match(await pages[0].locator('#game-state').textContent(),/Ruch nieprzyjęty: ZBYT_WIELE_PROB/,'explicit error state (its visibility is tracked as CHESS-002)');
+ assert.match(await pages[0].locator('#game-state').textContent(),/Ruch nieprzyjęty: Zbyt wiele żądań/,'explicit error state (its visibility is tracked as CHESS-002)');
  assert.equal(await piece(pages[1],'c4'),'.','opponent sees no phantom move');
  assert.deepEqual(pageErrors,[],'no uncaught browser errors');
  console.log('CHESS_001_BROWSER_PASS',{warmupHalfMoves:172,version:after.version,remaining:after.state.clock.remaining});
