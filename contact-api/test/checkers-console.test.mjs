@@ -44,7 +44,7 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.match(style.body,/\.game-tools\.checkers-toolbar/);
  assert.match(style.body,/repeat\(7,minmax\(0,1fr\)\)/);
  // Full Max Premium pieces: CSS bodies, vector gold crown medallion for kings, decorative SVG only.
- for(const piece of ['.piece.white{','.piece.black{','.piece.king:after{content:none}','.piece .crown{'])assert.ok(style.body.includes(piece),piece);
+ for(const piece of ['.piece.white{','.piece.black{','.piece.king:after,.warcaby-console .checkers-drag-ghost.king:after{content:none}','.piece .crown{'])assert.ok(style.body.includes(piece),piece);
  assert.doesNotMatch(style.body,/♛/);
  assert.match(page.body,/<svg class="checkers-piece-defs" aria-hidden="true" focusable="false"[^>]*>[\s\S]*?<symbol id="checkers-crown"/);
  assert.match(js.body,/if\(p>=3\)token\.append\(crownEmblem\(\)\)/);
