@@ -259,7 +259,7 @@ test('Seat-to-play gate exists only in modern Warcaby and does not start clocks 
    'first legal white move starts clock even if white is controlled by computer');
  assert.ok(training.body.includes("if(side===2)scheduleComputer(generation)"),'computer opens as white when human chooses black');
  assert.ok(training.body.includes("player:humanSide"),'actual human side is wired into engine');
- assert.ok(css.body.includes('outline:2.5px solid transparent!important'),'active turn badge has thicker ring');
+ assert.ok(css.body.includes('outline:3px solid transparent!important'),'active turn badge has thicker ring');
  assert.ok(js.body.includes("sessionNickname||'Gość'"),'signed-out visitors are guests, never Gracz');
  // Legacy static clock-start contract retained:
  assert.ok(training.body.includes("if(!clockStarted&&actor===1)clockStarted=true"),
