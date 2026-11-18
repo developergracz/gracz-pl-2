@@ -267,6 +267,11 @@ body.warcaby-console .checkers-mobile-heading{display:none}
 
 /* Only clock typography and names: preserve the original clock boxes and player card dimensions. */
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .player-clock{
+ /* Retain the prior 3.3em box width and original digit line-box height as pixels,
+    calculated from its unchanged previous font clamp(23px,2vw,30px). */
+ width:clamp(75.9px,6.6vw,99px)!important;
+ min-width:clamp(75.9px,6.6vw,99px)!important;
+ min-height:clamp(26.15px,calc(2.1vw + 2px),33.5px)!important;
  font-size:clamp(21px,1.7vw,27px)!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .players>.player>.cc-side{
