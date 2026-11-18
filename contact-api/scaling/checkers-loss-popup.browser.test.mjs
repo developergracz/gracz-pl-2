@@ -55,6 +55,11 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await page.evaluate(id=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:4,winner:2,player:1,players:['Ty','Mistrz_Andrzej']}})),priorId);
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
+ assert.equal(await page.locator('#warcaby-loss-verb').textContent(),'Przegrałeś');
+ assert.equal(await page.locator('#warcaby-loss-emotion').textContent(),'😢');
+ assert.equal(await page.locator('#warcaby-loss-title').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(246, 232, 204)');
+ assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).color),'rgb(35, 121, 171)');
+ assert.equal(await page.locator('#warcaby-loss-rematch').evaluate(el=>getComputedStyle(el).fontSize),'16px');
  assert.equal(await page.locator('#board').evaluate(el=>el.innerHTML),before,'board must not be touched');
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
  assert.equal(await page.locator('#warcaby-tables-overlay').isVisible(),false,'tables initially hidden');
@@ -77,11 +82,21 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
   'a stale native modal must not reopen after switching to Stoły');
  await old.evaluate(el=>{el.querySelector('.result-card').dataset.result='loss';el.hidden=false;});
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false);
- assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer','training original result provides a fallback');
+ assert.equal(await page.locator('#warcaby-loss-name').textContent(),'komputerem','training original result provides a fallback');
  await page.locator('#warcaby-loss-close').click();
- for(const winner of [0,1,3]){
-  await page.evaluate(({value,id})=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:6,winner:value,player:1,players:['Ty','Mistrz_Andrzej']}})),{value:winner,id:priorId});
-  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,'no popup for non-loss');
+ await page.evaluate(id=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{
+  detail:{mode:'online',matchId:id,version:6,winner:1,player:1,players:['Ty','Mistrz_Andrzej']}
+ })),priorId);
+ assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true,'win also shows the result modal');
+ assert.equal(await page.locator('#warcaby-loss-verb').textContent(),'Wygrałeś');
+ assert.equal(await page.locator('#warcaby-loss-emotion').textContent(),'😄');
+ await page.locator('#warcaby-loss-rematch').click();
+ await page.waitForFunction(()=>document.querySelector('#warcaby-loss-notice')?.textContent.includes('Wysłano propozycję rewanżu'));
+ assert.equal(invites.at(-1).nickname,'Mistrz_Andrzej','winning rematch targets the opponent, not yourself');
+ await page.locator('#warcaby-loss-close').click();
+ for(const winner of [0,3]){
+  await page.evaluate(({value,id})=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',{detail:{mode:'online',matchId:id,version:7,winner:value,player:1,players:['Ty','Mistrz_Andrzej']}})),{value:winner,id:priorId});
+  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,'no custom popup for unfinished or drawn game');
  }
  assert.deepEqual(errors,[],'no browser runtime errors');
  await page.close();
@@ -92,7 +107,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  const runtimeErrors=[];actual.on('pageerror',e=>runtimeErrors.push(e.message));
  await actual.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/');
  await actual.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,{timeout:10000});
- assert.equal(await actual.locator('#warcaby-loss-name').textContent(),'Komputer');
+ assert.equal(await actual.locator('#warcaby-loss-name').textContent(),'komputerem');
  assert.equal(await actual.locator('#warcaby-tables-overlay').isVisible(),false,'tables open only when requested');
  assert.equal(await actual.locator('#board .square').count(),64);
  assert.deepEqual(runtimeErrors,[],'real controller rendering never breaks browser runtime');

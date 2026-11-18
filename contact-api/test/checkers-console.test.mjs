@@ -167,7 +167,10 @@ test('Warcaby loss dialog uses the signed-in nickname and an authenticated table
   'warcaby-loss-rematch','warcaby-loss-others','warcaby-tables-overlay',
   'warcaby-tables-code','warcaby-loss-tables','warcaby-tables-create','warcaby-tables-refresh'])
   assert.match(page.body,new RegExp('id="'+id+'"'));
- assert.match(page.body,/Przegrałeś <span id="warcaby-loss-player">Gracz<\/span> tę grę z/);
+ assert.ok(page.body.includes('<span id="warcaby-loss-verb">Przegrałeś</span> <span id="warcaby-loss-player">Gracz</span> tę grę z <span id="warcaby-loss-name">komputerem</span>.'),'whole result headline stays on the beige panel');
+ assert.match(page.body,/id="warcaby-loss-emotion"/);
+ assert.match(style.body,/#warcaby-loss-player/);
+ assert.match(style.body,/font-size:16px!important/);
  assert.match(page.body,/role="dialog" aria-modal="true"/);
  assert.match(page.body,/>Rewanż<\/button>/);
  assert.match(page.body,/>Stoły<\/button>/);
