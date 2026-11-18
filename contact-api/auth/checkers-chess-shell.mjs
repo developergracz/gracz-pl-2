@@ -244,6 +244,17 @@ export const checkersChessShellJs=String.raw`
  // Display-only nick comes from the authenticated session; never trust a typed name.
  let sessionNickname='';
  const clockNameLabels=[];
+ const clockTurnTokens=[];
+ const refreshClockTurnTokens=(snapshot=null)=>{
+  const activeTurn=Number(snapshot?.turn??board.dataset.checkersTurn);
+  const winner=Number(snapshot?.winner??board.dataset.checkersWinner);
+  const playable=(snapshot?.playable??(board.dataset.checkersPlayable==='true'))===true;
+  for(const [side,token] of clockTurnTokens){
+   const active=playable&&!winner&&activeTurn===side;
+   token.classList.toggle('is-turn',active);
+   token.title=active?'Teraz ruch '+(side===1?'białych':'czarnych'):'';
+  }
+ };
  const refreshClockNameLabels=()=>{
   const training=$('training-mode')?.classList.contains('active');
   for(const [id,label] of clockNameLabels){
@@ -255,14 +266,24 @@ export const checkersChessShellJs=String.raw`
    label.title=value;
   }
  };
- for(const id of ['black-name','white-name']){
+ for(const [id,side] of [['black-name',2],['white-name',1]]){
   const title=$(id),card=title?.closest('.player'),clock=card?.querySelector('.player-clock');
   if(!title||!card||!clock)continue;
   const label=card.querySelector('.cc-side')||E('span','cc-side');
-  clock.insertAdjacentElement('afterend',label);
+  const wrapper=E('span','checkers-clock-wrap');
+  const pawn=E('span','checkers-turn-token '+(side===1?'white':'black'));
+  pawn.setAttribute('aria-hidden','true');
+  clock.insertAdjacentElement('beforebegin',wrapper);
+  wrapper.append(pawn,clock);
+  wrapper.insertAdjacentElement('afterend',label);
+  clockTurnTokens.push([side,pawn]);
   clockNameLabels.push([id,label]);
   new MutationObserver(refreshClockNameLabels).observe(title,{childList:true,characterData:true,subtree:true});
  }
+ // Rendered board state is the single source of truth. Never infer a turn
+ // from a running clock (clocks may be disabled or paused).
+ window.addEventListener('gracz:warcaby:position',event=>refreshClockTurnTokens(event.detail));
+ refreshClockTurnTokens();
  for(const id of ['training-mode','online-mode']){
   const control=$(id);
   if(control)new MutationObserver(refreshClockNameLabels).observe(control,{attributes:true,attributeFilter:['class']});
