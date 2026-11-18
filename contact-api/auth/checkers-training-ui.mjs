@@ -23,7 +23,10 @@ export function setupTraining(a){
   if(!critical){
    clock.style.removeProperty('--checkers-clock-shade');
    clock.classList.remove('checkers-clock-pulse-twice','checkers-clock-pulse-once');
-   delete clock.dataset.checkersUrgencySecond;
+   // Remember a timed value just above the threshold to catch 00:31 -> 00:29.
+   if(Number.isFinite(remainingMs)&&remainingMs>30000)
+    clock.dataset.checkersUrgencySecond=String(Math.ceil(remainingMs/1000));
+   else delete clock.dataset.checkersUrgencySecond;
    return;
   }
   // Gradually turn the dark numerals into fully saturated red at 00:01.
@@ -38,7 +41,7 @@ export function setupTraining(a){
   if(crossing.length){
    clock.classList.remove('checkers-clock-pulse-twice','checkers-clock-pulse-once');
    void clock.offsetWidth; // Retrigger a milestone animation even if the previous one finished.
-   clock.classList.add(crossing[0]===30?'checkers-clock-pulse-twice':'checkers-clock-pulse-once');
+   clock.classList.add(crossing.at(-1)===30?'checkers-clock-pulse-twice':'checkers-clock-pulse-once');
   }
  }
  function displayClocks(){
