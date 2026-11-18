@@ -602,7 +602,6 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
   // Clicking a pawn must NOT leave a yellow square border; valid moves still
   // show their original small dots. Click-to-select must still work.
-  await takeSeat(page);
   await page.locator('#board .square[data-index="17"]').click();
   const selected=await page.evaluate(()=>{
    const square=document.querySelector('#board .square[data-index="17"]');
@@ -672,6 +671,7 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   assert.equal(await page.locator('#board .square').count(),64);
   await page.locator('#restart').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent==='Ruch 0');
+  await takeSeat(page);
   await page.locator('#board .square[data-index="17"]').click();
   await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
