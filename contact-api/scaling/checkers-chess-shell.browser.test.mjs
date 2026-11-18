@@ -66,6 +66,11 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   assert.equal(view.mode,true,'original computer game starts normally');
   assert.equal(view.top&&view.actions&&view.tools,true,'same approved chess-style right panel');
   assert.deepEqual(view.tabs,['Czat','Ruchy','Info']);
+  await page.getByRole('tab',{name:'Info'}).click();
+  await page.locator('#checkers-owner-info').waitFor({state:'visible'});
+  assert.equal(await page.getByRole('button',{name:'Odśwież partię online'}).isDisabled(),true,
+    'online refresh cannot interfere with a computer game');
+  await page.locator('#chat-tab').click();
   assert.ok(Math.abs(view.boardWidth-view.boardHeight)<3,'board stays square');
   if(!mobile)assert.ok(view.boardX<view.dockX,'board left, controls right');
   await page.locator('#board .square').nth(17).click();
