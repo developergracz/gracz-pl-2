@@ -203,8 +203,8 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.ok(script.body.includes("frame?.append(replay)"),'preview does not replace real board');
  assert.ok(script.body.includes("replay.hidden=true"),'live play remains available');
  assert.ok(script.body.includes("data.checkersRotated")===false,'no alternate game state introduced');
- assert.ok(style.body.includes('background:#031519!important'),'same midnight page as chess');
- assert.ok(style.body.includes('background:#003739!important'),'same dark game canvas as chess');
+ assert.ok(style.body.includes('background:#000!important'),'pure black page requested by Owner');
+ assert.ok(style.body.includes('#game:not(.game-focus)>.boardarea'),'board canvas overrides included');
  assert.ok(style.body.includes('checkers-history-columns'));
  assert.ok(style.body.includes('checkers-history-nav'));
  assert.ok(style.body.includes('checkers-mobile-menu-panel'));
@@ -216,7 +216,7 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.doesNotMatch(classicJs.body,/checkers-history-nav/,'classic script remains unchanged');
 });
 
-test('Warcaby chat correction is CSS-only and isolated from chess/Gomoku',()=>{
+test('Warcaby dark chat styling and drag controls are isolated from chess/Gomoku',()=>{
  const style=load('/konto/warcaby/styl.css');
  const script=load('/konto/warcaby/app.js');
  const classic=load('/konto/warcaby/styl.css?konsola=klasyczna');
@@ -227,8 +227,19 @@ test('Warcaby chat correction is CSS-only and isolated from chess/Gomoku',()=>{
  assert.ok(style.body.includes('#game #chat-messages .game-chat-message.own'));
  assert.ok(style.body.includes('#game #chat-input:focus-visible'));
  assert.ok(style.body.includes('outline:none!important'));
- assert.ok(style.body.includes('border-color:#4f838a!important'));
- assert.ok(style.body.includes('background:#092d34!important'));
+ assert.ok(style.body.includes('border:1px solid #a5b5b5!important'));
+ assert.ok(style.body.includes('background:#fff!important'));
  assert.doesNotMatch(classic.body,/width:fit-content!important/,'classic rescue style unchanged');
  assert.doesNotMatch(script.body,/chat-messages\.replaceChildren\(mine/,'no chat controller modifications');
+ assert.ok(style.body.includes('.game-chat-message.own')); 
+ assert.ok(style.body.includes('align-self:flex-start!important')); 
+ assert.ok(style.body.includes('checkers-drag-target'));
+ assert.ok(style.body.includes('checkers-drag-ghost'));
+ assert.ok(script.body.includes('b.dataset.index=String(i)'));
+ assert.ok(script.body.includes("board.addEventListener('pointerdown'"));
+ assert.ok(script.body.includes("board.addEventListener('pointermove'"));
+ assert.ok(script.body.includes('void choose(to)'),'drop uses original game rules');
+ assert.ok(script.body.includes('captureSources(state,current.player)'));
+ assert.ok(script.body.includes('d.targets.includes(to)'));
+ assert.doesNotMatch(load('/konto/warcaby/app.js?konsola=klasyczna').body,/checkers-drag-ghost/,'classic fallback code unchanged');
 });
