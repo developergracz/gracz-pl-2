@@ -1,6 +1,34 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Seat-to-play dialog is independent of board and clock geometry. */
+body.warcaby-console.chess-console.cc-owner .checkers-start-colors{
+ display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:12px
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-colors button{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:9px;min-height:104px;border:1px solid #d2c2a2;border-radius:12px;
+ background:#f2e9d6;color:#103f43;cursor:pointer;
+ font:750 15px system-ui,-apple-system,'Segoe UI',sans-serif
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-colors button:hover{
+ border-color:#087d7e;background:#e3f1ed
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-colors button:focus-visible{
+ outline:3px solid #087d7e;outline-offset:2px
+}
+body.warcaby-console.chess-console.cc-owner .checkers-choice-pawn{
+ display:block;width:48px;height:48px;box-sizing:border-box;border-radius:50%;
+ border:3px solid #7c9999;
+ box-shadow:0 3px 6px #002e3036,inset 0 0 0 5px #ffffff55,inset 0 0 0 7px #496e6e66
+}
+body.warcaby-console.chess-console.cc-owner .checkers-choice-pawn.white{
+ background:radial-gradient(circle at 35% 26%,#fff 0%,#f1f4f2 58%,#c1cecc 100%)
+}
+body.warcaby-console.chess-console.cc-owner .checkers-choice-pawn.black{
+ background:radial-gradient(circle at 35% 26%,#555 0%,#252626 54%,#0a0b0d 100%);
+ border-color:#45585b;box-shadow:0 3px 6px #002e3036,inset 0 0 0 5px #9db5b522,inset 0 0 0 7px #293536
+}
+
 body.warcaby-console.chess-console.cc-owner .checkers-start-gate[hidden]{display:none!important}
 body.warcaby-console.chess-console.cc-owner .checkers-start-gate:not([hidden]){
  position:fixed;inset:0;z-index:100010;display:grid;place-items:center;
@@ -312,11 +340,12 @@ export const checkersChessShellJs=String.raw`
  };
  const refreshClockNameLabels=()=>{
   const training=$('training-mode')?.classList.contains('active');
+  const humanSide=board.dataset.checkersHumanSide==='2'?2:1;
   for(const [id,label] of clockNameLabels){
    const source=$(id)?.textContent?.trim()||'';
    const value=training
-    ?(id==='black-name'?'Komputer':sessionNickname||'Gracz')
-    :(source==='Ty'?(sessionNickname||'Gracz'):source||(id==='black-name'?'Czarne':'Białe'));
+    ?((id==='black-name'?2:1)===humanSide?(sessionNickname||'Gość'):'Komputer')
+    :(source==='Ty'?(sessionNickname||'Gość'):source||(id==='black-name'?'Czarne':'Białe'));
    if(label.textContent!==value)label.textContent=value;
    label.title=value;
   }
@@ -337,7 +366,7 @@ export const checkersChessShellJs=String.raw`
  }
  // Rendered board state is the single source of truth. Never infer a turn
  // from a running clock (clocks may be disabled or paused).
- window.addEventListener('gracz:warcaby:position',event=>refreshClockTurnTokens(event.detail));
+ window.addEventListener('gracz:warcaby:position',event=>{refreshClockTurnTokens(event.detail);refreshClockNameLabels();});
  refreshClockTurnTokens();
  for(const id of ['training-mode','online-mode']){
   const control=$(id);
