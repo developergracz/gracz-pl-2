@@ -50,6 +50,9 @@ export const productionModules=Object.freeze([
   'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
+  // Presentation-only chess-style shell for Warcaby: same-origin DOM reparenting and
+  // authenticated inbox metadata GET, no move engine, new routes or external hosts.
+  'auth/checkers-chess-shell.mjs',
   // Isolated Warcaby loss-only dialog: scoped CSS and browser UI, existing authenticated
   // social/challenges and friends/presence APIs; no new routes or privileged data.
   'auth/checkers-loss-popup.mjs',
