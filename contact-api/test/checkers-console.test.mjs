@@ -150,7 +150,7 @@ test('checkers loss dialog is the only new visual surface and is linked to actua
  assert.match(page.body,/role="dialog" aria-modal="true"/);
  assert.match(page.body,/Zagraj z innym graczem/);
  assert.match(script.body,/gracz:warcaby:position/);
- assert.match(script.body,/winner:s.winner,turn:s.turn,playable:current.playable,players:current.players/);
+ assert.match(script.body,/winner:s.winner,turn:s.turn,playable:current.playable,drawOffer:s.drawOffer\|\|null,moves:s.moves,players:current.players/);
  assert.match(script.body,/detail.winner===detail.player/);
  assert.match(script.body,/if\(!detail\|\|!detail.winner\)/);
  assert.match(script.body,/social\/challenges/);
@@ -212,6 +212,13 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.ok(script.body.includes("checkers-turn-token"),'real white/black turn markers exist');
  assert.ok(script.body.includes("dataset.checkersTurn=String(current.state.turn)"),'active indicator uses actual rules engine turn');
  assert.ok(script.body.includes("document.body.append(d.ghost)"),'drag ghost uses viewport coordinates');
+ assert.ok(script.body.includes("sourceFont=getComputedStyle(source).fontSize"),'ghost maintains exactly the same piece-size units');
+ assert.ok(style.body.includes('.checkers-drag-ghost.white'), 'white dragged pawn receives the premium gradient');
+ assert.ok(style.body.includes('.checkers-drag-ghost.black'), 'black dragged pawn receives the premium gradient');
+ assert.ok(style.body.includes('.checkers-drag-ghost:before'), 'drag clone renders face/inner ring');
+ assert.ok(script.body.includes("checkers-offer-draw"),'Remis action is present');
+ assert.ok(script.body.includes("sendDraw('acceptDraw')"),'acceptance sends explicit consent');
+ assert.ok(script.body.includes("sendDraw('rejectDraw')"),'rejection is possible');
  assert.ok(script.body.includes("suppressDragClickTo=to"),'drag release never double-clicks its target');
  assert.ok(style.body.includes('#game:not(.game-focus)>.boardarea'),'board canvas overrides included');
  assert.ok(style.body.includes('checkers-history-columns'));
