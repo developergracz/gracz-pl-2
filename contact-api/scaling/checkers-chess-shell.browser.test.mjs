@@ -7,11 +7,15 @@ import {chromium} from 'playwright';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
 
-async function serverFor(t){
+async function serverFor(t,{nickname=null}={}){
  const requests=[];
  const server=createServer((req,res)=>{
   const url=new URL(req.url,'http://127.0.0.1');
   if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+  if(url.pathname==='/auth/session'){
+   res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+   res.end(JSON.stringify(nickname?{ok:true,loggedIn:true,nickname}:{ok:true,loggedIn:false}));return;
+  }
   if(url.pathname==='/auth/message-center'){
    res.writeHead(401,{'Content-Type':'application/json'});res.end('{"ok":false}');return;
   }
@@ -31,6 +35,47 @@ async function serverFor(t){
  t.after(()=>{server.close();server.closeAllConnections();});
  return {base:'http://127.0.0.1:'+server.address().port,requests};
 }
+
+test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
+ const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<=800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#white-name')?.closest('.player')?.querySelector('.cc-side')?.textContent==='ZalogowanyGracz');
+  const info=await page.evaluate(()=>{
+   const card=id=>document.getElementById(id)?.closest('.player');
+   const black=card('black-name'),white=card('white-name');
+   const clock=black.querySelector('.player-clock');
+   const name=black.querySelector('.cc-side'),other=white.querySelector('.cc-side');
+   const st=getComputedStyle(clock),ns=getComputedStyle(name);
+   return {
+    labels:[name.textContent,other.textContent],
+    order:clock.nextElementSibling===name&&white.querySelector('.player-clock').nextElementSibling===other,
+    fontSize:parseFloat(st.fontSize),labelSize:parseFloat(ns.fontSize),labelColor:ns.color,
+    clockWidth:parseFloat(st.width),clockHeight:parseFloat(st.minHeight),
+    playerWidth:black.getBoundingClientRect().width,
+    docWidth:document.documentElement.scrollWidth,viewportWidth:document.documentElement.clientWidth
+   };
+  });
+  assert.deepEqual(info.labels,['Komputer','ZalogowanyGracz'],'real signed-in nickname, not placeholder');
+  assert.equal(info.order,true,'name is immediately after the clock in each existing player box');
+  assert.equal(info.labelSize,11,'compact name text');
+  assert.equal(info.labelColor,'rgb(255, 255, 255)','white name text');
+  assert.ok(info.fontSize>=21&&info.fontSize<=27,'clock digits are slightly smaller');
+  const originalWidth=Math.min(99,Math.max(75.9,viewport.width*.066));
+  const originalHeight=Math.min(33.5,Math.max(26.15,viewport.width*.021+2));
+  assert.ok(Math.abs(info.clockWidth-originalWidth)<2,'original clock width is retained');
+  assert.ok(Math.abs(info.clockHeight-originalHeight)<2,'original clock height is retained');
+  assert.ok(info.docWidth<=info.viewportWidth+2,'names do not introduce horizontal overflow');
+  assert.deepEqual(errors,[],'no browser JavaScript errors');
+  await context.close();
+ }
+});
 
 test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, online invitation and mobile',{timeout:110000},async t=>{
  const {base,requests}=await serverFor(t);
@@ -221,7 +266,7 @@ test('P0: same service always offers a fully playable classic Warcaby fallback',
  assert.deepEqual(errors,[]);
 });
 
-test('Owner parity: chess-dark background, correctly oriented coordinates, chess-style move history and mobile topbar',{timeout:120000},async t=>{
+test('Owner parity: exact chess desktop/mobile background, coordinates, move history and mobile topbar',{timeout:120000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  t.after(()=>browser.close());
@@ -257,10 +302,11 @@ test('Owner parity: chess-dark background, correctly oriented coordinates, chess
     viewport:document.documentElement.clientWidth
    };
   });
-  assert.equal(visuals.root,'rgb(0, 0, 0)','document root is black');
-  assert.equal(visuals.body,'rgb(0, 0, 0)','Owner requested pure black page');
-  assert.equal(visuals.boardarea,'rgb(0, 0, 0)','no green board surroundings');
-  assert.equal(visuals.game,'rgb(0, 0, 0)','Owner requested pure black game canvas');
+  const expectedChess=mobile?'rgb(226, 242, 239)':'rgb(227, 235, 231)';
+  assert.equal(visuals.root,expectedChess,'document root matches Szachy');
+  assert.equal(visuals.body,expectedChess,'body matches Szachy');
+  assert.equal(visuals.boardarea,expectedChess,'board surroundings match Szachy');
+  assert.equal(visuals.game,expectedChess,'game canvas matches Szachy');
   assert.equal(visuals.shadow,'none','no surrounding game frame shadow');
   assert.equal(visuals.mobileBar,mobile,'mobile navigation bar only on phones');
   assert.equal(visuals.header,true);
