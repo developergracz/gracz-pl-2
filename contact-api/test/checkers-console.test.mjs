@@ -142,25 +142,30 @@ test('premium checkers console serves isolated assets with strict CSP',()=>{
  assert.equal(load('/konto/warcaby/no-such').served,false);
 });
 
-test('checkers loss dialog is the only new visual surface and is linked to actual match results',()=>{
+test('Warcaby loss dialog uses the signed-in nickname and an authenticated tables lobby',()=>{
  const page=load('/konto/warcaby/'),style=load('/konto/warcaby/styl.css'),script=load('/konto/warcaby/app.js');
- for(const id of ['warcaby-loss-overlay','warcaby-loss-name','warcaby-loss-rematch','warcaby-loss-others','warcaby-loss-tables','warcaby-loss-friends','warcaby-loss-scheduled'])
+ for(const id of ['warcaby-loss-overlay','warcaby-loss-player','warcaby-loss-name',
+  'warcaby-loss-rematch','warcaby-loss-others','warcaby-tables-overlay',
+  'warcaby-tables-code','warcaby-loss-tables','warcaby-tables-create','warcaby-tables-refresh'])
   assert.match(page.body,new RegExp('id="'+id+'"'));
- assert.match(page.body,/PRZEGRAŁEŚ TĘ PARTIĘ Z/);
+ assert.match(page.body,/Przegrałeś <span id="warcaby-loss-player">Gracz<\/span> tę grę z/);
  assert.match(page.body,/role="dialog" aria-modal="true"/);
- assert.match(page.body,/Zagraj z innym graczem/);
+ assert.match(page.body,/>Rewanż<\/button>/);
+ assert.match(page.body,/>Stoły<\/button>/);
+ assert.match(page.body,/>Utwórz stół<\/button>/);
+ assert.match(page.body,/Wolne stoły/);
+ assert.match(page.body,/W trakcie gry/);
+ assert.match(page.body,/Moje stoły/);
  assert.match(script.body,/gracz:warcaby:position/);
  assert.match(script.body,/winner:s.winner,turn:s.turn,playable:current.playable,drawOffer:s.drawOffer\|\|null,moves:s.moves,players:current.players/);
- assert.match(script.body,/detail.winner===detail.player/);
- assert.match(script.body,/if\(!detail\|\|!detail.winner\)/);
- assert.match(script.body,/social\/challenges/);
- assert.match(script.body,/friends\/presence/);
- assert.match(script.body,/x.status==='accepted'/);
- assert.match(script.body,/Date.parse\(x.scheduledAt\)>Date.now\(\)/);
- assert.match(script.body,/id!==session\?\.matchId/);
- assert.match(script.body,/if\(oldModal\)oldModal.hidden=true/);
- assert.match(style.body,/\.warcaby-console \.warcaby-loss-overlay/);
- assert.doesNotMatch(style.body,/\.warcaby-loss-board/);
+ assert.match(script.body,/fetch\('\/auth\/session'/);
+ assert.match(script.body,/setText\('warcaby-loss-player'/);
+ assert.match(script.body,/\/auth\/warcaby\/tables/);
+ assert.match(script.body,/action:'create'/);
+ assert.match(script.body,/action:'join'/);
+ assert.match(script.body,/action:'close'/);
+ assert.match(script.body,/if\(!d\|\|!\[1,2\]\.includes\(d.player\)/);
+ assert.match(style.body,/\.warcaby-console \.warcaby-tables-overlay/);
  assert.doesNotMatch(page.body,/Szachista_PL|Mistrz_Andrzej|Stół #1284/,'no invented opponents or rooms');
  assert.doesNotThrow(()=>new Script(script.body));
 });
