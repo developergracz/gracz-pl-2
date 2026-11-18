@@ -38,7 +38,8 @@ async function serverFor(t,{nickname=null}={}){
 
 async function takeSeat(page){
  await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length>0&&
-  document.querySelector('#checkers-start-gate')?.hidden===true);
+  document.querySelector('#checkers-start-gate')?.hidden===true&&
+  document.querySelector('#board')?.dataset.checkersPlayable==='false');
  await page.locator('#board .piece.white').first().evaluate(el=>{
   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
  });
@@ -145,7 +146,11 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   assert.deepEqual(info.labels,['Komputer','ZalogowanyGracz'],'real signed-in nickname, not placeholder');
   assert.equal(info.order,true,'name is immediately after the clock in each existing player box');
   assert.ok(info.pawns[0].includes('black')&&info.pawns[1].includes('white'),'correct colours: black computer / white signed-in player');
-  assert.ok(!info.pawns[0].includes('is-turn')&&info.pawns[1].includes('is-turn'),'first turn belongs to white pawn');
+  assert.ok(!info.pawns[0].includes('is-turn')&&!info.pawns[1].includes('is-turn'),
+   'no active turn ring before taking a seat');
+  await takeSeat(page);
+  assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),1,
+   'after seating white is next to move, without starting clock');
   for(const icon of info.pawnIcons){
    assert.equal(icon.width,15);assert.equal(icon.height,15);
    assert.equal(icon.borderWidth,'1px','thin pawn border');
