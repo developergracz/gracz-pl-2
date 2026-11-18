@@ -4,7 +4,9 @@ import {initialGame,playMove,legalMoves,evaluate,chooseComputerMove} from './che
 
 export function setupTraining(a){
  const $=a.$;
- let mode='online',generation=0,finished=false,recorded=false;
+ let mode='online',generation=0,finished=false,recorded=false,humanSide=1;
+ const computerSide=()=>3-humanSide;
+ const trainingPlayers=()=>humanSide===1?['Ty','Komputer']:['Komputer','Ty'];
  let clocks={1:0,2:0},lastTick=0,clockStarted=false,snapshots=[],notes=[];
  const storageKey='gracz-warcaby-training-v1';
  const clone=value=>JSON.parse(JSON.stringify(value));
@@ -57,7 +59,7 @@ export function setupTraining(a){
  }
  function hideResult(){$('game-result-modal').hidden=true}
  function showResult(winner){
-  const result=winner===3?'draw':winner===1?'win':'loss';
+  const result=winner===3?'draw':winner===humanSide?'win':'loss';
   const card=$('game-result-modal').querySelector('.result-card');
   card.dataset.result=result;
   $('game-result-title').textContent=result==='win'?'Wygrałeś z komputerem!':result==='loss'?'Przegrałeś z komputerem.':'Partia zakończona remisem.';
@@ -68,7 +70,7 @@ export function setupTraining(a){
  function finish(){
   if(finished||!game()?.winner)return;
   finished=true;generation++;
-  if(!recorded){recorded=true;addResult(game().winner===3?'draw':game().winner===1?'win':'loss')}
+  if(!recorded){recorded=true;addResult(game().winner===3?'draw':game().winner===humanSide?'win':'loss')}
   displayClocks();a.renderBoard();showResult(game().winner);
  }
  function tick(){
@@ -78,7 +80,7 @@ export function setupTraining(a){
   clocks[game().turn]=Math.max(0,clocks[game().turn]-delta);
   if(clocks[game().turn]===0){
    game().winner=3-game().turn;
-   announce('Koniec czasu: '+(game().winner===1?'wygrywasz.':'wygrywa komputer.'));
+   announce('Koniec czasu: '+(game().winner===humanSide?'wygrywasz.':'wygrywa komputer.'));
    finish();
   }
   displayClocks();
@@ -107,51 +109,63 @@ export function setupTraining(a){
   if(before.turn!==response.state.turn&&Number($('training-time').value))
    clocks[actor]+=Number($('training-increment').value)*1000;
   const history=[...(before.history||[]),{player:actor,from:move.from,to:move.to}];
-  a.setCurrent({type:'training',state:{...response.state,history},players:['Ty','Komputer'],player:1,playable:true});
-  a.setSelected(response.state.forced!==null&&response.state.turn===1?response.state.forced:null);
+  a.setCurrent({type:'training',state:{...response.state,history},players:trainingPlayers(),player:humanSide,playable:true});
+  a.setSelected(response.state.forced!==null&&response.state.turn===humanSide?response.state.forced:null);
   lastTick=performance.now();
   a.renderBoard();
   if(response.state.winner){finish();return}
-  announce(response.state.turn===1?'Twój ruch — wybierz pionek.':'Komputer analizuje ruch…');
-  if(response.state.turn===2)scheduleComputer(generation);
+  announce(response.state.turn===humanSide?'Twój ruch — wybierz pionek.':'Komputer analizuje ruch…');
+  if(response.state.turn===computerSide())scheduleComputer(generation);
  }
  function scheduleComputer(version){
   if(mode!=='training'||finished)return;
   setTimeout(()=>{
-   if(version!==generation||mode!=='training'||finished||!game()||game().turn!==2)return;
+   if(version!==generation||mode!=='training'||finished||!game()||game().turn!==computerSide())return;
    tick();
    if(finished)return;
    let move;
-   try{move=chooseComputerMove(game(),$('ai-level').value)}catch{announce('Nie udało się obliczyć ruchu komputera.');return}
+   try{move=chooseComputerMove(game(),$('ai-level').value,{computerSide:computerSide()})}catch{announce('Nie udało się obliczyć ruchu komputera.');return}
    if(version!==generation||mode!=='training'||finished)return;
    if(!move){
-    game().winner=1;finish();return;
+    game().winner=humanSide;finish();return;
    }
-   turnFinished(move,2);
+   turnFinished(move,computerSide());
   },90);
  }
  async function startTraining(){
   if(mode!=='training')return;
-  generation++;finished=false;recorded=false;clockStarted=false;snapshots=[];notes=[];
+  generation++;finished=false;recorded=false;clockStarted=false;snapshots=[];notes=[];humanSide=1;
+  a.setOrientation?.(true);
   hideResult();
   const minutes=Number($('training-time').value)||0;
   clocks={1:minutes*60000,2:minutes*60000};
   const state={...initialGame('warcaby'),history:[]};
   a.resetSeatGate?.();
-  a.setCurrent({type:'training',state,players:['Ty','Komputer'],player:1,playable:!a.isSeatPending?.()});
+  a.setCurrent({type:'training',state,players:trainingPlayers(),player:humanSide,playable:!a.isSeatPending?.()});
   a.setSelected(null);lastTick=performance.now();
   a.renderBoard();displayClocks();renderNotes();updateStats();
   $('chat-tab').click();
-  announce('Nowa partia z komputerem. Grasz białymi, masz pierwszy ruch.');
+  announce('Nowa partia z komputerem. Wybierz kolor pionków, aby rozpocząć.');
+ }
+ function activateSeat(side){
+  if(mode!=='training'||finished||!game()||game().moves!==0||![1,2].includes(side))return false;
+  humanSide=side;
+  a.setOrientation?.(side===1); // white begins at bottom; selecting black turns the view.
+  a.setCurrent({type:'training',state:game(),players:trainingPlayers(),player:humanSide,playable:true});
+  a.setSelected(null);
+  a.renderBoard();displayClocks();
+  announce('Świetnie! Grasz teraz '+(side===1?'białymi':'czarnymi')+' pionkami.');
+  if(side===2)scheduleComputer(generation); // white (computer) opens the game.
+  return true;
  }
  function playTrainingMove(move){
-  if(mode!=='training'||finished||!game()||game().turn!==1)return;
+  if(mode!=='training'||finished||!game()||game().turn!==humanSide)return;
   if(game().forced==null){
    snapshots.push({state:clone(game()),clocks:{...clocks},clockStarted});
    if(snapshots.length>20)snapshots.shift();
   }
   tick();
-  if(!finished)turnFinished(move,1);
+  if(!finished)turnFinished(move,humanSide);
  }
  function undoTraining(){
   if(mode!=='training'||finished||!snapshots.length){
@@ -160,20 +174,20 @@ export function setupTraining(a){
   generation++;
   const last=snapshots.pop();
   clocks={...last.clocks};clockStarted=last.clockStarted;
-  a.setCurrent({type:'training',state:last.state,players:['Ty','Komputer'],player:1,playable:true});
+  a.setCurrent({type:'training',state:last.state,players:trainingPlayers(),player:humanSide,playable:true});
   a.setSelected(null);lastTick=performance.now();
   a.renderBoard();displayClocks();
   announce('Cofnięto całą turę — Twój ruch i odpowiedź komputera.');
  }
  function hint(){
-  if(mode!=='training'||finished||game()?.turn!==1){announce('Podpowiedź jest dostępna podczas Twojej tury.');return}
+  if(mode!=='training'||finished||game()?.turn!==humanSide){announce('Podpowiedź jest dostępna podczas Twojej tury.');return}
   const moves=legalMoves(game());
   if(!moves.length){announce('Brak dostępnych ruchów.');return}
   let best=moves[0],score=-Infinity;
   for(const move of moves){
-   const r=playMove('warcaby',game(),1,move);
+   const r=playMove('warcaby',game(),humanSide,move);
    if(r.error)continue;
-   const value=evaluate(r.state,1)+(move.taken!==undefined?10:0);
+   const value=evaluate(r.state,humanSide)+(move.taken!==undefined?10:0);
    if(value>score){score=value;best=move}
   }
   a.setSelected(best.from);a.renderBoard();
@@ -225,5 +239,5 @@ export function setupTraining(a){
  $('game-result-new').addEventListener('click',()=>void startTraining());
  setInterval(tick,250);
  updateHint();updateStats();
- return {startTraining,playTrainingMove,undoTraining,renderNotes,setMode,getMode:()=>mode};
+ return {startTraining,activateSeat,playTrainingMove,undoTraining,renderNotes,setMode,getMode:()=>mode};
 }

@@ -301,7 +301,7 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .chec
  position:absolute!important;left:-19px!important;top:50%!important;
  transform:translateY(-50%)!important;width:15px!important;height:15px!important;
  box-sizing:border-box!important;flex:none!important;border-radius:50%!important;
- border:1px solid #617a7a!important;outline:1px solid transparent!important;outline-offset:2px!important;
+ border:1px solid #617a7a!important;outline:3px solid transparent!important;outline-offset:2px!important;
  pointer-events:none!important;z-index:1!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-turn-token.white{

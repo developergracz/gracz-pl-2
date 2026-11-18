@@ -47,7 +47,7 @@ async function takeSeat(page){
   });
  }
  await page.locator('#checkers-start-gate').waitFor({state:'visible'});
- await page.locator('#checkers-start-button').click();
+ await page.getByRole('button',{name:'Wybierz białe pionki'}).click();
  await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
 }
@@ -82,7 +82,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   await gate.waitFor({state:'visible'});
   assert.equal(await gate.getAttribute('role'),'dialog');
   assert.equal(await gate.getAttribute('aria-modal'),'true');
-  assert.match(await gate.textContent(),/Aby rozpocząć grę, usiądź do gry/);
+  assert.match(await gate.textContent(),/Wybierz kolor pionków/);
   const bbox=await page.locator('.checkers-start-card').boundingBox();
   assert.ok(Math.abs(bbox.x+bbox.width/2-viewport.width/2)<5,'prompt horizontally centered');
   assert.ok(Math.abs(bbox.y+bbox.height/2-viewport.height/2)<5,'prompt vertically centered');
@@ -93,7 +93,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
   const initial=await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent()));
   assert.deepEqual(initial,['07:00','07:00']);
-  await page.locator('#checkers-start-button').click();
+  await page.getByRole('button',{name:'Wybierz białe pionki'}).click();
   await gate.waitFor({state:'hidden'});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
   await page.waitForTimeout(1250);
@@ -176,6 +176,83 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
  }
 });
 
+test('Anonymous guest and color picker: white below; black side triggers computer white opener and clock',{timeout:95000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const context=await browser.newContext({viewport,isMobile:viewport.width<500,hasTouch:viewport.width<500});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false'&&
+   document.querySelectorAll('#board .piece.white').length===12);
+  const check=()=>page.evaluate(()=>{
+   const $=id=>document.getElementById(id),labels=['black-name','white-name'].map(id=>
+    $(id)?.closest('.player')?.querySelector('.cc-side')?.textContent);
+   const center=i=>{const r=document.querySelector('#board .square[data-index="'+i+'"]').getBoundingClientRect();return r.top+r.height/2};
+   return {labels,white:center(17),black:center(49),rotation:$('board').dataset.checkersRotated};
+  });
+  await page.waitForFunction(()=>document.getElementById('white-name')?.closest('.player')?.querySelector('.cc-side')?.textContent==='Gość');
+  const initial=await check();
+  assert.deepEqual(initial.labels,['Komputer','Gość']);
+  assert.equal(initial.rotation,'true');
+  assert.ok(initial.white>initial.black,'opening screen displays white pieces at the bottom');
+  const pawn=page.locator('#board .square[data-index="17"] .piece');
+  // Hover opens a blocking modal immediately. Dispatch the hover event as
+  // a real DOM pointer event, otherwise Playwright keeps retrying hover
+  // because the newly opened dialog correctly intercepts the pointer.
+  await pawn.evaluate((el,viewportWidth)=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:viewportWidth<500?'touch':'mouse'})),viewport.width);
+  const gate=page.locator('#checkers-start-gate');
+  await gate.waitFor({state:'visible'});
+  assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
+  assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),['07:00','07:00']);
+  await gate.getByRole('button',{name:'Wybierz czarne pionki'}).click();
+  await gate.waitFor({state:'hidden'});
+  await page.locator('#checkers-color-confirmation').waitFor({state:'visible'});
+  assert.match(await page.locator('#checkers-color-confirmation').textContent(),/Świetnie! Grasz teraz czarnymi pionkami/);
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2');
+  const chosen=await check();
+  assert.deepEqual(chosen.labels,['Gość','Komputer']);
+  assert.equal(chosen.rotation,'false');
+  assert.ok(chosen.black>chosen.white,'black is now on the bottom for human black player');
+  await page.waitForFunction(()=>document.querySelector('#move-count')?.textContent!=='Ruch 0');
+  await page.waitForFunction(()=>document.getElementById('history-count')?.textContent==='1'&&
+   document.getElementById('board')?.dataset.checkersTurn==='2');
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-human-side'),'2',
+   'computer has completed the first legal white move and it is now the black player turn');
+  await page.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='07:00',null,{timeout:7000});
+  // Regression: the previous test clicked 49→40, which is blocked by a
+  // black pawn already occupying 40. It therefore passed without a move.
+  assert.equal(await page.locator('#board .square[data-index="33"] .piece').count(),0,
+   'the actual black destination must be empty before the move');
+  assert.equal(await page.locator('#turn-label').textContent(),'Twój ruch',
+   'after the white AI opener it is the black human player turn');
+  assert.match(await page.locator('#board-help').textContent(),/grasz czarnymi pionkami/);
+  await page.locator('#board .square[data-index="40"] .piece.black').click();
+  await page.locator('#board .square[data-index="33"]').click();
+  await page.waitForFunction(()=>!!document.querySelector('#board .square[data-index="33"] .piece.black')&&
+   !document.querySelector('#board .square[data-index="40"] .piece'));
+  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>=2);
+  // Observe the black move and subsequent AI reply before opening the
+  // history preview; otherwise a new live move can close the preview.
+  await page.waitForFunction(()=>document.getElementById('turn-label')?.textContent==='Twój ruch'&&
+   Number(document.getElementById('history-count')?.textContent)>=3);
+  await page.locator('#history-tab').click();
+  await page.locator('#moves-panel').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelectorAll('#moves-list .checkers-history-move').length>=3);
+  const blackEntry=page.locator('#moves-list .checkers-history-move').nth(1);
+  assert.match(await blackEntry.getAttribute('aria-label'),/Czarne/,
+   'second recorded move is a real black move, not an existing pawn');
+  await blackEntry.click();
+  await page.locator('.checkers-replay-board').waitFor({state:'visible'});
+  assert.match(await page.locator('.checkers-history-nav-status').textContent(),/Pozycja 2/,
+   'history replay shows the position after the actual black move');
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }
+});
+
 test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
  const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -220,7 +297,7 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   for(const icon of info.pawnIcons){
    assert.equal(icon.width,15);assert.equal(icon.height,15);
    assert.equal(icon.borderWidth,'1px','thin pawn border');
-   assert.equal(icon.outlineWidth,'1px','thin active turn outline');
+   assert.equal(icon.outlineWidth,'3px','highlight ring thicker without resizing the clock token');
    assert.equal(icon.leftOfClock,true,'pawn left of clock without changing its box');
   }
   assert.equal(info.labelSize,11,'compact name text');
@@ -278,8 +355,8 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   assert.ok(Math.abs(view.boardWidth-view.boardHeight)<3,'board stays square');
   if(!mobile)assert.ok(view.boardX<view.dockX,'board left, controls right');
   await takeSeat(page);
-  await page.locator('#board .square').nth(17).click();
-  await page.locator('#board .square').nth(24).click();
+  await page.locator('#board .square[data-index="17"]').click();
+  await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
   assert.ok((await page.locator('#moves-list .checkers-history-move').count())>=1,'existing move history');
   const undo=page.getByRole('button',{name:'Cofnij',exact:true});
@@ -352,7 +429,7 @@ test('P0: visible checker is clickable by real cursor/touch after cold load and 
    await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
    await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'));
    await page.waitForTimeout(2400); // also cross the formerly indefinite CSS-boot mask
-   const first=page.locator('#board .square').nth(17),dest=page.locator('#board .square').nth(24);
+   const first=page.locator('#board .square[data-index="17"]'),dest=page.locator('#board .square[data-index="24"]');
    await first.scrollIntoViewIfNeeded();
    const preflight=await first.evaluate(cell=>{
     const piece=cell.querySelector('.piece'),rect=piece?.getBoundingClientRect();
@@ -399,8 +476,8 @@ test('P0: console remains playable when web-font readiness never resolves',{time
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:6000});
  await takeSeat(page);
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
 });
 
@@ -422,8 +499,8 @@ test('P0: same service always offers a fully playable classic Warcaby fallback',
   css:[...document.querySelectorAll('link[rel=stylesheet]')].some(x=>x.href.includes('/konto/warcaby/styl.css?konsola=klasyczna'))
  }));
  assert.deepEqual(state,{classic:true,noBootBlock:true,boardSquares:64,pawns:24,js:true,css:true});
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
  assert.deepEqual(errors,[]);
 });
@@ -448,7 +525,7 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    last:cells.at(-1).querySelector('.checkers-coordinate-file')?.textContent,
    pointer:getComputedStyle(cells[0].querySelector('.checkers-coordinate-rank')).pointerEvents
   }));
-  assert.deepEqual(labels,{first:'8',last:'h',pointer:'none'});
+  assert.deepEqual(labels,{first:'1',last:'a',pointer:'none'},'white pawns shown at bottom change visible coordinate order');
   const visuals=await page.evaluate(()=>{
    const game=document.getElementById('game'),body=document.body,area=game.querySelector('.boardarea');
    const mobileBar=area.querySelector('.checkers-mobile-heading');
@@ -481,8 +558,8 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),false);
   }
   await takeSeat(page);
-  await page.locator('#board .square').nth(17).locator('.piece').click();
-  await page.locator('#board .square').nth(24).click();
+  await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+  await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
   // Wait for the computer's immediate reply. A new live move legitimately
   // resets a historical preview; do not race that state transition.
@@ -509,9 +586,9 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
   await page.locator('#checkers-owner-info').count();
   // Check board-rotation metadata and labels without changing the actual rules.
   await page.locator('#rotate-board').evaluate(button=>button.click());
-  await page.waitForFunction(()=>document.getElementById('board')?.dataset.checkersRotated==='true');
+  await page.waitForFunction(()=>document.getElementById('board')?.dataset.checkersRotated==='false');
   const flipped=await page.locator('#board .square').first().locator('.checkers-coordinate-rank').textContent();
-  assert.equal(flipped,'1','rank labels follow rotation');
+  assert.equal(flipped,'8','rank labels follow the manual flip back from white-bottom view');
   assert.deepEqual(errors,[],'no browser JS errors');
   await context.close();
  }
@@ -525,8 +602,8 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await takeSeat(page);
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>0);
  await page.locator('#history-tab').click();
  await page.getByRole('button',{name:'Pierwsza pozycja'}).click();

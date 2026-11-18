@@ -51,7 +51,8 @@ export function evaluate(state,computer=2){
 }
 
 export function chooseComputerMove(state,level='normal',options={}){
- if(!state||state.winner||state.turn!==2)return null;
+ const computer=options.computerSide===1?1:2;
+ if(!state||state.winner||state.turn!==computer)return null;
  const top=legalMoves(state);
  if(!top.length)return null;
  const depths={normal:1,hard:2,expert:3,master:5};
@@ -66,10 +67,10 @@ export function chooseComputerMove(state,level='normal',options={}){
  });
  function search(node,remaining,alpha,beta){
   visited++;
-  if(!remaining||node.winner||visited>=maxNodes||Date.now()>deadline)return evaluate(node,2);
+  if(!remaining||node.winner||visited>=maxNodes||Date.now()>deadline)return evaluate(node,computer);
   const legal=legalMoves(node);
-  if(!legal.length)return node.turn===2?-100000:100000;
-  const maximize=node.turn===2;
+  if(!legal.length)return node.turn===computer?-100000:100000;
+  const maximize=node.turn===computer;
   let best=maximize?-Infinity:Infinity;
   for(const move of ordered(legal,node)){
    const applied=playMove('warcaby',node,node.turn,move);
@@ -79,11 +80,11 @@ export function chooseComputerMove(state,level='normal',options={}){
    if(maximize)alpha=Math.max(alpha,best);else beta=Math.min(beta,best);
    if(beta<=alpha||visited>=maxNodes||Date.now()>deadline)break;
   }
-  return Number.isFinite(best)?best:evaluate(node,2);
+  return Number.isFinite(best)?best:evaluate(node,computer);
  }
  let best=null,bestScore=-Infinity;
  for(const move of ordered(top,state)){
-  const applied=playMove('warcaby',state,2,move);
+  const applied=playMove('warcaby',state,computer,move);
   if(applied.error)continue;
   const score=search(applied.state,depth-1,-Infinity,Infinity);
   if(score>bestScore){bestScore=score;best=move}
