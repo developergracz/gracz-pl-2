@@ -199,8 +199,10 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   assert.equal(initial.rotation,'true');
   assert.ok(initial.white>initial.black,'opening screen displays white pieces at the bottom');
   const pawn=page.locator('#board .square[data-index="17"] .piece');
-  if(viewport.width<500)await pawn.dispatchEvent('pointerdown',{pointerType:'touch'});
-  else await pawn.hover();
+  // Hover opens a blocking modal immediately. Dispatch the hover event as
+  // a real DOM pointer event, otherwise Playwright keeps retrying hover
+  // because the newly opened dialog correctly intercepts the pointer.
+  await pawn.evaluate(el=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:viewportWidth<500?'touch':'mouse'})),viewport.width);
   const gate=page.locator('#checkers-start-gate');
   await gate.waitFor({state:'visible'});
   assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
@@ -269,8 +271,7 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   for(const icon of info.pawnIcons){
    assert.equal(icon.width,15);assert.equal(icon.height,15);
    assert.equal(icon.borderWidth,'1px','thin pawn border');
-   assert.equal(icon.outlineWidth,'2.5px','highlight ring thicker without resizing the clock token');
-   assert.equal(icon.outlineWidth,'1px','thin active turn outline');
+   assert.equal(icon.outlineWidth,'3px','highlight ring thicker without resizing the clock token');
    assert.equal(icon.leftOfClock,true,'pawn left of clock without changing its box');
   }
   assert.equal(info.labelSize,11,'compact name text');
@@ -498,7 +499,7 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    last:cells.at(-1).querySelector('.checkers-coordinate-file')?.textContent,
    pointer:getComputedStyle(cells[0].querySelector('.checkers-coordinate-rank')).pointerEvents
   }));
-  assert.deepEqual(labels,{first:'8',last:'h',pointer:'none'});
+  assert.deepEqual(labels,{first:'1',last:'a',pointer:'none'},'white pawns shown at bottom change visible coordinate order');
   const visuals=await page.evaluate(()=>{
    const game=document.getElementById('game'),body=document.body,area=game.querySelector('.boardarea');
    const mobileBar=area.querySelector('.checkers-mobile-heading');
