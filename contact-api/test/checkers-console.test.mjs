@@ -244,14 +244,24 @@ test('Seat-to-play gate exists only in modern Warcaby and does not start clocks 
  const training=load('/konto/warcaby/training-ui.mjs');
  const css=load('/konto/warcaby/styl.css');
  assert.match(modern.body,/id="checkers-start-gate"[^>]+role="dialog"[^>]+aria-modal="true"/);
- assert.match(modern.body,/id="checkers-start-button"[^>]*>Rozpocznij grę</);
+ assert.match(modern.body,/data-checkers-side="1" aria-label="Wybierz białe pionki"/);
+ assert.match(modern.body,/data-checkers-side="2" aria-label="Wybierz czarne pionki"/);
  assert.doesNotMatch(classic.body,/id="checkers-start-gate"/,'classic game is unchanged');
  assert.ok(css.body.includes('checkers-start-gate[hidden]'),'hidden overlay stays hidden on initial load');
  assert.ok(js.body.includes("board.addEventListener('pointerover',showSeatGate)"));
  assert.ok(js.body.includes("seatPending=false;seatModal.hidden=true"));
- assert.ok(js.body.includes("current={...current,playable:true}"),'arming enables board without starting clock');
+ assert.ok(js.body.includes("trainingController?.activateSeat?.(side)"),'user chooses actual engine side, not CSS-only skin');
+ assert.ok(js.body.includes("chatSignature='',rotated=true"),'initial board places white at bottom');
+ assert.ok(js.body.includes('const i=rotated?63-pos:pos'),'preview honors orientation');
  assert.ok(training.body.includes("a.resetSeatGate?.()"));
  assert.ok(training.body.includes("playable:!a.isSeatPending?.()"),'unseated game blocks moves');
+ assert.ok(training.body.includes("if(!clockStarted&&actor===1)clockStarted=true"),
+   'first legal white move starts clock even if white is controlled by computer');
+ assert.ok(training.body.includes("if(side===2)scheduleComputer(generation)"),'computer opens as white when human chooses black');
+ assert.ok(training.body.includes("player:humanSide"),'actual human side is wired into engine');
+ assert.ok(css.body.includes('outline:2.5px solid transparent!important'),'active turn badge has thicker ring');
+ assert.ok(js.body.includes("sessionNickname||'Gość'"),'signed-out visitors are guests, never Gracz');
+ // Legacy static clock-start contract retained:
  assert.ok(training.body.includes("if(!clockStarted&&actor===1)clockStarted=true"),
   'only first valid white move starts existing timer');
  assert.doesNotThrow(()=>new Script(js.body));
