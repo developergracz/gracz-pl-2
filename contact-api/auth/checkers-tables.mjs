@@ -18,9 +18,11 @@ const reply=(res,status,value)=>{
 const fail=(res,status,error)=>reply(res,status,{ok:false,error});
 export function validTableConfig(body){
  if(!body||typeof body!=='object'||Array.isArray(body)||
-  Object.keys(body).some(key=>!['action','title','minutes','incrementSeconds','color','visibility'].includes(key)))
+  Object.keys(body).some(key=>!['action','id','title','minutes','incrementSeconds','color','visibility'].includes(key)))
   return false;
- if(body.action!=='create'||typeof body.title!=='string'||
+ if(!['create','edit'].includes(body.action)||
+  (body.action==='edit'?(typeof body.id!=='string'||!UUID.test(body.id)):
+   Object.hasOwn(body,'id'))||typeof body.title!=='string'||
   body.title.trim().length<3||body.title.trim().length>48||
   /[\u0000-\u001f\u007f<>]/.test(body.title)||
   !CLOCKS.has(body.minutes)||!BONUSES.has(body.incrementSeconds)||
@@ -82,7 +84,7 @@ export function createCheckersTablesRouter({database,ready,sessionToken,digest,a
      "FROM "+ROOT+".warcaby_tables t JOIN "+ROOT+".accounts host ON host.id=t.owner_id "+
      "LEFT JOIN "+ROOT+".accounts guest ON guest.id=t.guest_id "+
      "WHERE t.created_at>now()-interval '12 hours' AND "+
-     "(t.visibility='public' OR t.owner_id=$1 OR t.guest_id=$1 OR ($2::uuid IS NOT NULL AND t.id=$2::uuid)) "+
+     "(( $2::uuid IS NOT NULL AND t.id=$2::uuid) OR ($2::uuid IS NULL AND (t.visibility='public' OR t.owner_id=$1 OR t.guest_id=$1))) "+
      "AND (($3='waiting' AND t.status='waiting') "+
      "OR ($3='mine' AND (t.owner_id=$1 OR t.guest_id=$1) AND t.status<>'closed') "+
      "OR ($3='playing' AND t.status='started')) "+
@@ -91,8 +93,18 @@ export function createCheckersTablesRouter({database,ready,sessionToken,digest,a
     return reply(res,200,{ok:true,tables:list.rows.map(tableView)});
    }
    let body;try{body=await readBody(req)}catch{return fail(res,400,'BLEDNE_DANE')}
-   if(body?.action==='create'){
+   if(body?.action==='create'||body?.action==='edit'){
     if(!validTableConfig(body))return fail(res,400,'BLEDNA_KONFIGURACJA');
+    if(body.action==='edit'){
+     // Only the authenticated owner may edit their still-waiting table.
+     // UPDATE is atomic with joins and closes on the existing PostgreSQL.
+     const edited=await database.query("UPDATE "+ROOT+".warcaby_tables "+
+      "SET title=$3,minutes=$4,increment_seconds=$5,color=$6,visibility=$7,updated_at=now() "+
+      "WHERE id=$1 AND owner_id=$2 AND status='waiting' "+
+      "AND created_at>now()-interval '12 hours' RETURNING id",
+      [body.id,actor,body.title.trim(),body.minutes,body.incrementSeconds,body.color,body.visibility]);
+     return edited.rowCount?reply(res,200,{ok:true,id:body.id}):fail(res,409,'STOL_NIEAKTUALNY');
+    }
     const publicCount=await database.query("SELECT count(*)::int AS n FROM "+ROOT+
      ".warcaby_tables WHERE status='waiting' AND created_at>now()-interval '12 hours'");
     if(publicCount.rows[0].n>=80)return fail(res,429,'BRAK_WOLNYCH_MIEJSC');

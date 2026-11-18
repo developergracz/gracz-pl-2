@@ -180,7 +180,7 @@ test('Warcaby loss dialog uses the signed-in nickname and an authenticated table
  assert.match(script.body,/fetch\('\/auth\/session'/);
  assert.match(script.body,/setText\('warcaby-loss-player'/);
  assert.match(script.body,/\/auth\/warcaby\/tables/);
- assert.match(script.body,/action:'create'/);
+ assert.match(script.body,/action:editId\?'edit':'create'/);
  assert.match(script.body,/action:'join'/);
  assert.match(script.body,/action:'close'/);
  assert.match(script.body,/if\(!d\|\|!\[1,2\]\.includes\(d.player\)/);
