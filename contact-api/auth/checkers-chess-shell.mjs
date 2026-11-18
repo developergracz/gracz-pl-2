@@ -223,6 +223,13 @@ export const checkersChessShellJs=String.raw`
  if(game.dataset.checkersChessShell==='yes')return;
  game.dataset.checkersChessShell='yes';
  const body=document.body;
+ // Presentation must never block original Warcaby moves, even if fonts or
+ // enhanced controls initialize slowly or throw after the board is mounted.
+ const showPlayableBoard=()=>{
+  document.documentElement.classList.remove('checkers-shell-loading');
+  body.classList.remove('checkers-shell-loading');
+ };
+ const bootFailsafe=window.setTimeout(showPlayableBoard,2200);
  // Keep the existing Warcaby board, clock nodes, buttons, settings and controller untouched.
  arena.removeChild(dock);area.append(dock);
  dock.insertBefore(sidebar,match);
@@ -448,11 +455,16 @@ export const checkersChessShellJs=String.raw`
  let checks=0;
  const ready=()=>{
   if(board.querySelectorAll('.square').length===64&&dock.contains(mode)&&dock.contains(match)&&dock.contains(tools)){
-   document.documentElement.classList.remove('checkers-shell-loading');
-   body.classList.remove('checkers-shell-loading');
-  }else if(++checks<720)requestAnimationFrame(ready);
+   window.clearTimeout(bootFailsafe);
+   showPlayableBoard();
+  }else if(++checks<120){
+   requestAnimationFrame(ready);
+  }else{
+   // Keep the original game interactive if presentation readiness fails.
+   showPlayableBoard();
+  }
  };
- Promise.resolve(document.fonts?.ready).then(()=>requestAnimationFrame(()=>requestAnimationFrame(ready)),
-  ()=>requestAnimationFrame(()=>requestAnimationFrame(ready)));
+ // Never await potentially delayed web fonts before permitting moves.
+ requestAnimationFrame(()=>requestAnimationFrame(ready));
 })();
 `;
