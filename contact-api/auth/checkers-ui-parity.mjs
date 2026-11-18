@@ -1,13 +1,14 @@
 export const checkersUiParityCss=String.raw`
 /* Warcaby owner console visual parity — no alterations to chess or checkers rules. */
-/* Match the existing Szachy page canvas exactly, without changing console geometry:
-   desktop #e3ebe7 and mobile #e2f2ef. Scoped to Warcaby only. */
+/* Owner dark Szachy canvas #002529 (the existing chess boot/page ink), NOT the
+   pale mint/light console variant previously copied here. Scope to Warcaby.
+   Never change board geometry, the separate ivory control rail, or chat. */
 html:root,
 html:root.checkers-shell-loading,
 body.warcaby-console.chess-console.cc-owner,
 body.warcaby-console.chess-console.cc-owner.checkers-shell-loading,
 body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading){
- background:#e3ebe7!important;
+ background:#002529!important;
 }
 body.warcaby-console.chess-console.cc-owner::before,
 body.warcaby-console.chess-console.cc-owner::after{
@@ -15,12 +16,12 @@ body.warcaby-console.chess-console.cc-owner::after{
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus),
 body.warcaby-console.chess-console.cc-owner #game.game-focus{
- background:#e3ebe7!important;border:0!important;border-radius:0!important;
+ background:#002529!important;border:0!important;border-radius:0!important;
  box-shadow:none!important;text-shadow:none!important;
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea,
 body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
- background:#e3ebe7!important;border:0!important;border-radius:0!important;box-shadow:none!important
+ background:#002529!important;border:0!important;border-radius:0!important;box-shadow:none!important
 }
 @media(max-width:800px){
  html:root,
@@ -32,7 +33,7 @@ body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
  body.warcaby-console.chess-console.cc-owner #game.game-focus,
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea,
  body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
-  background:#e2f2ef!important
+  background:#002529!important
  }
 }
 body.warcaby-console.chess-console.cc-owner #game::before,
@@ -116,7 +117,8 @@ body.warcaby-console .checkers-drag-ghost{
  position:fixed!important;left:0;top:0;z-index:99999!important;
  transform:translate(-50%,-50%)!important;pointer-events:none!important;
  width:clamp(32px,4vw,74px)!important;height:clamp(32px,4vw,74px)!important;
- margin:0!important;opacity:.9!important;filter:drop-shadow(0 4px 7px #0008)!important
+ margin:0!important;opacity:.92!important;filter:drop-shadow(0 4px 7px #0008)!important;
+ will-change:left,top!important;touch-action:none!important
 }
 body.warcaby-console .checkers-drag-ghost .crown{pointer-events:none!important}
 
@@ -266,6 +268,37 @@ body.warcaby-console .checkers-mobile-heading{display:none}
  }
 }
 
+/* Real colour-coded miniature checkers sit to the LEFT of the existing clock.
+   Positioning is absolute: no reflow and no changes to the clock/card dimensions. */
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-clock-wrap{
+ position:relative!important;display:inline-block!important;flex:0 0 auto!important;
+ width:clamp(75.9px,6.6vw,99px)!important;max-width:100%!important;
+ min-width:0!important;margin:0!important;padding:0!important;line-height:1!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-clock-wrap:has(>.player-clock[hidden]){
+ display:none!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-clock-wrap>.player-clock{
+ display:block!important;max-width:100%!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-turn-token{
+ position:absolute!important;left:-19px!important;top:50%!important;
+ transform:translateY(-50%)!important;width:15px!important;height:15px!important;
+ box-sizing:border-box!important;flex:none!important;border-radius:50%!important;
+ border:1px solid #617a7a!important;outline:1px solid transparent!important;outline-offset:2px!important;
+ pointer-events:none!important;z-index:1!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-turn-token.white{
+ background:radial-gradient(circle at 34% 28%,#fff 0%,#f0f2ec 62%,#b8c3c0 100%)!important;
+ box-shadow:inset 0 1px 2px #fff!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-turn-token.black{
+ background:radial-gradient(circle at 34% 28%,#555 0%,#252525 46%,#080808 100%)!important;
+ box-shadow:inset 0 1px 2px #8886!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .checkers-turn-token.is-turn{
+ outline-color:#087d7e!important
+}
 /* Only clock typography and names: preserve the original clock boxes and player card dimensions. */
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .player-clock{
  /* Retain the prior 3.3em box width and original digit line-box height as pixels,
