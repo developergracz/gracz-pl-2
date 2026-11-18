@@ -144,7 +144,7 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
    {detail:{mode:'training',player:1,winner:2,players:['Ty','Komputer'],version:1}})));
   await page.locator('#warcaby-loss-overlay').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
-  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer');
+  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'komputerem');
   assert.match(await page.locator('#warcaby-loss-title').textContent(),/Przegrałeś gracz tę grę z/);
   assert.deepEqual(await page.locator('.warcaby-loss-actions button').allTextContents(),['Rewanż','Stoły']);
   await page.locator('#warcaby-loss-others').click();
@@ -252,9 +252,11 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   const appliedClockColor=await page.locator('#clock-1').evaluate(el=>{
    el.classList.add('checkers-clock-critical');
    el.style.setProperty('--checkers-clock-shade','rgb(190, 10, 20)');
+   el.style.setProperty('color','rgb(190, 10, 20)','important');
    const color=getComputedStyle(el).color;
    el.classList.remove('checkers-clock-critical');
    el.style.removeProperty('--checkers-clock-shade');
+   el.style.removeProperty('color');
    return color;
   });
   assert.equal(appliedClockColor,'rgb(190, 10, 20)',
@@ -957,16 +959,24 @@ test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal mo
  assert.match(await notice.textContent(),/Ten pionek musi bić/);
  assert.equal(await page.locator('#board .square[data-index="17"] .piece.capture-alert').count(),1,
   'capturing pawn becomes red after warning');
- await page.locator('#checkers-capture-dismiss').click();
+ assert.equal(await page.locator('#checkers-capture-dismiss').isVisible(),false,
+  'mandatory capture cannot be dismissed before the required move');
+ assert.equal(await notice.evaluate(el=>el.parentElement?.id),'chat-panel','capture message belongs to the chat');
+ const geometry=await notice.evaluate(el=>{
+  const a=el.getBoundingClientRect(),b=el.parentElement.getBoundingClientRect();
+  return {width:a.width,height:a.height,panelWidth:b.width,panelHeight:b.height,color:getComputedStyle(el).color};
+ });
+ assert.equal(geometry.color,'rgb(255, 255, 255)');
+ assert.ok(Math.abs(geometry.width-geometry.panelWidth)<2,'capture fills chat width');
+ assert.ok(Math.abs(geometry.height-geometry.panelHeight)<2,'capture fills chat height');
  await page.locator('#board .square[data-index="21"]').evaluate(el=>
   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,pointerId:12,isPrimary:true})));
  await notice.waitFor({state:'visible'});
  assert.deepEqual(calls,[],'another pawn cannot bypass mandatory capture');
- await page.locator('#checkers-capture-dismiss').click();
  await page.locator('#board .square[data-index="17"]').evaluate(el=>el.click());
- assert.equal(await notice.isVisible(),false,'correct pawn selection is silent');
+ assert.equal(await notice.isVisible(),true,'correct pawn selection leaves the capture warning visible');
  await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
- assert.equal(await notice.isVisible(),false,'illegal empty-square click does not warn');
+ assert.equal(await notice.isVisible(),true,'illegal empty-square click cannot dismiss the warning');
  assert.deepEqual(calls,[],'invalid click must not reach online API');
  // Empty-square attempts stay silent; no duplicate warning is expected.
  const drag=async(from,to)=>{
@@ -977,7 +987,7 @@ test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal mo
   await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
  };
  await drag(17,24);
- assert.equal(await notice.isVisible(),false,'illegal drop to empty square is silent');
+ assert.equal(await notice.isVisible(),true,'illegal drop does not dismiss the mandatory capture warning');
  assert.deepEqual(calls,[],'illegal drag snaps back without reaching API');
  await drag(17,35);
  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"] .piece.white')&&
