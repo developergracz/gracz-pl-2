@@ -1,10 +1,11 @@
 export const checkersUiParityCss=String.raw`
 /* Warcaby owner console visual parity — no alterations to chess or checkers rules. */
 body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading){
- background:#f1f6f4!important;
+ /* Same midnight canvas as chess, never the previous pale checkers page. */
+ background:#031519!important;
 }
 body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading) #game:not(.game-focus){
- background:transparent!important;border:0!important;border-radius:0!important;
+ background:#003739!important;border:0!important;border-radius:0!important;
  box-shadow:none!important;text-shadow:none!important;
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea{
@@ -33,6 +34,29 @@ body.warcaby-console .checkers-coordinate-rank{top:3px!important;left:4px!import
 body.warcaby-console .checkers-coordinate-file{right:4px!important;bottom:3px!important}
 body.warcaby-console .square.light .checkers-coordinate{color:#216363!important}
 body.warcaby-console .square.dark .checkers-coordinate{color:#fff8e8!important;text-shadow:0 1px 2px #082b30cc!important}
+
+/* Chess-style compact message bubbles. Only Warcaby, never Gomoku/chess. */
+body.warcaby-console.chess-console.cc-owner #game #chat-messages{
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;
+}
+body.warcaby-console.chess-console.cc-owner #game #chat-messages .game-chat-message{
+ box-sizing:border-box!important;display:block!important;
+ flex:0 0 auto!important;align-self:flex-start!important;
+ width:fit-content!important;min-width:0!important;
+ max-width:min(88%,calc(100% - 12px))!important;
+ margin:0!important;overflow-wrap:anywhere!important;word-break:normal!important
+}
+body.warcaby-console.chess-console.cc-owner #game #chat-messages .game-chat-message.own{
+ align-self:flex-end!important
+}
+/* Remove the inherited red focus ring without hiding keyboard focus entirely:
+   a subtle change of input fill/caret supplies an accessible focus cue. */
+body.warcaby-console.chess-console.cc-owner #game #chat-input:focus,
+body.warcaby-console.chess-console.cc-owner #game #chat-input:focus-visible{
+ outline:none!important;outline-offset:0!important;
+ box-shadow:none!important;border-color:#4f838a!important;
+ background:#092d34!important;color:#ecf6f9!important;caret-color:#9be5dc!important
+}
 
 /* Same move history structure as chess: numbered rows, two columns and playback. */
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) #moves-panel:not([hidden]){
