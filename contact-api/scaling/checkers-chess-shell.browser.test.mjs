@@ -36,6 +36,18 @@ async function serverFor(t,{nickname=null}={}){
  return {base:'http://127.0.0.1:'+server.address().port,requests};
 }
 
+async function takeSeat(page){
+ await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length>0&&
+  document.querySelector('#checkers-start-gate')?.hidden===true);
+ await page.locator('#board .piece.white').first().evaluate(el=>{
+  el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
+ });
+ await page.locator('#checkers-start-gate').waitFor({state:'visible'});
+ await page.locator('#checkers-start-button').click();
+ await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
+ await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
+}
+
 test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
  const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -133,6 +145,7 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#chat-tab').click();
   assert.ok(Math.abs(view.boardWidth-view.boardHeight)<3,'board stays square');
   if(!mobile)assert.ok(view.boardX<view.dockX,'board left, controls right');
+  await takeSeat(page);
   await page.locator('#board .square').nth(17).click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -229,6 +242,7 @@ test('P0: visible checker is clickable by real cursor/touch after cold load and 
    assert.notEqual(preflight.pointer,'none','owner shell must not swallow input');
    assert.notEqual(preflight.boardPointer,'none','board must receive pointer events');
    assert.equal(preflight.inert,false,'no overlay may make the board inert');
+   await takeSeat(page);
    await first.locator('.piece').click({timeout:5000});
    await dest.click({timeout:5000});
    await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
@@ -252,6 +266,7 @@ test('P0: console remains playable when web-font readiness never resolves',{time
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:6000});
+ await takeSeat(page);
  await page.locator('#board .square').nth(17).locator('.piece').click();
  await page.locator('#board .square').nth(24).click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -333,6 +348,7 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    await page.keyboard.press('Escape');
    assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),false);
   }
+  await takeSeat(page);
   await page.locator('#board .square').nth(17).locator('.piece').click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -376,6 +392,7 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  const page=await browser.newPage({viewport:{width:1366,height:768}});
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ await takeSeat(page);
  await page.locator('#board .square').nth(17).locator('.piece').click();
  await page.locator('#board .square').nth(24).click();
  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>0);
@@ -498,6 +515,7 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   };
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length===12);
+  await takeSeat(page);
   await page.evaluate(()=>{
    window.__checkersPointerProbe=[];
    const target=document.getElementById('board');
@@ -515,6 +533,7 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
   // Clicking a pawn must NOT leave a yellow square border; valid moves still
   // show their original small dots. Click-to-select must still work.
+  await takeSeat(page);
   await page.locator('#board .square[data-index="17"]').click();
   const selected=await page.evaluate(()=>{
    const square=document.querySelector('#board .square[data-index="17"]');
