@@ -278,7 +278,7 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .play
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .players>.player>.cc-side{
  display:block!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;
  overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;text-align:center!important;
- color:#fff!important;text-shadow:0 1px 3px #14383b!important;
+ color:var(--cc-ink)!important;text-shadow:none!important;
  font:600 11px/1.1 system-ui,-apple-system,'Segoe UI',sans-serif!important
 }
 `;
