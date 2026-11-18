@@ -414,9 +414,6 @@ test('cold navigation and refresh render no intermediate page before all 64 squa
    // Commit waits only for response headers, not module hydration; hold the game module deliberately.
    await page.goto(base+'/konto/szachy/',{waitUntil:'commit'});
    await page.waitForFunction(()=>!!document.querySelector('#game')&&!!document.querySelector('#chess-initial-load'));
-   // CSS is render-blocking but the commit/DOM probe can race its download.
-   // Inspect first paint only after the actual stylesheet is available, while JS stays blocked.
-   await page.waitForFunction(()=>[...document.styleSheets].some(s=>s.href?.endsWith('/konto/szachy/styl.css')));
    const initial=await page.evaluate(()=>{
     const game=document.getElementById('game'),notice=document.getElementById('chess-initial-load');
     return {

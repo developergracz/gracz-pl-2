@@ -103,9 +103,6 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
  }
  // Check the premium invitation form in a real browser (no new DB challenges).
  const form=pages[0];
- // The same invitation controls now live in the chess-style Online sheet.
- await form.getByRole('button',{name:'Nowa gra',exact:true}).click();
- await form.locator('#cc-sheet-online').waitFor({state:'visible'});
  assert.equal(await form.locator('#create-room-time').isVisible(),true);
  assert.equal(await form.locator('#create-room-increment').isVisible(),true);
  await form.locator('#create-room-time').selectOption('0');
@@ -126,7 +123,6 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
  assert.deepEqual({game:invitationPayload?.game,timeLimitMinutes:invitationPayload?.timeLimitMinutes,
    incrementSeconds:invitationPayload?.incrementSeconds},{game:'warcaby',timeLimitMinutes:7,incrementSeconds:2});
  await form.unroute('**/auth/social/challenges');
- await form.locator('#cc-sheet-online .cc-sheet-close').click(); // uncover the real board before the move sequence
  let response=await api(base,users[0].token,'/auth/match?id='+matchId);
  assert.equal(response.status,200);
  assert.deepEqual(response.match.state.clock.ready,[true,true]);
