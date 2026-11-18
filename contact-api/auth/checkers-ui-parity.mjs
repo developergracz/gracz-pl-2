@@ -121,10 +121,7 @@ body.warcaby-console .checkers-replay-board .square{
 body.warcaby-console .checkers-replay-board .square.light{background:#e9dfcc!important}
 body.warcaby-console .checkers-replay-board .square.dark{background:#3b8084!important}
 body.warcaby-console .checkers-replay-board .square .piece{pointer-events:none!important}
-body.warcaby-console .checkers-replay-board .square .piece.king::after{
- content:"♛";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
- color:#b88c4d;font:bold 18px/1 Georgia,serif;text-shadow:0 1px 1px #0013
-}
+body.warcaby-console .checkers-replay-board .piece .crown{pointer-events:none!important}
 
 /* Identical compact mobile topbar structure to the current chess console. */
 body.warcaby-console .checkers-mobile-heading{display:none}
@@ -282,6 +279,12 @@ export const checkersUiParityJs=String.raw`
    const piece=position.board[i];
    if(piece){
     const node=E('span','piece '+((piece%2)?'white':'black')+(piece>=3?' king':''));
+    if(piece>=3){
+     const crown=document.createElementNS('http://www.w3.org/2000/svg','svg');
+     crown.setAttribute('class','crown');crown.setAttribute('viewBox','0 0 100 100');
+     crown.setAttribute('aria-hidden','true');const use=document.createElementNS('http://www.w3.org/2000/svg','use');
+     use.setAttribute('href','#checkers-crown');crown.append(use);node.append(crown);
+    }
     cell.append(node);
    }
    addCoords(cell,i,flipped);fragment.append(cell);
