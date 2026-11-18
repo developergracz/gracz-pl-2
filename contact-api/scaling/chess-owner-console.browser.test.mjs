@@ -399,3 +399,41 @@ test('owner acceptance views: badge 3 and 0, short clock labels and the Online f
   await context.close();
  }
 });
+
+test('cold navigation and refresh render no intermediate page before all 64 squares and owner controls are ready',{timeout:90000},async t=>{
+ const base=await startServer(t),browser=await launch(t);
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage();
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  let release;
+  const blocked=new Promise(resolve=>{release=resolve;});
+  await page.route('**/konto/szachy/app.js',async route=>{await blocked;await route.continue();});
+  try{
+   // Commit waits only for response headers, not module hydration; hold the game module deliberately.
+   await page.goto(base+'/konto/szachy/',{waitUntil:'commit'});
+   await page.waitForFunction(()=>!!document.querySelector('#game')&&!!document.querySelector('#chess-initial-load'));
+   const initial=await page.evaluate(()=>{
+    const game=document.getElementById('game'),notice=document.getElementById('chess-initial-load');
+    return {
+     boot:document.body.classList.contains('chess-booting')&&document.documentElement.classList.contains('chess-booting'),
+     hidden:getComputedStyle(game).visibility,
+     noticeOpacity:getComputedStyle(notice).opacity,
+     background:getComputedStyle(document.documentElement).backgroundColor
+    };
+   });
+   assert.deepEqual(initial,{boot:true,hidden:'hidden',noticeOpacity:'0',background:'rgb(0, 37, 41)'},
+    'nothing from the shared console or loader may paint before modules are available');
+   await page.waitForTimeout(150);
+   assert.equal(await page.locator('#game').isVisible(),false,'legacy layout stays invisible during the blocked import');
+  }finally{release();}
+  await page.locator('#board .chess-square').first().waitFor({state:'visible',timeout:15000});
+  await page.waitForFunction(()=>!document.body.classList.contains('chess-booting'));
+  assert.equal(await page.locator('#board .chess-square').count(),64);
+  assert.equal(await page.locator('#game .cc-top').count(),1);
+  assert.equal(await page.locator('#chess-initial-load').isVisible(),false,'slow-loading fallback disappears when ready');
+  assert.deepEqual(errors,[],'no module or DOM error');
+  await context.close();
+ }
+});

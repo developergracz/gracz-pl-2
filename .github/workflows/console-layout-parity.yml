@@ -30,6 +30,9 @@ jobs:
           npm --prefix contact-api ci --ignore-scripts --no-fund --no-audit
           npm --prefix contact-api install --no-save --no-package-lock --ignore-scripts --no-fund --no-audit playwright@1.58.2
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify zero-flash chess navigation in real Chromium (desktop + mobile)
+        run: |
+          node --test --test-name-pattern='cold navigation and refresh render no intermediate page' contact-api/scaling/chess-owner-console.browser.test.mjs
       - name: Measure 24 rendered consoles and 464 dynamic interaction steps
         run: |
           node --check contact-api/console-layout-agent/measure.mjs
