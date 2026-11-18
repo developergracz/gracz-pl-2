@@ -1,6 +1,26 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Seat-to-play dialog is independent of board and clock geometry. */
+body.warcaby-console .checkers-newgame-blocker[hidden]{display:none!important}
+body.warcaby-console .checkers-newgame-blocker{
+ position:fixed;inset:0;z-index:100120;display:grid;place-items:center;
+ padding:18px;background:rgba(0,25,30,.77)
+}
+body.warcaby-console .checkers-newgame-card{
+ width:min(470px,100%);box-sizing:border-box;padding:28px 24px;
+ border-radius:18px;border:1px solid #d8c9a9;
+ background:#fff8ea;color:#073f43;text-align:center;
+ box-shadow:0 22px 75px #00191e8c;font:15px/1.6 system-ui,sans-serif
+}
+body.warcaby-console .checkers-newgame-card h2{
+ margin:0 0 12px;font:800 23px/1.3 system-ui,sans-serif;color:#073f43
+}
+body.warcaby-console .checkers-newgame-card p{margin:0 0 24px;font-weight:650}
+body.warcaby-console .checkers-newgame-close{
+ min-height:42px;border:0;border-radius:9px;padding:9px 28px;
+ background:#006d6c;color:#fff;font:750 14px system-ui,sans-serif;cursor:pointer
+}
+body.warcaby-console .checkers-newgame-close:focus-visible{outline:3px solid #eaa83a;outline-offset:3px}
 body.warcaby-console.chess-console.cc-owner .checkers-color-confirmation[hidden]{display:none!important}
 body.warcaby-console.chess-console.cc-owner .checkers-color-confirmation:not([hidden]){
  position:fixed;z-index:100011;left:50%;bottom:clamp(20px,6vh,60px);
@@ -548,7 +568,34 @@ export const checkersChessShellJs=String.raw`
  fullscreen.addEventListener('click',()=>{$('fullscreen-game')?.click();});
  dock.append(tools);
  $('chat-send')?.replaceChildren(icon('send'));
+ let lastResult=null,drawBusy=false,drawMessage='';
+ const blocker=E('div','checkers-newgame-blocker');blocker.hidden=true;
+ blocker.setAttribute('role','dialog');blocker.setAttribute('aria-modal','true');
+ blocker.setAttribute('aria-labelledby','checkers-newgame-title');
+ blocker.setAttribute('aria-describedby','checkers-newgame-description');
+ const blockerCard=E('section','checkers-newgame-card');
+ const blockerTitle=E('h2','','Nowa gra jest niedostępna');blockerTitle.id='checkers-newgame-title';
+ const blockerText=E('p','','Nie możesz rozpocząć nowej gry podczas trwania obecnej rozgrywki.');
+ blockerText.id='checkers-newgame-description';
+ const blockerClose=E('button','checkers-newgame-close','Zamknij');blockerClose.type='button';
+ blockerCard.append(blockerTitle,blockerText,blockerClose);blocker.append(blockerCard);
+ document.body.append(blocker);
+ const hideNewGameBlocker=()=>{blocker.hidden=true;newGame.focus({preventScroll:true})};
+ blockerClose.addEventListener('click',hideNewGameBlocker);
+ blocker.addEventListener('click',e=>{if(e.target===blocker)hideNewGameBlocker()});
+ blocker.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){e.preventDefault();hideNewGameBlocker()}
+  else if(e.key==='Tab'){e.preventDefault();blockerClose.focus()}
+ });
+ function isCheckersGameInProgress(snapshot){
+  if(!snapshot||snapshot.winner)return false;
+  if(snapshot.mode==='online')return !!snapshot.matchId&&!!snapshot.playable;
+  return snapshot.mode==='training'&&!!snapshot.playable;
+ }
  newGame.addEventListener('click',()=>{
+  if(isCheckersGameInProgress(lastResult)){
+   closeSheet();blocker.hidden=false;blockerClose.focus({preventScroll:true});return;
+  }
   if($('training-mode')?.classList.contains('active'))$('restart')?.click();
   else openSheet('online',newGame);
  });
@@ -557,7 +604,6 @@ export const checkersChessShellJs=String.raw`
   openSheet('online',invite);
   $('create-room-friend')?.focus({preventScroll:true});
  });
- let lastResult=null,drawBusy=false,drawMessage='';
  function updateDraw(){
   const active=$('online-mode')?.classList.contains('active');
   const offer=active?lastResult?.drawOffer:null;
