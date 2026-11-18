@@ -63,7 +63,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   const gate=page.locator('#checkers-start-gate');
   assert.equal(await gate.isVisible(),false,'no modal before hovering a pawn');
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
-  await page.locator('#training-time').selectOption('7');
+  await page.locator('#training-time').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('change',{bubbles:true}));});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false');
   const source=page.locator('#board .square[data-index="17"] .piece');
   const a=await source.boundingBox(),x=a.x+a.width/2,y=a.y+a.height/2;
