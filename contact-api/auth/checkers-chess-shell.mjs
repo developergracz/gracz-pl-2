@@ -270,8 +270,10 @@ export const checkersChessShellJs=String.raw`
  const rules=E('a','','Zasady gry w warcaby');
  rules.href='https://gracz.pl/gry/warcaby/zasady/';
  const panel=E('a','','Moje partie i zaproszenia');panel.href='/konto/panel/?sekcja=play';
+ const refresh=E('button','','Odśwież partię online');refresh.type='button';
+ refresh.addEventListener('click',()=>{$('refresh-match')?.click();});
  const links=E('ul','cc-info-links');
- for(const node of [rules,panel]){const li=E('li');li.append(node);links.append(li);}
+ for(const node of [rules,panel,refresh]){const li=E('li');li.append(node);links.append(li);}
  info.append(E('h3','cc-info-heading','Bieżąca partia'),detail,E('h3','cc-info-heading','Zasady i pomoc'),links);
  match.insertBefore(info,match.querySelector('.mini-chat'));
  function showInfo(){
@@ -413,6 +415,7 @@ export const checkersChessShellJs=String.raw`
  });
  function sync(){
   const local=$('training-mode')?.classList.contains('active');
+  refresh.disabled=local;
   fields.mode.textContent=local?'Komputer':'Online';
   fields.opponent.textContent=local?'Komputer':($('room-select')?.selectedOptions?.[0]?.textContent||'Zaproś znajomego');
   fields.state.textContent=$('game-state')?.textContent?.trim()||'—';
