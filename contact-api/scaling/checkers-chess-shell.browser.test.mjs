@@ -207,6 +207,8 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),['07:00','07:00']);
   await gate.getByRole('button',{name:'Wybierz czarne pionki'}).click();
   await gate.waitFor({state:'hidden'});
+  await page.locator('#checkers-color-confirmation').waitFor({state:'visible'});
+  assert.match(await page.locator('#checkers-color-confirmation').textContent(),/Świetnie! Grasz teraz czarnymi pionkami/);
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2');
   const chosen=await check();
   assert.deepEqual(chosen.labels,['Gość','Komputer']);
