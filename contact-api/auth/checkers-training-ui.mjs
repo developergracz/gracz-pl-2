@@ -22,6 +22,7 @@ export function setupTraining(a){
   clock.classList.toggle('checkers-clock-critical',critical);
   if(!critical){
    clock.style.removeProperty('--checkers-clock-shade');
+   clock.style.removeProperty('color');
    clock.classList.remove('checkers-clock-pulse-twice','checkers-clock-pulse-once');
    // Remember a timed value just above the threshold to catch 00:31 -> 00:29.
    if(Number.isFinite(remainingMs)&&remainingMs>30000)
@@ -32,7 +33,11 @@ export function setupTraining(a){
   // Gradually turn the dark numerals into fully saturated red at 00:01.
   const progress=Math.max(0,Math.min(1,(30000-Math.max(1000,remainingMs))/29000));
   const red=Math.round(95+160*progress),green=Math.round(43*(1-progress)),blue=Math.round(50*(1-progress));
-  clock.style.setProperty('--checkers-clock-shade','rgb('+red+','+green+','+blue+')');
+  const shade='rgb('+red+','+green+','+blue+')';
+  clock.style.setProperty('--checkers-clock-shade',shade);
+  // The shared chess console applies an !important clock color; use an inline
+  // important override so the running Warcaby urgency color is actually visible.
+  clock.style.setProperty('color',shade,'important');
   const seconds=Math.max(0,Math.ceil(remainingMs/1000));
   const priorValue=clock.dataset.checkersUrgencySecond;
   const last=priorValue===undefined?null:Number(priorValue);
