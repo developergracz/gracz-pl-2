@@ -150,7 +150,7 @@ test('checkers loss dialog is the only new visual surface and is linked to actua
  assert.match(page.body,/role="dialog" aria-modal="true"/);
  assert.match(page.body,/Zagraj z innym graczem/);
  assert.match(script.body,/gracz:warcaby:position/);
- assert.match(script.body,/winner:s.winner,players:current.players/);
+ assert.match(script.body,/winner:s.winner,turn:s.turn,playable:current.playable,players:current.players/);
  assert.match(script.body,/detail.winner===detail.player/);
  assert.match(script.body,/if\(!detail\|\|!detail.winner\)/);
  assert.match(script.body,/social\/challenges/);
@@ -203,12 +203,16 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.ok(script.body.includes("frame?.append(replay)"),'preview does not replace real board');
  assert.ok(script.body.includes("replay.hidden=true"),'live play remains available');
  assert.ok(script.body.includes("data.checkersRotated")===false,'no alternate game state introduced');
- assert.ok(style.body.includes('background:#e3ebe7!important'),'desktop canvas exactly matches Szachy');
- assert.ok(style.body.includes('background:#e2f2ef!important'),'mobile canvas exactly matches Szachy');
+ assert.ok(style.body.includes('background:#002529!important'),'deep chess turquoise canvas replaces the pale previous Warcaby variant');
+ assert.doesNotMatch(style.body,/background:#e3ebe7!important|background:#e2f2ef!important/,'pale canvas no longer painted');
  assert.ok(style.body.includes('width:clamp(75.9px,6.6vw,99px)!important'),'clock box keeps original physical width');
  assert.ok(style.body.includes('font-size:clamp(21px,1.7vw,27px)!important'),'only clock digits become smaller');
  assert.ok(script.body.includes("fetch('/auth/session'"),'authenticated nickname sourced from existing session API');
- assert.ok(script.body.includes("clock.insertAdjacentElement('afterend',label)"),'name appears immediately below the clock');
+ assert.ok(script.body.includes("wrapper.insertAdjacentElement('afterend',label)"),'name remains directly below the original-sized clock');
+ assert.ok(script.body.includes("checkers-turn-token"),'real white/black turn markers exist');
+ assert.ok(script.body.includes("dataset.checkersTurn=String(current.state.turn)"),'active indicator uses actual rules engine turn');
+ assert.ok(script.body.includes("document.body.append(d.ghost)"),'drag ghost uses viewport coordinates');
+ assert.ok(script.body.includes("suppressDragClickTo=to"),'drag release never double-clicks its target');
  assert.ok(style.body.includes('#game:not(.game-focus)>.boardarea'),'board canvas overrides included');
  assert.ok(style.body.includes('checkers-history-columns'));
  assert.ok(style.body.includes('checkers-history-nav'));

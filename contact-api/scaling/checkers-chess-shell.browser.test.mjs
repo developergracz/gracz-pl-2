@@ -55,8 +55,15 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
    const st=getComputedStyle(clock),ns=getComputedStyle(name);
    return {
     labels:[name.textContent,other.textContent],
-    order:clock.nextElementSibling===name&&white.querySelector('.player-clock').nextElementSibling===other,
+    order:clock.parentElement.nextElementSibling===name&&white.querySelector('.player-clock').parentElement.nextElementSibling===other,
     fontSize:parseFloat(st.fontSize),labelSize:parseFloat(ns.fontSize),labelColor:ns.color,
+    pawns:[black.querySelector('.checkers-turn-token')?.className,white.querySelector('.checkers-turn-token')?.className],
+    pawnIcons:[black.querySelector('.checkers-turn-token'),white.querySelector('.checkers-turn-token')].map(el=>{
+     const css=getComputedStyle(el),r=el.getBoundingClientRect();
+     return {width:r.width,height:r.height,borderWidth:css.borderTopWidth,
+      outlineWidth:css.outlineWidth,outline:css.outlineColor,
+      leftOfClock:r.right<el.parentElement.querySelector('.player-clock').getBoundingClientRect().left};
+    }),
     clockWidth:parseFloat(st.width),clockHeight:parseFloat(st.minHeight),
     playerWidth:black.getBoundingClientRect().width,
     docWidth:document.documentElement.scrollWidth,viewportWidth:document.documentElement.clientWidth
@@ -64,6 +71,14 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   });
   assert.deepEqual(info.labels,['Komputer','ZalogowanyGracz'],'real signed-in nickname, not placeholder');
   assert.equal(info.order,true,'name is immediately after the clock in each existing player box');
+  assert.ok(info.pawns[0].includes('black')&&info.pawns[1].includes('white'),'correct colours: black computer / white signed-in player');
+  assert.ok(!info.pawns[0].includes('is-turn')&&info.pawns[1].includes('is-turn'),'first turn belongs to white pawn');
+  for(const icon of info.pawnIcons){
+   assert.equal(icon.width,15);assert.equal(icon.height,15);
+   assert.equal(icon.borderWidth,'1px','thin pawn border');
+   assert.equal(icon.outlineWidth,'1px','thin active turn outline');
+   assert.equal(icon.leftOfClock,true,'pawn left of clock without changing its box');
+  }
   assert.equal(info.labelSize,11,'compact name text');
   assert.equal(info.labelColor,'rgb(10, 58, 61)','dark readable clock labels on the pale chess-style panel');
   assert.ok(info.fontSize>=21&&info.fontSize<=27,'clock digits are slightly smaller');
@@ -302,7 +317,7 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
     viewport:document.documentElement.clientWidth
    };
   });
-  const expectedChess=mobile?'rgb(226, 242, 239)':'rgb(227, 235, 231)';
+  const expectedChess='rgb(0, 37, 41)';
   assert.equal(visuals.root,expectedChess,'document root matches Szachy');
   assert.equal(visuals.body,expectedChess,'body matches Szachy');
   assert.equal(visuals.boardarea,expectedChess,'board surroundings match Szachy');
@@ -479,6 +494,22 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    }
   });
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
+  if(!mobile){
+   // The ghost must use viewport coordinates, not a transformed board's origin.
+   const box=await page.locator('#board .square[data-index="17"] .piece').boundingBox();
+   const x=box.x+box.width/2,y=box.y+box.height/2;
+   await page.mouse.move(x,y);await page.mouse.down();
+   await page.mouse.move(x+28,y+24,{steps:5});
+   const ghost=await page.evaluate(()=>{
+    const el=document.querySelector('.checkers-drag-ghost');
+    if(!el)return null;const r=el.getBoundingClientRect();
+    return {onBody:el.parentElement===document.body,x:r.x+r.width/2,y:r.y+r.height/2};
+   });
+   assert.ok(ghost?.onBody,'ghost is mounted in viewport layer');
+   assert.ok(Math.abs(ghost.x-(x+28))<3&&Math.abs(ghost.y-(y+24))<3,'ghost tracks mouse position');
+   await page.mouse.up();
+   assert.equal(await page.locator('.checkers-drag-ghost').count(),0,'ghost always removed on release');
+  }
   await drag(17,19); // Illegal sideways drag, source must snap back.
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
@@ -551,6 +582,7 @@ test('P0: forced two-step capture is draggable only from required pawn and to le
  assert.deepEqual(calls,[],'unmarked pawn cannot move during forced capture');
  await drag(17,35);
  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"].must-continue'));
+ assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),1,'forced multi-capture keeps white turn ring');
  assert.deepEqual(calls,[[17,35]],'first capture accepted through original server API');
  await drag(35,53);
  try{
@@ -567,5 +599,7 @@ test('P0: forced two-step capture is draggable only from required pawn and to le
   throw Error('Forced follow-on capture failed: '+JSON.stringify({calls,debug}));
  }
  assert.deepEqual(calls,[[17,35],[35,53]],'second mandatory capture also via original API');
+ await page.waitForFunction(()=>document.querySelectorAll('.checkers-turn-token.black.is-turn').length===1);
+ assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),0,'turn outline moves to black after final capture');
  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
 });
