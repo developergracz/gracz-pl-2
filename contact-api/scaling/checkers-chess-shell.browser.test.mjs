@@ -433,3 +433,50 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   await context.close();
  }
 });
+
+test('P0: forced two-step capture is draggable only from required pawn and to legal highlighted squares',{timeout:65000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ const id='12345678-1234-4234-8234-1234567890ab';
+ const board=Array(64).fill(0);
+ board[17]=1;board[21]=1;board[26]=2;board[44]=2;
+ let match={id,game:'warcaby',version:10,player:1,players:['Ty','Rywal'],playable:true,
+  state:{board,turn:1,winner:0,forced:17,moves:0,quiet:0,history:[]}};
+ const calls=[];
+ await page.route('**/auth/match?*',route=>route.fulfill({json:{ok:true,match}}));
+ await page.route('**/auth/match',route=>{
+  const payload=route.request().postDataJSON(),move=payload?.move;
+  if(payload?.version!==match.version||!move||move.from!==(calls.length?35:17)||
+      move.to!==(calls.length?53:35)){
+   return route.fulfill({status:400,json:{ok:false,error:'ILLEGAL_MOVE'}});
+  }
+  const next=match.state.board.slice();next[move.to]=next[move.from];
+  next[move.from]=0;next[calls.length?44:26]=0;
+  calls.push([move.from,move.to]);
+  match={...match,version:match.version+1,state:{...match.state,
+   board:next,forced:calls.length===1?35:null,turn:calls.length===1?1:2,
+   moves:calls.length,history:[...match.state.history,{player:1,from:move.from,to:move.to}]}};
+  return route.fulfill({json:{ok:true,match}});
+ });
+ await page.goto(base+'/konto/warcaby/?match='+id,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="17"].must-continue'));
+ const drag=async(from,to)=>{
+  const a=await page.locator('#board .square[data-index="'+from+'"] .piece').boundingBox();
+  const b=await page.locator('#board .square[data-index="'+to+'"]').boundingBox();
+  assert.ok(a&&b);
+  await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();
+  await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
+ };
+ await drag(21,28);
+ assert.deepEqual(calls,[],'unmarked pawn cannot move during forced capture');
+ await drag(17,35);
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"].must-continue'));
+ assert.deepEqual(calls,[[17,35]],'first capture accepted through original server API');
+ await drag(35,53);
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="53"] .piece.white')&&
+  document.getElementById('move-count')?.textContent==='Ruch 2');
+ assert.deepEqual(calls,[[17,35],[35,53]],'second mandatory capture also via original API');
+ assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
+});
