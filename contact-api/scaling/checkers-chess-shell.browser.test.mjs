@@ -131,3 +131,68 @@ test('Warcaby render no legacy page or loading text during a delayed checkers ap
  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:15000});
  assert.equal(await page.locator('#board .square').count(),64);
 });
+
+test('P0: visible checker is clickable by real cursor/touch after cold load and reload on desktop/mobile',{timeout:105000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1649,height:928},{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage();
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  for(const iteration of ['cold','refresh']){
+   if(iteration==='cold')await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+   else await page.reload({waitUntil:'domcontentloaded'});
+   await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+   await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'));
+   await page.waitForTimeout(2400); // also cross the formerly indefinite CSS-boot mask
+   const first=page.locator('#board .square').nth(17),dest=page.locator('#board .square').nth(24);
+   await first.scrollIntoViewIfNeeded();
+   const preflight=await first.evaluate(cell=>{
+    const piece=cell.querySelector('.piece'),rect=piece?.getBoundingClientRect();
+    const hit=rect?document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2):null;
+    const board=document.getElementById('board'),game=document.getElementById('game');
+    return {
+     piece:!!piece,visible:!!rect&&rect.width>8&&rect.height>8,
+     hit:hit===piece||piece?.contains(hit)||hit===cell||cell.contains(hit),
+     visibleGame:getComputedStyle(game).visibility==='visible',
+     pointer:getComputedStyle(game).pointerEvents,
+     inert:!!piece?.closest('[inert]'),
+     boardPointer:getComputedStyle(board).pointerEvents
+    };
+   });
+   assert.equal(preflight.piece,true,'a real player piece exists: '+JSON.stringify(viewport));
+   assert.equal(preflight.visible,true,'piece must occupy a visible click target');
+   assert.equal(preflight.hit,true,'the checkerpiece must be the topmost hit-test element');
+   assert.equal(preflight.visibleGame,true,'bootstrap mask must be released');
+   assert.notEqual(preflight.pointer,'none','owner shell must not swallow input');
+   assert.notEqual(preflight.boardPointer,'none','board must receive pointer events');
+   assert.equal(preflight.inert,false,'no overlay may make the board inert');
+   await first.locator('.piece').click({timeout:5000});
+   await dest.click({timeout:5000});
+   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
+   assert.ok(await page.locator('#moves-list li').count()>=1,'move committed by a real piece click');
+  }
+  assert.deepEqual(errors,[],'no JavaScript errors on a real browser and refresh');
+  await context.close();
+ }
+});
+
+test('P0: console remains playable when web-font readiness never resolves',{timeout:30000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ await page.addInitScript(()=>{
+  // Simulate a browser/font subsystem whose ready promise never settles.
+  const pending=new Promise(()=>{});
+  try{Object.defineProperty(document.fonts,'ready',{configurable:true,get:()=>pending});}catch{}
+ });
+ await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:6000});
+ await page.locator('#board .square').nth(17).locator('.piece').click();
+ await page.locator('#board .square').nth(24).click();
+ await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+});
