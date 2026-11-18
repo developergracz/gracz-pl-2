@@ -143,7 +143,7 @@ test('mandatory capture warning appears on another own piece, not the capturing 
  hover(event(17));assert.equal(warnings,0,'correct capturing piece is silent');
  hover(event(26));assert.equal(warnings,0,'opponent piece is silent');
  hover(event(40));assert.equal(warnings,1,'hovering other own piece warns');
- assert.ok(js.includes("if(!reopen){if(!captureAlertActive)notice.hidden=true;return}"));
+ assert.ok(js.includes("if(!reopen&&!captureAlertActive){notice.hidden=true;return}"),'notice persists while capture is required');
  assert.ok(js.includes("captureAlertActive&&sources.includes(i)"));
  assert.ok(css.includes('animation:checkers-capture-red-cycle 4500ms'));
  assert.ok(css.includes('@keyframes checkers-capture-red-cycle'));
@@ -169,10 +169,16 @@ test('new game button shows central dismissible block only during a live game',(
 test('mandatory capture notice is mounted inside modern chat, never as a floating overlay',()=>{
  const js=asset('/konto/warcaby/app.js'),css=asset('/konto/warcaby/styl.css');
  const trainingJs=asset('/konto/warcaby/training-ui.mjs');
- assert.ok(js.includes("$('chat-panel')?.prepend($('checkers-capture-notice'))"),
-  'capture alert shares the chat panel and does not go to online message API');
+ assert.ok(js.includes("panel.prepend(seatNotice);panel.prepend($('checkers-capture-notice'))"),
+  'welcome and mandatory capture instructions live in the chat panel');
  assert.ok(css.includes('#chat-panel #checkers-capture-notice:not([hidden])'));
- assert.match(css,/#chat-panel #checkers-capture-notice:not\(\[hidden\]\)\{[^}]*position:relative!important/s);
+ assert.ok(css.includes('#chat-panel #checkers-color-confirmation:not([hidden])'));
+ assert.match(css,/#chat-panel #checkers-capture-notice:not\(\[hidden\]\)\{[^}]*position:absolute!important/s);
+ assert.ok(css.includes('width:100%!important;height:100%!important'),'announcements fill chat content');
+ assert.ok(css.includes('#chat-panel #checkers-capture-dismiss{display:none!important}'),
+  'mandatory capture cannot be dismissed before a correct capture');
+ assert.ok(js.includes("if(!reopen&&!captureAlertActive){notice.hidden=true;return}"),
+  'the capture notice persists across board re-renders');
  assert.match(css,/#clock-1\.checkers-clock-critical/);
  assert.match(css,/#clock-2\.checkers-clock-critical/);
  assert.match(trainingJs,/clock\.classList\.toggle\('checkers-clock-critical'/);

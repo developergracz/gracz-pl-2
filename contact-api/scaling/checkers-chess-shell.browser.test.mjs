@@ -144,7 +144,7 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
    {detail:{mode:'training',player:1,winner:2,players:['Ty','Komputer'],version:1}})));
   await page.locator('#warcaby-loss-overlay').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
-  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer');
+  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'komputerem');
   assert.match(await page.locator('#warcaby-loss-title').textContent(),/Przegrałeś gracz tę grę z/);
   assert.deepEqual(await page.locator('.warcaby-loss-actions button').allTextContents(),['Rewanż','Stoły']);
   await page.locator('#warcaby-loss-others').click();
@@ -238,6 +238,32 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   await gate.waitFor({state:'hidden'});
   await page.locator('#checkers-color-confirmation').waitFor({state:'visible'});
   assert.match(await page.locator('#checkers-color-confirmation').textContent(),/Świetnie! Grasz teraz czarnymi pionkami/);
+  assert.equal(await page.locator('#checkers-color-confirmation').evaluate(el=>el.parentElement?.id),'chat-panel',
+   'the welcome notice belongs to the chat surface');
+  const chatGeometry=await page.locator('#checkers-color-confirmation').evaluate(el=>{
+   const banner=el.getBoundingClientRect(),panel=el.parentElement.getBoundingClientRect();
+   return {position:getComputedStyle(el).position,width:banner.width,panelWidth:panel.width,
+    height:banner.height,panelHeight:panel.height,color:getComputedStyle(el).color};
+  });
+  assert.equal(chatGeometry.position,'absolute');
+  assert.ok(Math.abs(chatGeometry.width-chatGeometry.panelWidth)<2,'welcome fills chat width');
+  assert.ok(Math.abs(chatGeometry.height-chatGeometry.panelHeight)<2,'welcome fills chat height');
+  assert.equal(chatGeometry.color,'rgb(255, 255, 255)');
+  const appliedClockColor=await page.locator('#clock-1').evaluate(el=>{
+   el.classList.add('checkers-clock-critical');
+   el.style.setProperty('--checkers-clock-shade','rgb(190, 10, 20)');
+   el.style.setProperty('color','rgb(190, 10, 20)','important');
+   el.style.setProperty('transition','none','important'); // Inspect the settled target shade.
+   const color=getComputedStyle(el).color;
+   el.classList.remove('checkers-clock-critical');
+   el.style.removeProperty('--checkers-clock-shade');
+   el.style.removeProperty('color');
+   el.style.removeProperty('transition');
+   return color;
+  });
+  assert.equal(appliedClockColor,'rgb(190, 10, 20)',
+   'the urgent clock style wins over the chess console clock color');
+  await page.locator('#checkers-color-confirmation').waitFor({state:'hidden',timeout:6000});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2');
   const chosen=await check();
   assert.deepEqual(chosen.labels,['Gość','Komputer']);
@@ -291,6 +317,10 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#white-name')?.closest('.player')?.querySelector('.cc-side')?.textContent==='ZalogowanyGracz');
+  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading')&&
+   [...document.querySelectorAll('.cc-top .checkers-turn-token')].length===2&&
+   [...document.querySelectorAll('.cc-top .checkers-turn-token')].every(el=>el.getBoundingClientRect().width>=15),
+   null,{timeout:15000});
   const info=await page.evaluate(()=>{
    const card=id=>document.getElementById(id)?.closest('.player');
    const black=card('black-name'),white=card('white-name');
@@ -935,16 +965,24 @@ test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal mo
  assert.match(await notice.textContent(),/Ten pionek musi bić/);
  assert.equal(await page.locator('#board .square[data-index="17"] .piece.capture-alert').count(),1,
   'capturing pawn becomes red after warning');
- await page.locator('#checkers-capture-dismiss').click();
+ assert.equal(await page.locator('#checkers-capture-dismiss').isVisible(),false,
+  'mandatory capture cannot be dismissed before the required move');
+ assert.equal(await notice.evaluate(el=>el.parentElement?.id),'chat-panel','capture message belongs to the chat');
+ const geometry=await notice.evaluate(el=>{
+  const a=el.getBoundingClientRect(),b=el.parentElement.getBoundingClientRect();
+  return {width:a.width,height:a.height,panelWidth:b.width,panelHeight:b.height,color:getComputedStyle(el).color};
+ });
+ assert.equal(geometry.color,'rgb(255, 255, 255)');
+ assert.ok(Math.abs(geometry.width-geometry.panelWidth)<2,'capture fills chat width');
+ assert.ok(Math.abs(geometry.height-geometry.panelHeight)<2,'capture fills chat height');
  await page.locator('#board .square[data-index="21"]').evaluate(el=>
   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,pointerId:12,isPrimary:true})));
  await notice.waitFor({state:'visible'});
  assert.deepEqual(calls,[],'another pawn cannot bypass mandatory capture');
- await page.locator('#checkers-capture-dismiss').click();
  await page.locator('#board .square[data-index="17"]').evaluate(el=>el.click());
- assert.equal(await notice.isVisible(),false,'correct pawn selection is silent');
+ assert.equal(await notice.isVisible(),true,'correct pawn selection leaves the capture warning visible');
  await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
- assert.equal(await notice.isVisible(),false,'illegal empty-square click does not warn');
+ assert.equal(await notice.isVisible(),true,'illegal empty-square click cannot dismiss the warning');
  assert.deepEqual(calls,[],'invalid click must not reach online API');
  // Empty-square attempts stay silent; no duplicate warning is expected.
  const drag=async(from,to)=>{
@@ -955,7 +993,7 @@ test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal mo
   await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
  };
  await drag(17,24);
- assert.equal(await notice.isVisible(),false,'illegal drop to empty square is silent');
+ assert.equal(await notice.isVisible(),true,'illegal drop does not dismiss the mandatory capture warning');
  assert.deepEqual(calls,[],'illegal drag snaps back without reaching API');
  await drag(17,35);
  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"] .piece.white')&&
