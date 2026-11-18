@@ -80,6 +80,11 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#cc-sheet-settings').waitFor({state:'visible'});
   assert.equal(await page.locator('#ai-level').count(),1,'original AI difficulty remains present');
   assert.equal(await page.locator('#training-time').count(),1,'original clocks remain present');
+  await page.locator('#training-time').selectOption('0');
+  assert.equal(await page.locator('#clock-1').isVisible(),false,'untimed game hides black clock');
+  assert.equal(await page.locator('#clock-2').isVisible(),false,'untimed game hides white clock');
+  await page.locator('#training-time').selectOption('7');
+  assert.equal(await page.locator('#clock-1').isVisible(),true,'timed game restores clock');
   await page.locator('#cc-sheet-settings button.cc-button').filter({hasText:'Obróć planszę'}).click();
   await page.locator('#cc-sheet-settings').waitFor({state:'hidden'});
   await page.locator('#online-mode').click();
