@@ -1,5 +1,34 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
+/* Seat-to-play dialog is independent of board and clock geometry. */
+body.warcaby-console.chess-console.cc-owner .checkers-start-gate[hidden]{display:none!important}
+body.warcaby-console.chess-console.cc-owner .checkers-start-gate:not([hidden]){
+ position:fixed;inset:0;z-index:100010;display:grid;place-items:center;
+ padding:16px;box-sizing:border-box;background:rgba(0,23,26,.58);
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-card{
+ width:min(440px,100%);max-height:calc(100dvh - 32px);overflow:auto;
+ box-sizing:border-box;border:1px solid #d3c6a6;border-radius:18px;
+ background:#fff7e7;color:#0a3a3d;
+ box-shadow:0 20px 60px rgba(0,17,20,.38);padding:clamp(22px,4vw,36px);
+ text-align:center;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-card h2{
+ margin:0 0 12px;font-weight:800;font-size:clamp(19px,2.6vw,26px);line-height:1.25;
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-card p{
+ margin:0 0 22px;font-weight:450;font-size:14px;line-height:1.55;color:#375556;
+}
+body.warcaby-console.chess-console.cc-owner #checkers-start-button{
+ min-height:44px;padding:12px 24px;border:0;border-radius:10px;
+ background:#006d71;color:#fff;font:750 15px system-ui,-apple-system,'Segoe UI',sans-serif;
+ cursor:pointer;
+}
+body.warcaby-console.chess-console.cc-owner #checkers-start-button:hover{background:#005b5e}
+body.warcaby-console.chess-console.cc-owner #checkers-start-button:focus-visible{
+ outline:2px solid #083c42;outline-offset:3px
+}
+
 html:root.checkers-shell-loading,body.warcaby-console.checkers-shell-loading{background:#002529!important}
 body.warcaby-console.checkers-shell-loading>#game{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 body.warcaby-console #checkers-shell-fallback{display:none!important}

@@ -36,6 +36,83 @@ async function serverFor(t,{nickname=null}={}){
  return {base:'http://127.0.0.1:'+server.address().port,requests};
 }
 
+async function takeSeat(page){
+ await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length>0&&
+  document.querySelector('#board')?.dataset.checkersPlayable==='false');
+ // Pointer can remain over a pawn after restart; in that case the dialog
+ // has already opened automatically, which is correct user-facing behavior.
+ if(await page.locator('#checkers-start-gate').isHidden()){
+  await page.locator('#board .piece.white').first().evaluate(el=>{
+   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
+  });
+ }
+ await page.locator('#checkers-start-gate').waitFor({state:'visible'});
+ await page.locator('#checkers-start-button').click();
+ await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
+ await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
+}
+
+test('Seat-to-play modal is centered on first hover/tap and clocks start only after first valid move',{timeout:95000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<=800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false'&&
+   document.querySelectorAll('#board .piece.white').length===12);
+  const gate=page.locator('#checkers-start-gate');
+  assert.equal(await gate.isVisible(),false,'no modal before hovering a pawn');
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
+  await page.locator('#training-time').evaluate(el=>{el.value='7';el.dispatchEvent(new Event('change',{bubbles:true}));});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false');
+  const source=page.locator('#board .square[data-index="17"] .piece');
+  const a=await source.boundingBox(),x=a.x+a.width/2,y=a.y+a.height/2;
+  if(mobile){
+   const cdp=await context.newCDPSession(page);
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await cdp.detach();
+  }else{
+   await page.mouse.move(x,y,{steps:5});
+  }
+  await gate.waitFor({state:'visible'});
+  assert.equal(await gate.getAttribute('role'),'dialog');
+  assert.equal(await gate.getAttribute('aria-modal'),'true');
+  assert.match(await gate.textContent(),/Aby rozpocząć grę, usiądź do gry/);
+  const bbox=await page.locator('.checkers-start-card').boundingBox();
+  assert.ok(Math.abs(bbox.x+bbox.width/2-viewport.width/2)<5,'prompt horizontally centered');
+  assert.ok(Math.abs(bbox.y+bbox.height/2-viewport.height/2)<5,'prompt vertically centered');
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-playable'),'false');
+  // Dispatching a board click without using the dialog must never bypass activation.
+  await page.locator('#board .square[data-index="17"]').evaluate(el=>el.click());
+  await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
+  const initial=await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent()));
+  assert.deepEqual(initial,['07:00','07:00']);
+  await page.locator('#checkers-start-button').click();
+  await gate.waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
+  await page.waitForTimeout(1250);
+  assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),initial,
+   'clicking start does not consume either clock');
+  await page.locator('#board .square[data-index="17"]').click();
+  await page.locator('#board .square[data-index="24"]').click();
+  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+  await page.waitForFunction(initial=>
+   ['clock-1','clock-2'].some((id,i)=>document.getElementById(id)?.textContent!==initial[i]),
+   initial,{timeout:7000});
+  await page.locator('#restart').evaluate(el=>el.click());
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false');
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','new game is still unseated');
+  assert.deepEqual(errors,[],'no browser errors');
+  await context.close();
+ }
+});
+
 test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
  const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -72,7 +149,11 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   assert.deepEqual(info.labels,['Komputer','ZalogowanyGracz'],'real signed-in nickname, not placeholder');
   assert.equal(info.order,true,'name is immediately after the clock in each existing player box');
   assert.ok(info.pawns[0].includes('black')&&info.pawns[1].includes('white'),'correct colours: black computer / white signed-in player');
-  assert.ok(!info.pawns[0].includes('is-turn')&&info.pawns[1].includes('is-turn'),'first turn belongs to white pawn');
+  assert.ok(!info.pawns[0].includes('is-turn')&&!info.pawns[1].includes('is-turn'),
+   'no active turn ring before taking a seat');
+  await takeSeat(page);
+  assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),1,
+   'after seating white is next to move, without starting clock');
   for(const icon of info.pawnIcons){
    assert.equal(icon.width,15);assert.equal(icon.height,15);
    assert.equal(icon.borderWidth,'1px','thin pawn border');
@@ -133,6 +214,7 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#chat-tab').click();
   assert.ok(Math.abs(view.boardWidth-view.boardHeight)<3,'board stays square');
   if(!mobile)assert.ok(view.boardX<view.dockX,'board left, controls right');
+  await takeSeat(page);
   await page.locator('#board .square').nth(17).click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -229,6 +311,7 @@ test('P0: visible checker is clickable by real cursor/touch after cold load and 
    assert.notEqual(preflight.pointer,'none','owner shell must not swallow input');
    assert.notEqual(preflight.boardPointer,'none','board must receive pointer events');
    assert.equal(preflight.inert,false,'no overlay may make the board inert');
+   await takeSeat(page);
    await first.locator('.piece').click({timeout:5000});
    await dest.click({timeout:5000});
    await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
@@ -252,6 +335,7 @@ test('P0: console remains playable when web-font readiness never resolves',{time
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:6000});
+ await takeSeat(page);
  await page.locator('#board .square').nth(17).locator('.piece').click();
  await page.locator('#board .square').nth(24).click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -333,6 +417,7 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    await page.keyboard.press('Escape');
    assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),false);
   }
+  await takeSeat(page);
   await page.locator('#board .square').nth(17).locator('.piece').click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
@@ -376,6 +461,7 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  const page=await browser.newPage({viewport:{width:1366,height:768}});
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ await takeSeat(page);
  await page.locator('#board .square').nth(17).locator('.piece').click();
  await page.locator('#board .square').nth(24).click();
  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>0);
@@ -498,6 +584,7 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   };
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length===12);
+  await takeSeat(page);
   await page.evaluate(()=>{
    window.__checkersPointerProbe=[];
    const target=document.getElementById('board');
@@ -584,6 +671,7 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   assert.equal(await page.locator('#board .square').count(),64);
   await page.locator('#restart').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent==='Ruch 0');
+  await takeSeat(page);
   await page.locator('#board .square[data-index="17"]').click();
   await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
