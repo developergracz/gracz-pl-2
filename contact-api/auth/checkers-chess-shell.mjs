@@ -142,6 +142,7 @@ body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet :is(inpu
  background:var(--cc-surface)!important;color:var(--cc-ink)!important;border:1px solid var(--cc-line)!important;border-radius:8px!important
 }
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet :is(#training-settings,#online-settings)[hidden]{display:none!important}
+body.warcaby-console.chess-console.cc-owner #game #cc-sheet-online :is(label[for="create-room-friend"],#create-room-friend){display:block!important}
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet .cc-sheet-body{overflow:auto!important}
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet .cc-sheet-body>*{flex-shrink:0!important}
 body.warcaby-console.chess-console.cc-owner #game .cc-tool svg{fill:none}
@@ -307,6 +308,12 @@ export const checkersChessShellJs=String.raw`
  const studio=E('button','cc-button','Układ konsoli');studio.type='button';
  studio.addEventListener('click',()=>{closeSheet();$('console-config-open')?.click();});
  sheets.settings.content.append(studio);
+ const accessories=E('div','cc-group');
+ const rotate=E('button','cc-button','Obróć planszę');rotate.type='button';
+ rotate.addEventListener('click',()=>{$('rotate-board')?.click();closeSheet();});
+ const hint=E('button','cc-button','Podpowiedź ruchu');hint.type='button';
+ hint.addEventListener('click',()=>{$('training-hint')?.click();closeSheet();});
+ accessories.append(rotate,hint);sheets.settings.content.append(accessories);
  // Appearance choices are strictly visual; the original checker engine is never modified.
  const PREF='gracz-warcaby-chess-shell-style-v1';
  const defaults={board:'original',pieces:'original',theme:'light'};
