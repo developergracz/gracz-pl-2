@@ -107,6 +107,7 @@ test('Warcaby render no legacy page or loading text during a delayed checkers ap
  await page.route('**/konto/warcaby/app.js',async route=>{await gate;await route.continue();});
  await page.goto(base+'/konto/warcaby/',{waitUntil:'commit'});
  await page.waitForFunction(()=>!!document.querySelector('#game'));
+ await page.waitForFunction(()=>[...document.styleSheets].some(s=>s.href?.endsWith('/konto/warcaby/styl.css')));
  try{
   const state=await page.evaluate(()=>({
    root:document.documentElement.classList.contains('checkers-shell-loading'),
