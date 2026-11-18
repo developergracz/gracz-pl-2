@@ -7,13 +7,21 @@ import {readFileSync} from 'node:fs';
 function load(path,method='GET'){let status=0,headers={},body='';const res={writeHead(code,h){status=code;headers=h},end(text){body=String(text)}};const served=serveChessConsole({method},res,new URL('https://example.com'+path));return {served,status,headers,body};}
 test('Chess initial paint does not reveal the shared Gomoku shell before chess is ready',()=>{
   const page=load('/konto/szachy/'),css=load('/konto/szachy/styl.css'),app=load('/konto/szachy/app.js');
+  assert.match(page.body,/<html lang="pl" class="chess-booting">/);
   assert.match(page.body,/<body class="chess-console cc-owner chess-booting">/);
   assert.match(page.body,/<div id="chess-initial-load" role="status" aria-live="polite">/);
-  assert.ok(css.body.includes('body.chess-console.chess-booting #game{visibility:hidden!important}'));
-  assert.ok(css.body.includes('body.chess-console #chess-initial-load{display:none}'));
+  assert.doesNotMatch(page.body,/Wczytywanie szachów/,'no visible loading splash');
+  assert.ok(css.body.includes('body.chess-console.chess-booting > *{visibility:hidden!important}'));
+  assert.ok(css.body.includes('html.chess-booting,body.chess-console.chess-booting{background:#002529!important}'));
+  assert.ok(css.body.includes('opacity:0;animation:chess-boot-timeout 1ms steps(1,end) 12s forwards'));
+  assert.ok(css.body.includes('body.chess-console #chess-initial-load{display:none!important}'));
+  assert.ok(app.body.includes("document.documentElement.classList.remove('chess-booting')"));
   assert.ok(app.body.includes("body.classList.remove('chess-booting')"));
+  assert.ok(app.body.includes("board.querySelectorAll('.chess-square').length"));
+  assert.ok(app.body.includes("Promise.resolve(document.fonts?.ready).then(afterFonts,afterFonts)"));
+  assert.ok(app.body.includes('requestAnimationFrame(()=>requestAnimationFrame(revealReadyChess))'));
   assert.ok(app.body.lastIndexOf("body.classList.remove('chess-booting')") > app.body.lastIndexOf('syncFullscreen();'),
-    'boot splash must disappear only after the owner panel and clocks finish initializing');
+    'only a completed chess owner console can be exposed');
   assert.doesNotMatch(getSharedGameConsoleHtml(),/chess-booting/,'Gomoku keeps its existing loading behavior');
   assert.match(page.headers['Content-Security-Policy'],/style-src 'self'/);
 });
