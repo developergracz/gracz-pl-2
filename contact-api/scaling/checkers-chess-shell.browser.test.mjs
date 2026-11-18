@@ -897,6 +897,68 @@ test('Remis action sits below Cofnij and requests a two-player draw, never a uni
  assert.equal(calls.at(-1).offerId,'draw-1');
 });
 
+
+test('P0: single mandatory capture warns on hover, first invalid click and invalid drag',{timeout:65000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ const id='12345678-1234-4234-8234-1234567890ab',board=Array(64).fill(0);
+ board[17]=1;board[21]=1;board[26]=2; // Only 17 can capture, exactly once: 17->35.
+ let match={id,game:'warcaby',version:10,player:1,players:['Ty','Rywal'],playable:true,
+  state:{board,turn:1,winner:0,forced:null,moves:3,quiet:0,history:[]}};
+ const calls=[];
+ await page.route('**/auth/match?*',route=>route.fulfill({json:{ok:true,match}}));
+ await page.route('**/auth/match',route=>{
+  const payload=route.request().postDataJSON(),move=payload?.move;
+  calls.push(move);
+  if(move?.from!==17||move?.to!==35)return route.fulfill({status:400,json:{ok:false,error:'ILLEGAL_MOVE'}});
+  const next=match.state.board.slice();next[17]=0;next[26]=0;next[35]=1;
+  match={...match,version:11,state:{...match.state,board:next,turn:2,moves:4,
+   history:[{player:1,from:17,to:35}]}};
+  return route.fulfill({json:{ok:true,match}});
+ });
+ await page.goto(base+'/konto/warcaby/?match='+id,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="17"].capture-source')&&
+   document.querySelector('#board')?.dataset.checkersPlayable==='true');
+ const notice=page.locator('#checkers-capture-notice');
+ assert.equal(await notice.isVisible(),false,'single capture is initially quiet before hovering');
+ await page.locator('#board .square[data-index="17"] .piece').evaluate(el=>
+  el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
+ await notice.waitFor({state:'visible'});
+ assert.match(await notice.textContent(),/Bicie obowiązkowe/,'hover warns without clicking');
+ assert.match(await notice.textContent(),/Ten pionek musi bić/);
+ await page.locator('#checkers-capture-dismiss').click();
+ await page.locator('#board .square[data-index="21"]').evaluate(el=>
+  el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,pointerId:12,isPrimary:true})));
+ await notice.waitFor({state:'visible'});
+ assert.deepEqual(calls,[],'another pawn cannot bypass mandatory capture');
+ await page.locator('#checkers-capture-dismiss').click();
+ await page.locator('#board .square[data-index="17"]').evaluate(el=>el.click());
+ await notice.waitFor({state:'visible'});
+ await page.locator('#checkers-capture-dismiss').click();
+ await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
+ await notice.waitFor({state:'visible'});
+ assert.deepEqual(calls,[],'illegal click target must not reach online API');
+ await page.locator('#checkers-capture-dismiss').click();
+ const drag=async(from,to)=>{
+  const a=await page.locator('#board .square[data-index="'+from+'"] .piece').boundingBox();
+  const b=await page.locator('#board .square[data-index="'+to+'"]').boundingBox();
+  assert.ok(a&&b);
+  await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();
+  await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
+ };
+ await drag(17,24);
+ await notice.waitFor({state:'visible'});
+ assert.deepEqual(calls,[],'illegal drag snaps back and warns immediately');
+ await page.locator('#checkers-capture-dismiss').click();
+ await drag(17,35);
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"] .piece.white')&&
+  document.getElementById('move-count')?.textContent==='Ruch 4');
+ assert.deepEqual(calls,[{from:17,to:35}],'only real legal capture is sent to server');
+ assert.equal(await notice.isVisible(),false,'notice clears after capture');
+});
+
 test('P0: forced two-step capture is draggable only from required pawn and to legal highlighted squares',{timeout:65000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});

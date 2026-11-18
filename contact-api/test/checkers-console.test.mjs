@@ -265,9 +265,14 @@ test('Seat-to-play gate exists only in modern Warcaby and does not start clocks 
  assert.match(modern.body,/id="checkers-start-gate"[^>]+role="dialog"[^>]+aria-modal="true"/);
  assert.match(modern.body,/data-checkers-side="1" aria-label="Wybierz białe pionki"/);
  assert.match(modern.body,/data-checkers-side="2" aria-label="Wybierz czarne pionki"/);
+ assert.match(modern.body,/Gra rozpocznie się, gdy wybierzesz kolor pionków\./);
+ assert.doesNotMatch(modern.body,/Zegar ruszy dopiero/);
  assert.doesNotMatch(classic.body,/id="checkers-start-gate"/,'classic game is unchanged');
  assert.ok(css.body.includes('checkers-start-gate[hidden]'),'hidden overlay stays hidden on initial load');
  assert.ok(js.body.includes("board.addEventListener('pointerover',showSeatGate)"));
+ assert.ok(js.body.includes("board.addEventListener('pointerover',showMandatoryCaptureOnHover)"),'mandatory capture announced on hover');
+ assert.ok(js.body.includes("board.addEventListener('focusin',showMandatoryCaptureOnHover)"),'keyboard focus announces mandatory capture');
+ assert.ok(js.body.includes("syncCaptureNotice(true,d.from)"),'invalid drop warns on first attempt');
  assert.ok(js.body.includes("seatPending=false;seatModal.hidden=true"));
  assert.ok(js.body.includes("trainingController?.activateSeat?.(side)"),'user chooses actual engine side, not CSS-only skin');
  assert.ok(js.body.includes("chatSignature='',rotated=true"),'initial board places white at bottom');
