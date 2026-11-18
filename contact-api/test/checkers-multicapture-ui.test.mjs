@@ -168,11 +168,12 @@ test('new game button shows central dismissible block only during a live game',(
 
 test('mandatory capture notice is mounted inside modern chat, never as a floating overlay',()=>{
  const js=asset('/konto/warcaby/app.js'),css=asset('/konto/warcaby/styl.css');
+ const trainingJs=asset('/konto/warcaby/training-ui.mjs');
  assert.ok(js.includes("$('chat-panel')?.prepend($('checkers-capture-notice'))"),
   'capture alert shares the chat panel and does not go to online message API');
  assert.ok(css.includes('#chat-panel #checkers-capture-notice:not([hidden])'));
  assert.match(css,/#chat-panel #checkers-capture-notice:not\(\[hidden\]\)\{[^}]*position:relative!important/s);
  assert.match(css,/#clock-1\.checkers-clock-critical/);
  assert.match(css,/#clock-2\.checkers-clock-critical/);
- assert.match(js,/clock\.classList\.toggle\('checkers-clock-critical'/);
+ assert.match(trainingJs,/clock\.classList\.toggle\('checkers-clock-critical'/);
 });
