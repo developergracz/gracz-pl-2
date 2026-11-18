@@ -232,6 +232,26 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.doesNotMatch(classicJs.body,/checkers-history-nav/,'classic script remains unchanged');
 });
 
+test('Seat-to-play gate exists only in modern Warcaby and does not start clocks early',()=>{
+ const modern=load('/konto/warcaby/');
+ const classic=load('/konto/warcaby/?konsola=klasyczna');
+ const js=load('/konto/warcaby/app.js');
+ const training=load('/konto/warcaby/training-ui.mjs');
+ const css=load('/konto/warcaby/styl.css');
+ assert.match(modern.body,/id="checkers-start-gate"[^>]+role="dialog"[^>]+aria-modal="true"/);
+ assert.match(modern.body,/id="checkers-start-button"[^>]*>Rozpocznij grę</);
+ assert.doesNotMatch(classic.body,/id="checkers-start-gate"/,'classic game is unchanged');
+ assert.ok(css.body.includes('checkers-start-gate[hidden]'),'hidden overlay stays hidden on initial load');
+ assert.ok(js.body.includes("board.addEventListener('pointerover',showSeatGate)"));
+ assert.ok(js.body.includes("seatPending=false;seatModal.hidden=true"));
+ assert.ok(js.body.includes("current={...current,playable:true}"),'arming enables board without starting clock');
+ assert.ok(training.body.includes("a.resetSeatGate?.()"));
+ assert.ok(training.body.includes("playable:!a.isSeatPending?.()"),'unseated game blocks moves');
+ assert.ok(training.body.includes("if(!clockStarted&&actor===1)clockStarted=true"),
+  'only first valid white move starts existing timer');
+ assert.doesNotThrow(()=>new Script(js.body));
+});
+
 test('Warcaby dark chat styling and drag controls are isolated from chess/Gomoku',()=>{
  const style=load('/konto/warcaby/styl.css');
  const script=load('/konto/warcaby/app.js');
