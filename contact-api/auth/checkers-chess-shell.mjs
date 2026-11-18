@@ -134,6 +134,7 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) #match-panel>
  flex:0 0 auto!important;min-height:0!important;margin:0!important;padding:7px!important;background:var(--cc-surface)!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) #match-panel>.mini-chat[hidden]{display:none!important}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.game-tools.checkers-toolbar{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-tools{order:5!important}
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet #training-settings,
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-sheet #online-settings{
