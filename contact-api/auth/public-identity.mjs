@@ -11,6 +11,7 @@ import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScry
 import { initialGame, playMove } from './game-engine.mjs';
 import {initialChessMatch,playChessMatch,undoLastChessMove} from './chess-match.mjs';
 import {chessTimeoutIsDraw} from './chess-rules.mjs';
+import {applyCheckersDrawAgreement} from './checkers-draw-agreement.mjs';
 import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
@@ -788,6 +789,38 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
             targetTo:undo.targetTo,createdAt:undo.createdAt}:null
         }}),true;
       }
+      // A draw by agreement is an explicit, two-sided decision, never a
+      // client-selected winner or a chat-only message. Restricted to Warcaby.
+      if(!isChat&&!isUndo&&req.method==='POST'&&
+        ['offerDraw','acceptDraw','rejectDraw','cancelDraw'].includes(body.action)){
+        if(match.game!=='warcaby')return bad(res,400,'REMIS_NIEDOSTEPNY'),true;
+        if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
+        if(match.state.winner)return bad(res,409,'PARTIA_ZAKONCZONA'),true;
+        if(!Number.isInteger(body.version)||body.version!==match.version)
+          return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        const decision=applyCheckersDrawAgreement(match.state,player,body.action,body.offerId);
+        if(decision.error)return bad(res,
+          decision.error==='NIE_TWOJA_PROPOZYCJA'||decision.error==='BRAK_ZGODY_PRZECIWNIKA'?403:409,
+          decision.error),true;
+        const next=decision.state;
+        const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
+          SET state=$1::jsonb,version=m.version+1,updated_at=now()
+          FROM gracz_public_identity.game_challenges c
+          WHERE m.challenge_id=$2 AND c.id=m.challenge_id AND c.status='accepted'
+            AND m.version=$3 AND (c.sender_id=$4 OR c.recipient_id=$4)
+            AND NOT EXISTS(SELECT 1 FROM gracz_public_identity.friend_blocks b
+              WHERE (b.blocker=c.sender_id AND b.blocked=c.recipient_id)
+              OR (b.blocker=c.recipient_id AND b.blocked=c.sender_id))
+          RETURNING m.version`,[JSON.stringify(next),matchId,match.version,actor]);
+        if(!updated.rowCount)return bad(res,409,'ODSWIEZ_PARTIE'),true;
+        match={...match,state:next,version:updated.rows[0].version};
+        notifyGomoku(matchId);
+        return json(res,200,{ok:true,serverTime:new Date().toISOString(),match:{
+          id:matchId,game:match.game,version:match.version,player,
+          players:[match.sender_nick,match.recipient_nick],
+          state:next,playable:true
+        }}),true;
+      }
       if(isChat){
         if(!match.playable)return bad(res,403,'PARTIA_ZABLOKOWANA'),true;
         if(!['gomoku','warcaby','szachy'].includes(match.game))return bad(res,400,'CZAT_NIEDOSTEPNY'),true;
@@ -836,6 +869,9 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
           result.state=clockAfterMove(match.state,result.state,movedAt);
         }
         if(match.game==='warcaby'){
+          // A played move declines any unanswered offer; no stale draw request
+          // survives a new game state.
+          delete result.state.drawOffer;
           const previous=Array.isArray(match.state.history)?match.state.history.slice(-159):[];
           result.state.history=[...previous,{player,from:body.move.from,to:body.move.to,number:result.state.moves}];
           result.state=clockAfterMove(match.state,result.state,movedAt);

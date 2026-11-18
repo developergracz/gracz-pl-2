@@ -476,6 +476,13 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',
       touchPoints:[{x:x+(u-x)*n/8,y:y+(v-y)*n/8,id:1}]});
     }
+    const touchGhost=await page.evaluate(()=>{
+     const node=document.querySelector('.checkers-drag-ghost');
+     return node?{background:getComputedStyle(node).backgroundImage,
+      sourceOpacity:getComputedStyle(document.querySelector('#board .square.checkers-drag-source .piece')).opacity}:null;
+    });
+    assert.ok(touchGhost&&touchGhost.background!=='none','visible skinned pawn follows touch');
+    assert.equal(touchGhost.sourceOpacity,'0','stationary source is hidden during touch drag');
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
     await cdp.detach();
    }else{
@@ -528,9 +535,18 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    const ghost=await page.evaluate(()=>{
     const el=document.querySelector('.checkers-drag-ghost');
     if(!el)return null;const r=el.getBoundingClientRect();
-    return {onBody:el.parentElement===document.body,x:r.x+r.width/2,y:r.y+r.height/2};
+    const css=getComputedStyle(el),rim=getComputedStyle(el,'::before');
+    const source=document.querySelector('#board .square[data-index="17"] .piece');
+    return {onBody:el.parentElement===document.body,x:r.x+r.width/2,y:r.y+r.height/2,
+     background:css.backgroundImage,shadow:css.boxShadow,edge:rim.backgroundImage,
+     sourceOpacity:getComputedStyle(source).opacity};
+
    });
    assert.ok(ghost?.onBody,'ghost is mounted in viewport layer');
+   assert.notEqual(ghost.background,'none','dragged pawn preserves metal skin rather than invisible blank clone');
+   assert.notEqual(ghost.shadow,'none','dragged pawn retains premium shadow');
+   assert.notEqual(ghost.edge,'none','dragged pawn keeps its inner face');
+   assert.equal(ghost.sourceOpacity,'0','original pawn is hidden during drag');
    assert.ok(Math.abs(ghost.x-(x+28))<3&&Math.abs(ghost.y-(y+24))<3,'ghost tracks mouse position');
    await page.mouse.up();
    assert.equal(await page.locator('.checkers-drag-ghost').count(),0,'ghost always removed on release');
@@ -574,6 +590,56 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   assert.deepEqual(errors,[]);
   await context.close();
  }
+});
+
+test('Remis action sits below Cofnij and requests a two-player draw, never a unilateral result',{timeout:65000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ const id='12345678-1234-4234-8234-1234567890ab';
+ const board=Array(64).fill(0);board[17]=1;board[26]=2;
+ let match={id,game:'warcaby',version:10,player:1,
+  players:['Zalogowany','Rywal'],playable:true,
+  state:{board,turn:1,winner:0,forced:null,moves:2,quiet:0,history:[]}};
+ const calls=[];
+ await page.route('**/auth/match?*',route=>route.fulfill({json:{ok:true,match}}));
+ await page.route('**/auth/match',route=>{
+  const payload=route.request().postDataJSON();calls.push(payload);
+  if(payload.version!==match.version)return route.fulfill({status:409,json:{ok:false,error:'ODSWIEZ_PARTIE'}});
+  let next={...match.state};
+  if(payload.action==='offerDraw')next.drawOffer={id:'draw-1',requester:match.player};
+  if(payload.action==='rejectDraw')delete next.drawOffer;
+  if(payload.action==='acceptDraw'){delete next.drawOffer;next.winner=3;}
+  match={...match,version:match.version+1,state:next};
+  return route.fulfill({json:{ok:true,match}});
+ });
+ page.on('dialog',dialog=>dialog.accept());
+ await page.goto(base+'/konto/warcaby/?match='+id,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#checkers-offer-draw')?.title==='Zaproponuj remis przeciwnikowi');
+ const positions=await page.evaluate(()=>{
+  const actions=document.querySelector('.chess-reference-actions');
+  return {children:actions?.children.length,stack:actions?.lastElementChild?.className,
+   names:[...actions?.lastElementChild?.querySelectorAll('button')||[]].map(b=>b.textContent.trim())};
+ });
+ assert.equal(positions.children,4,'four existing action columns are preserved');
+ assert.match(positions.stack,/checkers-undo-draw/);
+ assert.deepEqual(positions.names,['Cofnij','Remis']);
+ await page.locator('#checkers-offer-draw').click();
+ await page.waitForFunction(()=>document.querySelector('.checkers-draw-text')?.textContent.includes('Czekamy'));
+ assert.equal(match.state.winner,0,'offering a draw does not end the game');
+ assert.equal(calls.at(-1).action,'offerDraw');
+ assert.equal(calls.at(-1).version,10);
+ assert.equal(calls.at(-1).id,id);
+ match={...match,player:2,version:match.version+1};
+ await page.evaluate(()=>window.dispatchEvent(new Event('gracz:warcaby:refresh-requested')));
+ await page.waitForFunction(()=>!document.querySelector('.checkers-draw-banner').hidden&&
+  document.querySelector('.checkers-draw-text')?.textContent.includes('Przeciwnik'));
+ await page.getByRole('button',{name:'Przyjmij'}).click();
+ await page.waitForFunction(()=>document.querySelector('#session-heading')?.textContent.includes('Remis'));
+ assert.equal(match.state.winner,3,'two-party acceptance ends as server-reported draw');
+ assert.equal(calls.at(-1).action,'acceptDraw');
+ assert.equal(calls.at(-1).offerId,'draw-1');
 });
 
 test('P0: forced two-step capture is draggable only from required pawn and to legal highlighted squares',{timeout:65000},async t=>{
