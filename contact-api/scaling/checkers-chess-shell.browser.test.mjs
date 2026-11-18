@@ -131,6 +131,9 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
    if(body.action==='create')tables=[{id,title:body.title,host:'gracz',
     guest:null,minutes:body.minutes,incrementSeconds:body.incrementSeconds,
     status:'waiting',visibility:body.visibility,mine:true,joined:false,color:body.color}];
+   if(body.action==='edit')tables=tables.map(row=>row.id===body.id?{...row,title:body.title,
+    minutes:body.minutes,incrementSeconds:body.incrementSeconds,
+    color:body.color,visibility:body.visibility}:row);
    if(body.action==='join')return route.fulfill({json:{ok:true,matchId:id}});
    if(body.action==='close')tables=[];
    return route.fulfill({json:{ok:true,id}});
@@ -160,8 +163,32 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
   assert.equal(calls.at(-1).minutes,5);
   assert.equal(calls.at(-1).incrementSeconds,2);
   assert.match(await page.locator('#warcaby-loss-tables').textContent(),/Gospodarz: gracz/);
-  assert.equal(await page.locator('#warcaby-loss-tables button').textContent(),'Zamknij');
-  await page.locator('#warcaby-loss-tables button').click();
+  const actions=page.locator('#warcaby-loss-tables');
+  assert.deepEqual(await actions.locator('button').allTextContents(),
+   ['Zamknij','Edytuj','Kod QR','Wyślij']);
+  await actions.getByRole('button',{name:'Edytuj'}).click();
+  assert.equal(await page.locator('#warcaby-tables-form-heading').textContent(),'Edytuj stół');
+  assert.equal(await page.locator('input[name="title"]').inputValue(),'Warcaby Test');
+  await page.locator('input[name="title"]').fill('Warcaby Nowe');
+  await page.locator('select[name="visibility"]').selectOption('private');
+  await page.locator('#warcaby-tables-save').click();
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Warcaby Nowe'));
+  assert.equal(calls.at(-1).action,'edit');
+  assert.equal(calls.at(-1).id,id);
+  assert.equal(calls.at(-1).visibility,'private');
+  await actions.getByRole('button',{name:'Kod QR'}).click();
+  await page.locator('#warcaby-share-overlay').waitFor({state:'visible'});
+  await page.locator('#warcaby-share-qr svg').waitFor({state:'visible'});
+  assert.equal(new URL(await page.locator('#warcaby-share-link').inputValue()).searchParams.get('table'),id);
+  await page.locator('#warcaby-share-close').click();
+  await page.locator('#warcaby-share-overlay').waitFor({state:'hidden'});
+  await page.evaluate(()=>Object.defineProperty(navigator,'share',{value:undefined,configurable:true}));
+  await actions.getByRole('button',{name:'Wyślij'}).click();
+  await page.locator('#warcaby-share-overlay').waitFor({state:'visible'});
+  assert.equal(new URL(await page.locator('#warcaby-share-link').inputValue()).searchParams.get('table'),id);
+  await page.locator('#warcaby-share-close').click();
+  assert.equal(await actions.getByRole('button',{name:'Zamknij',exact:true}).textContent(),'Zamknij');
+  await page.locator('#warcaby-loss-tables').getByRole('button',{name:'Zamknij',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Brak stołów'));
   assert.equal(calls.at(-1).action,'close');
   await page.locator('#warcaby-tables-close').click();

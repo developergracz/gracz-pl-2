@@ -37,6 +37,10 @@ const make=()=>{
 };
 test('strict table options reject malformed data, injection and untimed increments',()=>{
  assert.equal(validTableConfig(config),true);
+ assert.equal(validTableConfig({...config,action:'edit',id}),true);
+ assert.equal(validTableConfig({...config,id}),false);
+ for(const change of [{id:'bad'},{id:null},{title:'x'},{visibility:'secret'},{unexpected:1}])
+  assert.equal(validTableConfig({...config,action:'edit',id,...change}),false,JSON.stringify(change));
  for(const change of [{minutes:1},{incrementSeconds:100},{color:'red'},{visibility:'secret'},
   {title:'<script>evil</script>'},{title:'x'},{minutes:0,incrementSeconds:2},
   {unexpected:'drop'}])
@@ -92,4 +96,33 @@ test('unknown and malformed actions fail closed',async()=>{
  for(const body of [{action:'join',id:'bad'},{action:'start',id},{action:'close',id,extra:true},null]){
   f.setBody(body);assert.equal((await f.call('POST')).status,400);
  }
+});
+
+test('owner-only edit updates an existing waiting table with bound parameters',async()=>{
+ const f=make();f.setBody({...config,action:'edit',id,title:'Nowa nazwa',minutes:10,
+  incrementSeconds:3,color:'black',visibility:'private'});
+ const out=await f.call('POST');
+ assert.equal(out.status,200);assert.equal(out.result.id,id);
+ const write=f.statements.find(x=>x.sql.includes('SET title=$3,minutes=$4'));
+ assert.ok(write,'No update query');
+ assert.deepEqual(write.args,[id,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','Nowa nazwa',10,3,'black','private']);
+ assert.ok(write.sql.includes("owner_id=$2 AND status='waiting'"));
+ assert.ok(write.sql.includes("created_at>now()-interval '12 hours'"));
+});
+test('edit fails closed when table was claimed, closed or belongs to another owner',async()=>{
+ const f=make();
+ const old=f.db.query;
+ f.db.query=(sql,args)=>sql.includes('SET title=$3,minutes=$4')?Promise.resolve({rows:[],rowCount:0}):old(sql,args);
+ f.setBody({...config,action:'edit',id});
+ const out=await f.call('POST');
+ assert.equal(out.status,409);assert.equal(out.result.error,'STOL_NIEAKTUALNY');
+ f.setBody({...config,action:'edit',id:'not-a-uuid'});
+ assert.equal((await f.call('POST')).status,400);
+});
+test('invite lookup narrows visibility to the exact table UUID',async()=>{
+ const f=make();await f.call('GET','?scope=waiting&code='+id);
+ const lookup=f.statements.find(x=>x.sql.includes('SELECT t.id,t.title,t.minutes'));
+ assert.ok(lookup.sql.includes("t.id=$2::uuid"));
+ assert.ok(lookup.sql.includes("$2::uuid IS NULL"));
+ assert.equal(lookup.args[1],id);
 });
