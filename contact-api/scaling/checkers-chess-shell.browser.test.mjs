@@ -414,13 +414,41 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
   };
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length===12);
+  await page.evaluate(()=>{
+   window.__checkersPointerProbe=[];
+   const target=document.getElementById('board');
+   for(const type of ['pointerdown','pointermove','pointerup','lostpointercapture','click']){
+    target.addEventListener(type,e=>{
+     const a=window.__checkersPointerProbe;if(a.length>70)return;
+     const at=document.elementFromPoint(e.clientX??0,e.clientY??0);
+     a.push({type,pointerId:e.pointerId,from:e.target?.className?.baseVal||e.target?.className,
+      physical:at?.closest?.('.square[data-index]')?.dataset.index||null,
+      ghost:document.querySelectorAll('.checkers-drag-ghost').length,
+      targets:document.querySelectorAll('.checkers-drag-target').length});
+    },true);
+   }
+  });
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
   await drag(17,19); // Illegal sideways drag, source must snap back.
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
   assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
   await drag(17,24); // Real legal white opening.
-  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:12000});
+  try{
+   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:6500});
+  }catch(err){
+   const snapshot=await page.evaluate(()=>({
+    state:document.getElementById('move-count')?.textContent,
+    status:document.getElementById('game-state')?.textContent,
+    notices:document.getElementById('checkers-capture-notice')?.hidden,
+    start:document.querySelector('#board .square[data-index="17"]')?.className,
+    target:document.querySelector('#board .square[data-index="24"]')?.className,
+    ghostCount:document.querySelectorAll('.checkers-drag-ghost').length,
+    highlighted:document.querySelectorAll('#board .square.possible').length,
+    pointerProbe:window.__checkersPointerProbe
+   }));
+   throw Error('Legal mouse/touch drag failed: '+JSON.stringify({viewport,snapshot,errors}));
+  }
   assert.ok(Number(await page.locator('#history-count').textContent())>=1);
   assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
   assert.equal(await page.locator('#board .square').count(),64);
@@ -475,8 +503,19 @@ test('P0: forced two-step capture is draggable only from required pawn and to le
  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"].must-continue'));
  assert.deepEqual(calls,[[17,35]],'first capture accepted through original server API');
  await drag(35,53);
- await page.waitForFunction(()=>document.querySelector('#board .square[data-index="53"] .piece.white')&&
-  document.getElementById('move-count')?.textContent==='Ruch 2');
+ try{
+  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="53"] .piece.white')&&
+   document.getElementById('move-count')?.textContent==='Ruch 2',{timeout:7000});
+ }catch(err){
+  const debug=await page.evaluate(()=>({
+   count:document.getElementById('move-count')?.textContent,
+   forced:[...document.querySelectorAll('#board .must-continue')].map(e=>e.dataset.index),
+   status:document.getElementById('game-state')?.textContent,
+   target53:document.querySelector('#board .square[data-index="53"]')?.className,
+   notice:document.getElementById('checkers-capture-notice')?.hidden
+  }));
+  throw Error('Forced follow-on capture failed: '+JSON.stringify({calls,debug}));
+ }
  assert.deepEqual(calls,[[17,35],[35,53]],'second mandatory capture also via original API');
  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
 });
