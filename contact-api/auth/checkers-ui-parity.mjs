@@ -117,7 +117,7 @@ body.warcaby-console.chess-console.cc-owner #board .square{
  touch-action:none!important
 }
 body.warcaby-console #board .square .piece{touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}
-body.warcaby-console #board .square.checkers-drag-source .piece{opacity:.55!important}
+body.warcaby-console #board .square.checkers-drag-source .piece{opacity:0!important}
 body.warcaby-console.chess-console.cc-owner #board .square.checkers-drag-target{
  box-shadow:none!important
 }
@@ -130,7 +130,7 @@ body.warcaby-console.chess-console.cc-owner #board .square.checkers-drag-hover{
  box-shadow:none!important;filter:brightness(1.08)!important
 }
 body.warcaby-console .checkers-drag-ghost{
- position:fixed!important;left:0;top:0;z-index:99999!important;
+ position:fixed!important;left:0;top:0;z-index:99999!important;visibility:visible!important;
  transform:translate(-50%,-50%)!important;pointer-events:none!important;
  width:clamp(32px,4vw,74px)!important;height:clamp(32px,4vw,74px)!important;
  margin:0!important;opacity:.92!important;filter:drop-shadow(0 4px 7px #0008)!important;
