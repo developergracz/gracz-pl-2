@@ -241,5 +241,6 @@ test('Warcaby dark chat styling and drag controls are isolated from chess/Gomoku
  assert.ok(script.body.includes('void choose(to)'),'drop uses original game rules');
  assert.ok(script.body.includes('captureSources(state,current.player)'));
  assert.ok(script.body.includes('d.targets.includes(to)'));
- assert.doesNotMatch(load('/konto/warcaby/app.js?konsola=klasyczna').body,/checkers-drag-ghost/,'classic fallback code unchanged');
+ assert.ok(script.body.includes("if(document.body?.classList?.contains?.('chess-console'))"),'pointer handlers only activate inside modern console');
+ assert.doesNotMatch(load('/konto/warcaby/?konsola=klasyczna').body,/class="warcaby-console chess-console/,'classic fallback remains a separate UI');
 });
