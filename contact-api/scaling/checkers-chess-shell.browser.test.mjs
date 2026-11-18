@@ -76,7 +76,7 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#board .square').nth(17).click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
-  assert.ok((await page.locator('#moves-list li').count())>=1,'existing move history');
+  assert.ok((await page.locator('#moves-list .checkers-history-move').count())>=1,'existing move history');
   const undo=page.getByRole('button',{name:'Cofnij',exact:true});
   assert.equal(await undo.isEnabled(),true);
   await undo.click();
@@ -172,7 +172,7 @@ test('P0: visible checker is clickable by real cursor/touch after cold load and 
    await first.locator('.piece').click({timeout:5000});
    await dest.click({timeout:5000});
    await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
-   assert.ok(await page.locator('#moves-list li').count()>=1,'move committed by a real piece click');
+   assert.ok(await page.locator('#moves-list .checkers-history-move').count()>=1,'move committed by a real piece click');
   }
   assert.deepEqual(errors,[],'no JavaScript errors on a real browser and refresh');
   await context.close();
