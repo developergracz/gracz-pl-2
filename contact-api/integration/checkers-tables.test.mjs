@@ -38,7 +38,7 @@ test('real PG: public/private tables create, strict auth, atomic join and existi
   const res={status:0,body:'',writeHead(status){this.status=status},end(raw){this.body=String(raw||'')}};
   const handled=await router.handle(req,res,new URL(path,origin));
   assert.equal(handled,true);
-  return {status:res.status,...JSON.parse(res.body)};
+  return {...JSON.parse(res.body),status:res.status};
  };
  const [host,guest,other]=accounts;
  assert.equal((await call(null,'GET','/auth/warcaby/tables')).status,401);
