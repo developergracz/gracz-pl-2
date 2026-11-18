@@ -1,21 +1,45 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
-/* Keep the existing capture message in the chat panel rather than over the board. */
+/* Modern Warcaby: both announcements fill the chat content region, not the board. */
+body.warcaby-console.chess-console.cc-owner #chat-panel{
+ position:relative!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-color-confirmation:not([hidden]),
 body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice:not([hidden]){
- position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
- transform:none!important;width:calc(100% - 12px)!important;max-width:none!important;
- z-index:auto!important;box-sizing:border-box!important;flex:0 0 auto!important;
- margin:4px 6px 10px!important;padding:10px!important;
- background:#fff0ee!important;color:#67232e!important;
- border:1px solid #ebacb4!important;box-shadow:none!important;
- pointer-events:auto!important;
+ position:absolute!important;inset:0!important;left:0!important;right:0!important;
+ top:0!important;bottom:0!important;transform:none!important;box-sizing:border-box!important;
+ width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;
+ margin:0!important;padding:18px 20px!important;border:0!important;border-radius:12px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ text-align:center!important;flex-wrap:wrap!important;gap:12px!important;
+ background:#006e71!important;color:#fff!important;box-shadow:none!important;
+ overflow:auto!important;backdrop-filter:none!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-color-confirmation:not([hidden]){
+ z-index:3!important;pointer-events:none!important;font:800 clamp(17px,1.5vw,21px)/1.45 system-ui,sans-serif!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice:not([hidden]){
+ z-index:4!important;pointer-events:auto!important;align-content:center!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-icon{
+ color:#fff!important;background:#005c60!important;border:1px solid #8de1d7!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-copy{
+ flex:0 1 100%!important;min-width:0!important;text-align:center!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-copy strong{
+ color:#fff!important;font:800 clamp(18px,1.6vw,22px)/1.3 system-ui,sans-serif!important;
 }
 body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-copy p{
- color:#67232e!important;
+ color:#fff!important;font:600 clamp(13px,1.2vw,16px)/1.5 system-ui,sans-serif!important;margin:8px 0 0!important;
 }
+/* The capture instruction must remain until the mandatory capture is played. */
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-dismiss{display:none!important}
 /* The two numerals progress from muted red at 00:30 to pure red at 00:01. */
-body.warcaby-console #clock-1.checkers-clock-critical,
-body.warcaby-console #clock-2.checkers-clock-critical{
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top #clock-1.checkers-clock-critical,
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top #clock-2.checkers-clock-critical,
+body.warcaby-console.chess-console.cc-owner #clock-1.checkers-clock-critical,
+body.warcaby-console.chess-console.cc-owner #clock-2.checkers-clock-critical{
  color:var(--checkers-clock-shade,#5f2b32)!important;
  transition:color .2s linear;
  transform-origin:center;
