@@ -9,7 +9,14 @@ body.warcaby-console.checkers-shell-loading #checkers-shell-fallback{
  padding:20px;background:#002529;color:#f8f4e6;font:600 16px/1.45 system-ui,sans-serif;text-align:center
 }
 @keyframes checkers-shell-timeout{to{opacity:1}}
-body.warcaby-console.chess-console.cc-owner #game:not(.game-focus){background:#002529!important}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus){
+ display:block!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;
+ min-height:100dvh!important;height:100dvh!important;overflow:hidden!important;background:#002529!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea{
+ display:grid!important;box-sizing:border-box!important;width:100%!important;height:100%!important;
+ min-height:0!important;margin:0!important;max-width:none!important;overflow:hidden!important
+}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.sidebar{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea>.players,
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea>.premium-quick-links,
@@ -158,6 +165,11 @@ body.warcaby-console.chess-console.cc-owner[data-checkers-pieces="wood"] #board 
 body.warcaby-console.chess-console.cc-owner[data-checkers-pieces="wood"] #board .piece.black{background:#574537!important}
 body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea>.side-dock{display:none!important}
 @media(max-width:800px){
+ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus){height:auto!important;overflow:visible!important}
+ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;height:auto!important;
+  padding:8px!important;gap:10px!important;overflow:visible!important
+ }
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea>.arena{order:3!important;min-height:0!important;height:auto!important}
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .board-center{height:auto!important;min-height:0!important}
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .boardframe{width:min(100%,calc(100dvw - 16px))!important;height:auto!important}
