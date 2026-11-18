@@ -184,7 +184,7 @@ export const checkersUiParityJs=String.raw`
 /* Warcaby owner parity: strictly presentation. Original match, moves and AI stay authoritative. */
 (()=>{
  const $=id=>document.getElementById(id);
- const layout=$('game'),board=$('board'),area=layout?.querySelector(':scope > .boardarea');
+ const layout=$('game'),board=$('board'),area=typeof layout?.querySelector==='function'?layout.querySelector(':scope > .boardarea'):null;
  const panel=$('moves-panel'),list=$('moves-list'),dock=$('match-panel');
  if(!layout||!board||!area||!panel||!list||!dock||layout.dataset.checkersUiParity==='yes')return;
  layout.dataset.checkersUiParity='yes';
