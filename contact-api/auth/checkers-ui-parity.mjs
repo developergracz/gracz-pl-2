@@ -104,14 +104,30 @@ body.warcaby-console #checkers-capture-notice #checkers-capture-dismiss{
  }
 }
 
-/* Pointer drag is a visual adapter. Rule enforcement stays in choose()/destinations(). */
+/* No yellow frame on selected pawns. Keyboard focus remains a subtle accessible line.
+   The allowed-move dots stay visible, including during a fast drag. */
+body.warcaby-console.chess-console.cc-owner #board.checkers-grid .square.selected{
+ box-shadow:none!important
+}
+body.warcaby-console.chess-console.cc-owner #board.checkers-grid .square:focus-visible{
+ outline:1px solid #25898c!important;outline-offset:-1px!important
+}
+/* Pointer drag is visual only; rules are enforced by choose()/destinations(). */
+body.warcaby-console.chess-console.cc-owner #board .square{
+ touch-action:none!important
+}
 body.warcaby-console #board .square .piece{touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}
 body.warcaby-console #board .square.checkers-drag-source .piece{opacity:.55!important}
-body.warcaby-console #board .square.checkers-drag-target{
- box-shadow:inset 0 0 0 3px #e7c676!important
+body.warcaby-console.chess-console.cc-owner #board .square.checkers-drag-target{
+ box-shadow:none!important
 }
-body.warcaby-console #board .square.checkers-drag-hover{
- box-shadow:inset 0 0 0 4px #00a99d!important
+body.warcaby-console.chess-console.cc-owner #board .square.checkers-drag-target::before{
+ content:""!important;position:absolute!important;z-index:2!important;
+ width:25%!important;height:25%!important;background:#ffd06aaa!important;
+ border-radius:50%!important;pointer-events:none!important
+}
+body.warcaby-console.chess-console.cc-owner #board .square.checkers-drag-hover{
+ box-shadow:none!important;filter:brightness(1.08)!important
 }
 body.warcaby-console .checkers-drag-ghost{
  position:fixed!important;left:0;top:0;z-index:99999!important;
