@@ -211,7 +211,9 @@ export const checkersChessShellJs=String.raw`
   node.setAttribute('stroke-linecap','round');node.setAttribute('stroke-linejoin','round');node.setAttribute('stroke','currentColor');
   node.setAttribute('fill','none');node.innerHTML=icons[name]||'';return node;
  };
- const game=$('game'),area=game?.querySelector(':scope > .boardarea'),arena=area?.querySelector('.arena');
+ const game=$('game');
+ if(!game||typeof game.querySelector!=='function')return; // isolated legacy controller test harnesses
+ const area=game.querySelector(':scope > .boardarea'),arena=area?.querySelector('.arena');
  const dock=arena?.querySelector(':scope > .side-dock'),sidebar=game?.querySelector(':scope > .sidebar');
  const board=$('board'),players=area?.querySelector(':scope > .players'),match=$('match-panel');
  const mode=sidebar?.querySelector('.mode'),chat=$('chat-tab'),moves=$('history-tab');
