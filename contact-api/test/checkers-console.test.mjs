@@ -203,7 +203,8 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.ok(script.body.includes("frame?.append(replay)"),'preview does not replace real board');
  assert.ok(script.body.includes("replay.hidden=true"),'live play remains available');
  assert.ok(script.body.includes("data.checkersRotated")===false,'no alternate game state introduced');
- assert.ok(style.body.includes('background:#f1f6f4!important'),'clean light game page');
+ assert.ok(style.body.includes('background:#031519!important'),'same midnight page as chess');
+ assert.ok(style.body.includes('background:#003739!important'),'same dark game canvas as chess');
  assert.ok(style.body.includes('checkers-history-columns'));
  assert.ok(style.body.includes('checkers-history-nav'));
  assert.ok(style.body.includes('checkers-mobile-menu-panel'));
@@ -213,4 +214,21 @@ test('Warcaby owner parity: recorded history drives replay, coordinates and mobi
  assert.doesNotMatch(classic.body,/chess-console cc-owner/,'classic URL remains original');
  const classicJs=load('/konto/warcaby/app.js?konsola=klasyczna');
  assert.doesNotMatch(classicJs.body,/checkers-history-nav/,'classic script remains unchanged');
+});
+
+test('Warcaby chat correction is CSS-only and isolated from chess/Gomoku',()=>{
+ const style=load('/konto/warcaby/styl.css');
+ const script=load('/konto/warcaby/app.js');
+ const classic=load('/konto/warcaby/styl.css?konsola=klasyczna');
+ assert.equal(style.status,200);
+ assert.ok(style.body.includes('#game #chat-messages .game-chat-message'));
+ assert.ok(style.body.includes('width:fit-content!important'));
+ assert.ok(style.body.includes('max-width:min(88%,calc(100% - 12px))!important'));
+ assert.ok(style.body.includes('#game #chat-messages .game-chat-message.own'));
+ assert.ok(style.body.includes('#game #chat-input:focus-visible'));
+ assert.ok(style.body.includes('outline:none!important'));
+ assert.ok(style.body.includes('border-color:#4f838a!important'));
+ assert.ok(style.body.includes('background:#092d34!important'));
+ assert.doesNotMatch(classic.body,/width:fit-content!important/,'classic rescue style unchanged');
+ assert.doesNotMatch(script.body,/chat-messages\.replaceChildren\(mine/,'no chat controller modifications');
 });
