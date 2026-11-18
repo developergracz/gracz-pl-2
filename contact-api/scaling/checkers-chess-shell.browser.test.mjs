@@ -397,13 +397,15 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#training-time').selectOption('0');
   assert.equal(await page.locator('#clock-1').isVisible(),true,'untimed game keeps black clock visible');
   assert.equal(await page.locator('#clock-2').isVisible(),true,'untimed game keeps white clock visible');
-  assert.equal(await page.locator('#clock-1').textContent(),'--:--','untimed black clock shows no fake time');
-  assert.equal(await page.locator('#clock-2').textContent(),'--:--','untimed white clock shows no fake time');
+  assert.equal(await page.locator('#clock-1').textContent(),'∞','untimed black clock shows no false countdown');
+  assert.equal(await page.locator('#clock-2').textContent(),'∞','untimed white clock shows no false countdown');
   await page.locator('#training-time').selectOption('7');
   assert.equal(await page.locator('#clock-1').isVisible(),true,'timed game restores clock');
   await page.locator('#cc-sheet-settings button.cc-button').filter({hasText:'Obróć planszę'}).click();
   await page.locator('#cc-sheet-settings').waitFor({state:'hidden'});
   await page.locator('#online-mode').click();
+  assert.equal(await page.locator('#clock-1').textContent(),'07:00','waiting online black clock shows the selected seven-minute preset');
+  assert.equal(await page.locator('#clock-2').textContent(),'07:00','waiting online white clock shows the selected seven-minute preset');
   await page.getByRole('button',{name:'Zaproś',exact:true}).click();
   await page.locator('#cc-sheet-online').waitFor({state:'visible'});
   assert.equal(await page.locator('#create-room-friend').isVisible(),true,'friend field was NOT hidden by inherited chess CSS');
