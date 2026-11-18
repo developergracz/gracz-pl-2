@@ -13,10 +13,30 @@ body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice
 body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-copy p{
  color:#67232e!important;
 }
-/* Only the clock numerals change color for the final 30 seconds. */
+/* The two numerals progress from muted red at 00:30 to pure red at 00:01. */
 body.warcaby-console #clock-1.checkers-clock-critical,
 body.warcaby-console #clock-2.checkers-clock-critical{
- color:#d12438!important;
+ color:var(--checkers-clock-shade,#5f2b32)!important;
+ transition:color .2s linear;
+ transform-origin:center;
+}
+body.warcaby-console .checkers-clock-pulse-twice{
+ animation:checkers-clock-double-pulse 1s ease-in-out 1;
+}
+body.warcaby-console .checkers-clock-pulse-once{
+ animation:checkers-clock-single-pulse .56s ease-in-out 1;
+}
+@keyframes checkers-clock-double-pulse{
+ 0%,35%,70%,100%{transform:scale(1);text-shadow:none}
+ 18%,53%{transform:scale(1.16);text-shadow:0 0 7px currentColor}
+}
+@keyframes checkers-clock-single-pulse{
+ 0%,100%{transform:scale(1);text-shadow:none}
+ 50%{transform:scale(1.16);text-shadow:0 0 7px currentColor}
+}
+@media(prefers-reduced-motion:reduce){
+ body.warcaby-console .checkers-clock-pulse-twice,
+ body.warcaby-console .checkers-clock-pulse-once{animation:none!important}
 }
 /* Seat-to-play dialog is independent of board and clock geometry. */
 body.warcaby-console .checkers-newgame-blocker[hidden]{display:none!important}
