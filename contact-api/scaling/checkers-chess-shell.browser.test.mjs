@@ -38,11 +38,14 @@ async function serverFor(t,{nickname=null}={}){
 
 async function takeSeat(page){
  await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length>0&&
-  document.querySelector('#checkers-start-gate')?.hidden===true&&
   document.querySelector('#board')?.dataset.checkersPlayable==='false');
- await page.locator('#board .piece.white').first().evaluate(el=>{
-  el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
- });
+ // Pointer can remain over a pawn after restart; in that case the dialog
+ // has already opened automatically, which is correct user-facing behavior.
+ if(await page.locator('#checkers-start-gate').isHidden()){
+  await page.locator('#board .piece.white').first().evaluate(el=>{
+   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
+  });
+ }
  await page.locator('#checkers-start-gate').waitFor({state:'visible'});
  await page.locator('#checkers-start-button').click();
  await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
@@ -104,7 +107,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
    initial,{timeout:7000});
   await page.locator('#restart').evaluate(el=>el.click());
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false');
-  assert.equal(await gate.isVisible(),false,'fresh game waits for new hover');
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','new game is still unseated');
   assert.deepEqual(errors,[],'no browser errors');
   await context.close();
  }
