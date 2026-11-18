@@ -238,6 +238,28 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   await gate.waitFor({state:'hidden'});
   await page.locator('#checkers-color-confirmation').waitFor({state:'visible'});
   assert.match(await page.locator('#checkers-color-confirmation').textContent(),/Świetnie! Grasz teraz czarnymi pionkami/);
+  assert.equal(await page.locator('#checkers-color-confirmation').evaluate(el=>el.parentElement?.id),'chat-panel',
+   'the welcome notice belongs to the chat surface');
+  const chatGeometry=await page.locator('#checkers-color-confirmation').evaluate(el=>{
+   const banner=el.getBoundingClientRect(),panel=el.parentElement.getBoundingClientRect();
+   return {position:getComputedStyle(el).position,width:banner.width,panelWidth:panel.width,
+    height:banner.height,panelHeight:panel.height,color:getComputedStyle(el).color};
+  });
+  assert.equal(chatGeometry.position,'absolute');
+  assert.ok(Math.abs(chatGeometry.width-chatGeometry.panelWidth)<2,'welcome fills chat width');
+  assert.ok(Math.abs(chatGeometry.height-chatGeometry.panelHeight)<2,'welcome fills chat height');
+  assert.equal(chatGeometry.color,'rgb(255, 255, 255)');
+  const appliedClockColor=await page.locator('#clock-1').evaluate(el=>{
+   el.classList.add('checkers-clock-critical');
+   el.style.setProperty('--checkers-clock-shade','rgb(190, 10, 20)');
+   const color=getComputedStyle(el).color;
+   el.classList.remove('checkers-clock-critical');
+   el.style.removeProperty('--checkers-clock-shade');
+   return color;
+  });
+  assert.equal(appliedClockColor,'rgb(190, 10, 20)',
+   'the urgent clock style wins over the chess console clock color');
+  await page.locator('#checkers-color-confirmation').waitFor({state:'hidden',timeout:6000});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2');
   const chosen=await check();
   assert.deepEqual(chosen.labels,['Gość','Komputer']);
