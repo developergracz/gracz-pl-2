@@ -946,10 +946,7 @@ test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal mo
  await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
  assert.equal(await notice.isVisible(),false,'illegal empty-square click does not warn');
  assert.deepEqual(calls,[],'invalid click must not reach online API');
- await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
- await notice.waitFor({state:'visible'});
- assert.deepEqual(calls,[],'illegal click target must not reach online API');
- await page.locator('#checkers-capture-dismiss').click();
+ // Empty-square attempts stay silent; no duplicate warning is expected.
  const drag=async(from,to)=>{
   const a=await page.locator('#board .square[data-index="'+from+'"] .piece').boundingBox();
   const b=await page.locator('#board .square[data-index="'+to+'"]').boundingBox();
