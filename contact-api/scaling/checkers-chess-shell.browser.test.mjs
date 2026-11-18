@@ -160,8 +160,8 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
   assert.equal(calls.at(-1).minutes,5);
   assert.equal(calls.at(-1).incrementSeconds,2);
   assert.match(await page.locator('#warcaby-loss-tables').textContent(),/Gospodarz: gracz/);
-  assert.equal(await page.locator('#warcaby-loss-tables button').textContent(),'Zamknij');
-  await page.locator('#warcaby-loss-tables button').click();
+  assert.equal(await page.locator('#warcaby-loss-tables').getByRole('button',{name:'Zamknij',exact:true}).textContent(),'Zamknij');
+  await page.locator('#warcaby-loss-tables').getByRole('button',{name:'Zamknij',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Brak stołów'));
   assert.equal(calls.at(-1).action,'close');
   await page.locator('#warcaby-tables-close').click();
