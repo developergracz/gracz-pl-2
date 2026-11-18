@@ -997,8 +997,24 @@ export const chessOwnerConsoleJs = String.raw`
   syncAll();
   syncFullscreen();
   body.classList.add('cc-owner');
-  // Reveal only after the real chess board and right-side panel are composed.
-  body.classList.remove('chess-booting');
+  // Atomic reveal after 64 squares, approved controls, stylesheet fonts and two layout frames.
+  // No transient Gomoku layout or loading text is painted during a cold visit or refresh.
+  let revealChecks=0;
+  const revealReadyChess=()=>{
+   const squares=board.querySelectorAll('.chess-square').length;
+   const panelReady=layout.dataset.ownerConsole==='yes'&&
+    !!dock.querySelector(':scope > .cc-top')&&
+    !!dock.querySelector(':scope > .cc-tools')&&
+    !!dock.querySelector(':scope > #match-panel');
+   if(squares===64&&panelReady){
+    document.documentElement.classList.remove('chess-booting');
+    body.classList.remove('chess-booting');
+   }else if(++revealChecks<600){
+    requestAnimationFrame(revealReadyChess);
+   }
+  };
+  const afterFonts=()=>requestAnimationFrame(()=>requestAnimationFrame(revealReadyChess));
+  Promise.resolve(document.fonts?.ready).then(afterFonts,afterFonts);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();
