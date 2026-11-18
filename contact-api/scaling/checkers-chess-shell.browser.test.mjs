@@ -219,7 +219,7 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   await page.waitForFunction(()=>document.querySelector('#move-count')?.textContent!=='Ruch 0');
   await page.waitForFunction(()=>document.getElementById('history-count')?.textContent==='1'&&
    document.getElementById('board')?.dataset.checkersTurn==='2');
-  assert.equal(await page.locator('#board').getAttribute('data-checkersHumanSide'),'2',
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-human-side'),'2',
    'computer has completed the first legal white move and it is now the black player turn');
   await page.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='07:00',null,{timeout:7000});
   await page.locator('#board .square[data-index="49"] .piece.black').click();
