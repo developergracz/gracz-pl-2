@@ -20,12 +20,15 @@ export function setupTraining(a){
  function displayClocks(){
   const online=mode==='online'?game()?.clock:null;
   const timedOnline=online&&Array.isArray(online.remaining)&&online.remaining.length===2;
+  // Before an online match starts, preview the selected limit without starting a clock.
+  const onlinePreviewMinutes=mode==='online'&&!game()?Math.max(0,Number($('create-room-time').value)||0):0;
   const training=mode==='training'&&Number($('training-time').value)>0;
   // White moves first; shared Gomoku clock-1 is black, clock-2 is white.
   for(const [player,id] of [[1,'clock-2'],[2,'clock-1']]){
-   // The clocks remain visible; a match without a time control shows --:--.
+   // Timed online matches use only authoritative server time; an untimed match shows --:--.
    $(id).hidden=false;
-   $(id).title=training||timedOnline?'Pozostały czas':'Bez limitu czasu';
+   $(id).title=training||timedOnline?'Pozostały czas':onlinePreviewMinutes>0?
+    'Ustawiony czas przed partią — odliczanie jeszcze nie trwa':'Bez limitu czasu';
    if(training)$(id).textContent=format(clocks[player]);
    else if(timedOnline){
     let ms=online.remaining[player-1];
@@ -34,7 +37,7 @@ export function setupTraining(a){
      if(Number.isFinite(since))ms-=Math.max(0,Date.now()-since);
     }
     $(id).textContent=format(ms);
-   }else $(id).textContent='--:--';
+   }else $(id).textContent=onlinePreviewMinutes>0?format(onlinePreviewMinutes*60000):'--:--';
   }
  }
  function readStats(){
@@ -230,6 +233,7 @@ export function setupTraining(a){
  function updateHint(){$('ai-hint').textContent=hints[$('ai-level').value]||hints.normal}
  $('training-mode').addEventListener('click',()=>setMode('training'));
  $('online-mode').addEventListener('click',()=>setMode('online'));
+ $('create-room-time').addEventListener('change',()=>{if(mode==='online')displayClocks()});
  $('restart').addEventListener('click',()=>void startTraining());
  $('training-undo').addEventListener('click',undoTraining);
  $('training-hint').addEventListener('click',hint);
