@@ -240,10 +240,46 @@ export const checkersChessShellJs=String.raw`
  const profile=E('a','cc-icon-link cc-profile');profile.href='/konto/panel/?sekcja=profile';
  profile.title='Mój profil';profile.setAttribute('aria-label','Mój profil');profile.append(icon('profile'));
  account.append(mail,profile);top.append(players,account);dock.insertBefore(top,sidebar);
- for(const [name,label] of [['black-name','Czarne'],['white-name','Białe']]){
-  const title=$(name),card=title?.closest('.player');
-  if(card&&!card.querySelector('.cc-side'))title.before(E('span','cc-side',label));
+ // The original clock boxes and their dimensions stay intact.
+ // Display-only nick comes from the authenticated session; never trust a typed name.
+ let sessionNickname='';
+ const clockNameLabels=[];
+ const refreshClockNameLabels=()=>{
+  const training=$('training-mode')?.classList.contains('active');
+  for(const [id,label] of clockNameLabels){
+   const source=$(id)?.textContent?.trim()||'';
+   const value=training
+    ?(id==='black-name'?'Komputer':sessionNickname||'Gracz')
+    :(source==='Ty'?(sessionNickname||'Gracz'):source||(id==='black-name'?'Czarne':'Białe'));
+   if(label.textContent!==value)label.textContent=value;
+   label.title=value;
+  }
+ };
+ for(const id of ['black-name','white-name']){
+  const title=$(id),card=title?.closest('.player'),clock=card?.querySelector('.player-clock');
+  if(!title||!card||!clock)continue;
+  const label=card.querySelector('.cc-side')||E('span','cc-side');
+  clock.insertAdjacentElement('afterend',label);
+  clockNameLabels.push([id,label]);
+  new MutationObserver(refreshClockNameLabels).observe(title,{childList:true,characterData:true,subtree:true});
  }
+ for(const id of ['training-mode','online-mode']){
+  const control=$(id);
+  if(control)new MutationObserver(refreshClockNameLabels).observe(control,{attributes:true,attributeFilter:['class']});
+ }
+ refreshClockNameLabels();
+ async function readClockSession(){
+  try{
+   const response=await fetch('/auth/session',{credentials:'same-origin',cache:'no-store'});
+   if(!response.ok){sessionNickname='';refreshClockNameLabels();return;}
+   const data=await response.json();
+   sessionNickname=data?.ok===true&&data.loggedIn===true&&typeof data.nickname==='string'
+    ?data.nickname.trim().slice(0,32):'';
+  }catch(_error){sessionNickname='';}
+  refreshClockNameLabels();
+ }
+ void readClockSession();
+ window.addEventListener('pageshow',event=>{if(event.persisted)void readClockSession();});
  const nav=E('nav','cc-site-nav');nav.setAttribute('aria-label','GRACZ.PL');
  for(const [label,href] of [['Start','https://gracz.pl/'],['Nasze gry','https://gracz.pl/gry/'],
   ['Poradnik','https://gracz.pl/poradniki/'],['Blog','https://gracz.pl/#aktualnosci'],
