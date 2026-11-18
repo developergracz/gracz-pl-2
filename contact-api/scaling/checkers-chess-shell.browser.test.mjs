@@ -202,7 +202,7 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   // Hover opens a blocking modal immediately. Dispatch the hover event as
   // a real DOM pointer event, otherwise Playwright keeps retrying hover
   // because the newly opened dialog correctly intercepts the pointer.
-  await pawn.evaluate(el=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:viewportWidth<500?'touch':'mouse'})),viewport.width);
+  await pawn.evaluate((el,viewportWidth)=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:viewportWidth<500?'touch':'mouse'})),viewport.width);
   const gate=page.locator('#checkers-start-gate');
   await gate.waitFor({state:'visible'});
   assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
