@@ -220,3 +220,105 @@ test('P0: same service always offers a fully playable classic Warcaby fallback',
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
  assert.deepEqual(errors,[]);
 });
+
+test('Owner parity: flat light background, correctly oriented coordinates, chess-style move history and mobile topbar',{timeout:120000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<=800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',err=>errors.push(err.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'));
+  await page.locator('#board .square').first().waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelectorAll('#board .checkers-coordinate').length===16);
+  assert.equal(await page.locator('#board .checkers-coordinate-rank').count(),8);
+  assert.equal(await page.locator('#board .checkers-coordinate-file').count(),8);
+  const labels=await page.locator('#board .square').evaluateAll(cells=>({
+   first:cells[0].querySelector('.checkers-coordinate-rank')?.textContent,
+   last:cells.at(-1).querySelector('.checkers-coordinate-file')?.textContent,
+   pointer:getComputedStyle(cells[0].querySelector('.checkers-coordinate-rank')).pointerEvents
+  }));
+  assert.deepEqual(labels,{first:'8',last:'h',pointer:'none'});
+  const visuals=await page.evaluate(()=>{
+   const game=document.getElementById('game'),body=document.body,area=game.querySelector('.boardarea');
+   const mobileBar=area.querySelector('.checkers-mobile-heading');
+   return {
+    body:getComputedStyle(body).backgroundColor,
+    game:getComputedStyle(game).backgroundColor,
+    shadow:getComputedStyle(game).boxShadow,
+    mobileBar:mobileBar&&getComputedStyle(mobileBar).display!=='none',
+    header:mobileBar?.textContent?.includes('GRACZ.PL')&&mobileBar?.textContent?.includes('Warcaby'),
+    width:document.documentElement.scrollWidth,
+    viewport:document.documentElement.clientWidth
+   };
+  });
+  assert.equal(visuals.body,'rgb(241, 246, 244)','same clean light-page family as chess');
+  assert.equal(visuals.game,'rgba(0, 0, 0, 0)','no dark game console background');
+  assert.equal(visuals.shadow,'none','no surrounding game frame shadow');
+  assert.equal(visuals.mobileBar,mobile,'mobile navigation bar only on phones');
+  assert.equal(visuals.header,true);
+  assert.ok(visuals.width<=visuals.viewport+2,'no horizontal overflow');
+  if(mobile){
+   await page.locator('.checkers-mobile-menu-toggle').click();
+   assert.equal(await page.locator('.checkers-mobile-menu-panel a').count(),4);
+   assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),true);
+   await page.keyboard.press('Escape');
+   assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),false);
+  }
+  await page.locator('#board .square').nth(17).locator('.piece').click();
+  await page.locator('#board .square').nth(24).click();
+  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+  await page.locator('#history-tab').click();
+  await page.locator('#moves-panel').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelectorAll('#moves-list .checkers-history-move').length>=1);
+  assert.equal(await page.locator('.checkers-history-columns').textContent(),'NrBiałeCzarne');
+  const recorded=Number(await page.locator('#history-count').textContent());
+  assert.ok(recorded>=1,'count from the real game history');
+  await page.locator('#moves-list .checkers-history-move').first().waitFor({state:'visible'});
+  await page.waitForFunction(()=>!document.querySelector('#moves-list .checkers-history-move')?.disabled,{timeout:15000});
+  await page.locator('#moves-list .checkers-history-move').first().click();
+  await page.locator('.checkers-replay-board').waitFor({state:'visible'});
+  assert.equal(await page.locator('.checkers-replay-board .square').count(),64,'position preview uses 64 squares');
+  assert.equal(await page.locator('#board .square').count(),64,'actual playable board untouched');
+  assert.ok((await page.locator('.checkers-history-nav-status').textContent()).includes('Pozycja 1'));
+  await page.getByRole('button',{name:'Pierwsza pozycja'}).click();
+  assert.ok((await page.locator('.checkers-history-nav-status').textContent()).includes('Pozycja 0'));
+  await page.getByRole('button',{name:'Następny ruch'}).click();
+  await page.getByRole('button',{name:'Powrót do bieżącej partii'}).click();
+  assert.equal(await page.locator('.checkers-replay-board').isVisible(),false);
+  await page.locator('#checkers-owner-info').count();
+  // Check board-rotation metadata and labels without changing the actual rules.
+  await page.locator('#rotate-board').evaluate(button=>button.click());
+  await page.waitForFunction(()=>document.getElementById('board')?.dataset.checkersRotated==='true');
+  const flipped=await page.locator('#board .square').first().locator('.checkers-coordinate-rank').textContent();
+  assert.equal(flipped,'1','rank labels follow rotation');
+  assert.deepEqual(errors,[],'no browser JS errors');
+  await context.close();
+ }
+});
+
+test('Move-history rewind resets after a new match and classic fallback remains functional',{timeout:60000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ await page.locator('#board .square').nth(17).locator('.piece').click();
+ await page.locator('#board .square').nth(24).click();
+ await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>0);
+ await page.locator('#history-tab').click();
+ await page.getByRole('button',{name:'Pierwsza pozycja'}).click();
+ await page.locator('.checkers-replay-board').waitFor({state:'visible'});
+ await page.locator('#training-mode').click();
+ await page.locator('#restart').evaluate(el=>el.click());
+ await page.waitForFunction(()=>document.getElementById('history-count')?.textContent==='0');
+ assert.equal(await page.locator('.checkers-replay-board').isVisible(),false,'new game hides old preview');
+ assert.equal(await page.locator('#moves-list .checkers-history-move').count(),0,'new game clears notation');
+ await page.goto(base+'/konto/warcaby/?konsola=klasyczna');
+ await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ assert.equal(await page.locator('.checkers-mobile-heading').count(),0,'classic route unchanged');
+});
