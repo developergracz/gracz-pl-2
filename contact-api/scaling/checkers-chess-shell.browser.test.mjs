@@ -176,6 +176,53 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
  }
 });
 
+test('Anonymous guest and color picker: white below; black side triggers computer white opener and clock',{timeout:95000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const context=await browser.newContext({viewport,isMobile:viewport.width<500,hasTouch:viewport.width<500});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='false'&&
+   document.querySelectorAll('#board .piece.white').length===12);
+  const check=()=>page.evaluate(()=>{
+   const $=id=>document.getElementById(id),labels=['black-name','white-name'].map(id=>
+    $(id)?.closest('.player')?.querySelector('.cc-side')?.textContent);
+   const center=i=>{const r=document.querySelector('#board .square[data-index="'+i+'"]').getBoundingClientRect();return r.top+r.height/2};
+   return {labels,white:center(17),black:center(49),rotation:$('board').dataset.checkersRotated};
+  });
+  await page.waitForFunction(()=>document.getElementById('white-name')?.closest('.player')?.querySelector('.cc-side')?.textContent==='Gość');
+  const initial=await check();
+  assert.deepEqual(initial.labels,['Komputer','Gość']);
+  assert.equal(initial.rotation,'true');
+  assert.ok(initial.white>initial.black,'opening screen displays white pieces at the bottom');
+  const pawn=page.locator('#board .square[data-index="17"] .piece');
+  if(viewport.width<500)await pawn.dispatchEvent('pointerdown',{pointerType:'touch'});
+  else await pawn.hover();
+  const gate=page.locator('#checkers-start-gate');
+  await gate.waitFor({state:'visible'});
+  assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
+  assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),['07:00','07:00']);
+  await gate.getByRole('button',{name:'Wybierz czarne pionki'}).click();
+  await gate.waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2');
+  const chosen=await check();
+  assert.deepEqual(chosen.labels,['Gość','Komputer']);
+  assert.equal(chosen.rotation,'false');
+  assert.ok(chosen.black>chosen.white,'black is now on the bottom for human black player');
+  await page.waitForFunction(()=>document.querySelector('#move-count')?.textContent!=='Ruch 0');
+  assert.match(await page.locator('#moves-list li').first().textContent(),/Komputer/);
+  await page.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='07:00',null,{timeout:7000});
+  await page.locator('#board .square[data-index="49"] .piece.black').click();
+  await page.locator('#board .square[data-index="40"]').click();
+  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="40"] .piece.black'));
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }
+});
+
 test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
  const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -220,6 +267,7 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   for(const icon of info.pawnIcons){
    assert.equal(icon.width,15);assert.equal(icon.height,15);
    assert.equal(icon.borderWidth,'1px','thin pawn border');
+   assert.equal(icon.outlineWidth,'2.5px','highlight ring thicker without resizing the clock token');
    assert.equal(icon.outlineWidth,'1px','thin active turn outline');
    assert.equal(icon.leftOfClock,true,'pawn left of clock without changing its box');
   }
