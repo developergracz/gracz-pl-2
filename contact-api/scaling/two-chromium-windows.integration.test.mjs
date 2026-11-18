@@ -109,9 +109,17 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
  }
  // Check the premium invitation form in a real browser (no new DB challenges).
  const form=pages[0];
- // The same invitation controls now live in the chess-style Online sheet.
- await form.getByRole('button',{name:'Nowa gra',exact:true}).click();
- await form.locator('#cc-sheet-online').waitFor({state:'visible'});
+ // Active match blocks New Game; Invite opens the same configuration without restarting.
+  await form.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
+  await form.getByRole('button',{name:'Nowa gra',exact:true}).click();
+  await form.locator('.checkers-newgame-blocker').waitFor({state:'visible'});
+  assert.match(await form.locator('#checkers-newgame-description').textContent(),
+   /Nie możesz rozpocząć nowej gry podczas trwania obecnej rozgrywki/);
+  assert.equal(await form.locator('#cc-sheet-online').isVisible(),false,
+   'New Game must not open a second match while first is active');
+  await form.locator('.checkers-newgame-close').click();
+  await form.getByRole('button',{name:'Zaproś',exact:true}).click();
+  await form.locator('#cc-sheet-online').waitFor({state:'visible'});
  assert.equal(await form.locator('#create-room-time').isVisible(),true);
  assert.equal(await form.locator('#create-room-increment').isVisible(),true);
  await form.locator('#create-room-time').selectOption('0');
