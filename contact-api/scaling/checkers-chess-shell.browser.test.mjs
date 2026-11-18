@@ -80,7 +80,7 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   await page.locator('#cc-sheet-settings').waitFor({state:'visible'});
   assert.equal(await page.locator('#ai-level').count(),1,'original AI difficulty remains present');
   assert.equal(await page.locator('#training-time').count(),1,'original clocks remain present');
-  await page.getByRole('button',{name:'Obróć planszę'}).click();
+  await page.locator('#cc-sheet-settings button.cc-button').filter({hasText:'Obróć planszę'}).click();
   await page.locator('#cc-sheet-settings').waitFor({state:'hidden'});
   await page.locator('#online-mode').click();
   await page.getByRole('button',{name:'Zaproś',exact:true}).click();
