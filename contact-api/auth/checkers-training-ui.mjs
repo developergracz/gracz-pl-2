@@ -23,7 +23,9 @@ export function setupTraining(a){
   const training=mode==='training'&&Number($('training-time').value)>0;
   // White moves first; shared Gomoku clock-1 is black, clock-2 is white.
   for(const [player,id] of [[1,'clock-2'],[2,'clock-1']]){
-   $(id).hidden=!training&&!timedOnline;
+   // The clocks remain visible; a match without a time control shows --:--.
+   $(id).hidden=false;
+   $(id).title=training||timedOnline?'Pozostały czas':'Bez limitu czasu';
    if(training)$(id).textContent=format(clocks[player]);
    else if(timedOnline){
     let ms=online.remaining[player-1];
@@ -32,7 +34,7 @@ export function setupTraining(a){
      if(Number.isFinite(since))ms-=Math.max(0,Date.now()-since);
     }
     $(id).textContent=format(ms);
-   }
+   }else $(id).textContent='--:--';
   }
  }
  function readStats(){
