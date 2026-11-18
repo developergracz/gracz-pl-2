@@ -253,10 +253,12 @@ test('Anonymous guest and color picker: white below; black side triggers compute
    el.classList.add('checkers-clock-critical');
    el.style.setProperty('--checkers-clock-shade','rgb(190, 10, 20)');
    el.style.setProperty('color','rgb(190, 10, 20)','important');
+   el.style.setProperty('transition','none','important'); // Inspect the settled target shade.
    const color=getComputedStyle(el).color;
    el.classList.remove('checkers-clock-critical');
    el.style.removeProperty('--checkers-clock-shade');
    el.style.removeProperty('color');
+   el.style.removeProperty('transition');
    return color;
   });
   assert.equal(appliedClockColor,'rgb(190, 10, 20)',
@@ -315,6 +317,10 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelector('#white-name')?.closest('.player')?.querySelector('.cc-side')?.textContent==='ZalogowanyGracz');
+  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading')&&
+   [...document.querySelectorAll('.cc-top .checkers-turn-token')].length===2&&
+   [...document.querySelectorAll('.cc-top .checkers-turn-token')].every(el=>el.getBoundingClientRect().width>=15),
+   null,{timeout:15000});
   const info=await page.evaluate(()=>{
    const card=id=>document.getElementById(id)?.closest('.player');
    const black=card('black-name'),white=card('white-name');
