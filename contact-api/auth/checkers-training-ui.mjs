@@ -17,6 +17,33 @@ export function setupTraining(a){
   const seconds=Math.max(0,Math.ceil(ms/1000));
   return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
  }
+ function updateClockUrgency(clock,remainingMs){
+  const critical=Number.isFinite(remainingMs)&&remainingMs>=0&&remainingMs<=30000;
+  clock.classList.toggle('checkers-clock-critical',critical);
+  if(!critical){
+   clock.style.removeProperty('--checkers-clock-shade');
+   clock.classList.remove('checkers-clock-pulse-twice','checkers-clock-pulse-once');
+   // Remember a timed value just above the threshold to catch 00:31 -> 00:29.
+   if(Number.isFinite(remainingMs)&&remainingMs>30000)
+    clock.dataset.checkersUrgencySecond=String(Math.ceil(remainingMs/1000));
+   else delete clock.dataset.checkersUrgencySecond;
+   return;
+  }
+  // Gradually turn the dark numerals into fully saturated red at 00:01.
+  const progress=Math.max(0,Math.min(1,(30000-Math.max(1000,remainingMs))/29000));
+  const red=Math.round(95+160*progress),green=Math.round(43*(1-progress)),blue=Math.round(50*(1-progress));
+  clock.style.setProperty('--checkers-clock-shade','rgb('+red+','+green+','+blue+')');
+  const seconds=Math.max(0,Math.ceil(remainingMs/1000));
+  const priorValue=clock.dataset.checkersUrgencySecond;
+  const last=priorValue===undefined?null:Number(priorValue);
+  const crossing=[30,20,10,5].filter(mark=>(last===null?seconds===mark:last>mark&&seconds<=mark));
+  clock.dataset.checkersUrgencySecond=String(seconds);
+  if(crossing.length){
+   clock.classList.remove('checkers-clock-pulse-twice','checkers-clock-pulse-once');
+   void clock.offsetWidth; // Retrigger a milestone animation even if the previous one finished.
+   clock.classList.add(crossing.at(-1)===30?'checkers-clock-pulse-twice':'checkers-clock-pulse-once');
+  }
+ }
  function displayClocks(){
   const online=mode==='online'?game()?.clock:null;
   const timedOnline=online&&Array.isArray(online.remaining)&&online.remaining.length===2;
@@ -40,9 +67,7 @@ export function setupTraining(a){
    }
    clock.textContent=remainingMs!==null?format(remainingMs):
     onlinePreviewMinutes>0?format(onlinePreviewMinutes*60000):'--:--';
-   // Red digits only for a genuinely running timed game with 30 seconds or less.
-   clock.classList.toggle('checkers-clock-critical',
-    Number.isFinite(remainingMs)&&remainingMs<=30000);
+   updateClockUrgency(clock,remainingMs);
   }
  }
  function readStats(){

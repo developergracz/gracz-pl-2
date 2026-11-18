@@ -9,8 +9,10 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
   if(!elements.has(id)){
    elements.set(id,{
     value:id==='training-time'?'7':id==='training-increment'?'0':id==='ai-level'?'normal':'',
-    textContent:'',hidden:false,disabled:false,style:{},dataset:{},selectedOptions:[{textContent:'Normalny'}],
-    classList:{classes:new Set(),toggle(name,enabled){if(enabled)this.classes.add(name);else this.classes.delete(name)},contains(name){return this.classes.has(name)}},addEventListener(event,fn){if(event==='change')this.onChange=fn},setAttribute(){},
+    textContent:'',hidden:false,disabled:false,
+    style:{vars:{},setProperty(name,value){this.vars[name]=value},removeProperty(name){delete this.vars[name]}},
+    offsetWidth:0,dataset:{},selectedOptions:[{textContent:'Normalny'}],
+    classList:{classes:new Set(),toggle(name,enabled){if(enabled)this.classes.add(name);else this.classes.delete(name)},contains(name){return this.classes.has(name)},add(name){this.classes.add(name)},remove(...names){for(const name of names)this.classes.delete(name)}},addEventListener(event,fn){if(event==='change')this.onChange=fn},setAttribute(){},
     click(){},focus(){},append(){},replaceChildren(){},
    });
   }
@@ -48,12 +50,36 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  assert.equal($('clock-2').textContent,'00:30');
  assert.equal($('clock-2').classList.contains('checkers-clock-critical'),true,
   'white time turns red at exactly thirty seconds online');
+ assert.equal($('clock-2').style.vars['--checkers-clock-shade'],'rgb(95,43,50)',
+  'at 30 seconds the digits are only subtly red');
+ assert.equal($('clock-2').classList.contains('checkers-clock-pulse-twice'),true,
+  '00:30 starts with two pulses');
  assert.equal($('clock-1').classList.contains('checkers-clock-critical'),false,
   'black still has 31 seconds online');
  game.state.clock.remaining=[31000,29000];clockTick();
  assert.equal($('clock-2').classList.contains('checkers-clock-critical'),false);
  assert.equal($('clock-1').classList.contains('checkers-clock-critical'),true,
   'black time is red with 29 seconds');
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-twice'),true,
+  'skipping 30 seconds between ticks still detects the threshold');
+ game.state.clock.remaining=[31000,20000];clockTick();
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-once'),true,'single pulse at 00:20');
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-twice'),false);
+ const at20=$('clock-1').style.vars['--checkers-clock-shade'];
+ game.state.clock.remaining=[31000,10000];clockTick();
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-once'),true,'single pulse at 00:10');
+ const at10=$('clock-1').style.vars['--checkers-clock-shade'];
+ assert.notEqual(at10,at20,'red becomes progressively stronger between milestones');
+ game.state.clock.remaining=[31000,5000];clockTick();
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-once'),true,'single pulse at 00:05');
+ game.state.clock.remaining=[31000,1000];clockTick();
+ assert.equal($('clock-1').style.vars['--checkers-clock-shade'],'rgb(255,0,0)',
+  'the last second is fully saturated pure red');
+ game.state.clock.remaining=[31000,35000];clockTick();
+ assert.equal($('clock-1').classList.contains('checkers-clock-critical'),false);
+ assert.equal($('clock-1').style.vars['--checkers-clock-shade'],undefined,
+  'time restored above 30 seconds clears the warning color');
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-once'),false);
  game=null;
  training.setMode('training');
  assert.equal($('clock-2').textContent,'07:00');
@@ -77,6 +103,7 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  assert.equal($('clock-1').textContent,'00:30');
  assert.equal($('clock-1').classList.contains('checkers-clock-critical'),true,
   'training black clock turns red with 30 seconds left');
+ assert.equal($('clock-1').classList.contains('checkers-clock-pulse-twice'),true);
  assert.equal($('clock-2').classList.contains('checkers-clock-critical'),false);
  training.undoTraining();
  assert.equal(game.state.turn,1);
