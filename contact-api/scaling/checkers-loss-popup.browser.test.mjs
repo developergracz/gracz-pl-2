@@ -73,8 +73,8 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  const old=page.locator('#game-result-modal');
  await old.evaluate(el=>{el.hidden=false;});
  await page.waitForFunction(()=>document.querySelector('#game-result-modal')?.hidden===true);
- await page.locator('#warcaby-loss-close').click();
- assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false);
+ assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,
+  'a stale native modal must not reopen after switching to Stoły');
  await old.evaluate(el=>{el.querySelector('.result-card').dataset.result='loss';el.hidden=false;});
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer','training original result provides a fallback');
