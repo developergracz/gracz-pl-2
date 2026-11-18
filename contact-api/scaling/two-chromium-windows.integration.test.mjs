@@ -49,20 +49,26 @@ function legal(state,ply){
  return options[0];
 }
 async function visibleBoard(page){
- return page.locator('#board .square').evaluateAll(items=>items.map(x=>{
-  const piece=x.querySelector('.piece');if(!piece)return 0;
-  const p=piece.classList.contains('white')?1:2;
-  return piece.classList.contains('king')?p+2:p;
- }));
+ return page.locator('#board .square').evaluateAll(items=>{
+  const board=Array(64).fill(0);
+  for(const square of items){
+   const index=Number(square.dataset.index),piece=square.querySelector('.piece');
+   if(!Number.isInteger(index)||index<0||index>=64)throw Error('INVALID_BOARD_INDEX');
+   if(!piece)continue;
+   const p=piece.classList.contains('white')?1:2;
+   board[index]=piece.classList.contains('king')?p+2:p;
+  }
+  return board;
+ });
 }
 async function waitForBoard(page,expected){
  await page.waitForFunction(board=>{
   const squares=[...document.querySelectorAll('#board .square')];
   if(squares.length!==64)return false;
-  return squares.every((x,i)=>{
-   const piece=x.querySelector('.piece');
+  return squares.every(square=>{
+   const index=Number(square.dataset.index),piece=square.querySelector('.piece');
    const n=piece?(piece.classList.contains('white')?1:2)+(piece.classList.contains('king')?2:0):0;
-   return n===board[i];
+   return Number.isInteger(index)&&index>=0&&index<64&&n===board[index];
   });
  },expected,{timeout:7500});
 }
@@ -145,8 +151,8 @@ test('two independent Chromium windows click Warcaby moves with shared live boar
   if(state.forced!==null)consecutive++;
   if(state.board.filter(Boolean).length>candidate.expected.board.filter(Boolean).length)captures++;
   // Real mouse clicks on two DOM gridcell buttons; no direct move API request here.
-  await active.locator('#board .square').nth(candidate.from).click({timeout:5000});
-  await active.locator('#board .square').nth(candidate.to).click({timeout:5000});
+  await active.locator('#board .square[data-index="'+candidate.from+'"]').click({timeout:5000});
+  await active.locator('#board .square[data-index="'+candidate.to+'"]').click({timeout:5000});
   const targetVersion=version+1;
   const start=Date.now();
   do{
