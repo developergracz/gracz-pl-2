@@ -113,6 +113,69 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
  }
 });
 
+test('signed-in loss result and real tables navigation, creation, join and mobile',{timeout:95000},async t=>{
+ const {base}=await serverFor(t,{nickname:'gracz'});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const context=await browser.newContext({viewport,isMobile:viewport.width<=800,hasTouch:viewport.width<=800});
+  const page=await context.newPage(),errors=[],calls=[];
+  const id='12345678-1234-4234-8234-1234567890ab';
+  let tables=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.route('**/auth/warcaby/tables*',async route=>{
+   const req=route.request(),url=new URL(req.url());
+   if(req.method()==='GET')return route.fulfill({json:{ok:true,
+    tables:tables.filter(row=>url.searchParams.get('scope')==='mine'?row.mine:true)}});
+   const body=req.postDataJSON();calls.push(body);
+   if(body.action==='create')tables=[{id,title:body.title,host:'gracz',
+    guest:null,minutes:body.minutes,incrementSeconds:body.incrementSeconds,
+    status:'waiting',visibility:body.visibility,mine:true,joined:false,color:body.color}];
+   if(body.action==='join')return route.fulfill({json:{ok:true,matchId:id}});
+   if(body.action==='close')tables=[];
+   return route.fulfill({json:{ok:true,id}});
+  });
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelector('#game')&&!document.body.classList.contains('checkers-shell-loading'));
+  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',
+   {detail:{mode:'training',player:1,winner:2,players:['Ty','Komputer'],version:1}})));
+  await page.locator('#warcaby-loss-overlay').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
+  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer');
+  assert.match(await page.locator('#warcaby-loss-title').textContent(),/Przegrałeś gracz tę grę z/);
+  assert.deepEqual(await page.locator('.warcaby-loss-actions button').allTextContents(),['Rewanż','Stoły']);
+  await page.locator('#warcaby-loss-others').click();
+  await page.locator('#warcaby-tables-overlay').waitFor({state:'visible'});
+  assert.deepEqual(await page.locator('.warcaby-tables-menu button').allTextContents(),
+   ['Wolne stoły','W trakcie gry','Moje stoły']);
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Nie ma obecnie wolnych stołów'));
+  await page.locator('#warcaby-tables-create-toggle').click();
+  await page.locator('input[name="title"]').fill('Warcaby Test');
+  await page.locator('select[name="minutes"]').selectOption('5');
+  await page.locator('select[name="incrementSeconds"]').selectOption('2');
+  await page.locator('select[name="visibility"]').selectOption('public');
+  await page.locator('#warcaby-tables-create button[type="submit"]').click();
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Warcaby Test'));
+  assert.equal(calls.at(-1).action,'create');
+  assert.equal(calls.at(-1).minutes,5);
+  assert.equal(calls.at(-1).incrementSeconds,2);
+  assert.match(await page.locator('#warcaby-loss-tables').textContent(),/Gospodarz: gracz/);
+  assert.equal(await page.locator('#warcaby-loss-tables button').textContent(),'Zamknij');
+  await page.locator('#warcaby-loss-tables button').click();
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Brak stołów'));
+  assert.equal(calls.at(-1).action,'close');
+  await page.locator('#warcaby-tables-close').click();
+  await page.locator('#warcaby-tables-overlay').waitFor({state:'hidden'});
+  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('gracz:warcaby:position',
+   {detail:{mode:'online',player:1,winner:2,
+   players:['gracz','Rywal123'],matchId:'other',version:4}})));
+  await page.locator('#warcaby-loss-overlay').waitFor({state:'visible'});
+  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Rywal123');
+  assert.deepEqual(errors,[],'no browser JavaScript errors');
+  await context.close();
+ }
+});
+
 test('Small signed-in nickname sits below the unchanged clock boxes on desktop and mobile',{timeout:90000},async t=>{
  const {base}=await serverFor(t,{nickname:'ZalogowanyGracz'});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});

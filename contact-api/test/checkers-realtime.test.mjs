@@ -9,7 +9,7 @@ function setup(){
  class Element{
   constructor(){this.children=[];this.value='';this.textContent='';this.listeners={};this.style={};this.dataset={};
    this.classList={add(){},remove(){},toggle(){},contains(){return false;}};}
-  setAttribute(){} focus(){} addEventListener(k,fn){this.listeners[k]=fn;}
+  setAttribute(){} focus(){} querySelectorAll(){return [];} addEventListener(k,fn){this.listeners[k]=fn;}
   append(...x){this.children.push(...x);} replaceChildren(...x){this.children=x;}
  }
  const $=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};

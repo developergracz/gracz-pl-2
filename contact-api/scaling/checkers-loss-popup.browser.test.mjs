@@ -27,6 +27,11 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
   }
   if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
   const send=(code,data)=>{res.writeHead(code,{'content-type':'application/json'});res.end(JSON.stringify(data));};
+  if(url.pathname==='/auth/session')return send(200,{ok:true,loggedIn:true,nickname:'gracz'});
+  if(url.pathname==='/auth/warcaby/tables')return send(200,{ok:true,tables:[{
+   id:roomId,title:'Warcaby 5 min',host:'Zosia_PL',guest:null,minutes:5,incrementSeconds:0,
+   visibility:'public',color:'white',mine:false,joined:false,status:'waiting'
+  }]});
   if(url.pathname==='/auth/social/challenges'){
    if(req.method==='GET')return send(200,{ok:true,challenges});
    const chunks=[];req.on('data',c=>chunks.push(c));req.on('end',()=>{invites.push(JSON.parse(Buffer.concat(chunks).toString()));send(200,{ok:true,id:'44444444-4444-4444-8444-444444444444'});});return;
@@ -51,23 +56,25 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
  assert.equal(await page.locator('#board').evaluate(el=>el.innerHTML),before,'board must not be touched');
- assert.equal(await page.locator('#warcaby-loss-lobby').isVisible(),true,'all three sections should open automatically');
- assert.equal(await page.locator('#warcaby-loss-others').getAttribute('aria-expanded'),'true');
+ await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
+ assert.equal(await page.locator('#warcaby-tables-overlay').isVisible(),false,'tables initially hidden');
+ assert.deepEqual(await page.locator('.warcaby-loss-actions button').allTextContents(),['Rewanż','Stoły']);
+ await page.locator('#warcaby-loss-rematch').click();
+ await page.waitForFunction(()=>document.querySelector('#warcaby-loss-notice')?.textContent.includes('Wysłano propozycję rewanżu'));
+ assert.deepEqual(invites[0],{action:'send',game:'warcaby',nickname:'Mistrz_Andrzej',timeLimitMinutes:10,incrementSeconds:2});
+ await page.locator('#warcaby-loss-others').click();
+ await page.locator('#warcaby-tables-overlay').waitFor({state:'visible'});
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Zosia_PL'));
  assert.match(await page.locator('#warcaby-loss-tables').innerText(),/Zosia_PL/);
- assert.doesNotMatch(await page.locator('#warcaby-loss-tables').innerText(),/Mistrz_Andrzej/,'current finished game not in live tables');
- assert.match(await page.locator('#warcaby-loss-friends').innerText(),/Basia_1/);
- assert.doesNotMatch(await page.locator('#warcaby-loss-friends').innerText(),/Nieobecny/);
- assert.match(await page.locator('#warcaby-loss-scheduled').innerText(),/Karol_22/);
- assert.equal(await page.locator('#warcaby-loss-tables a').count(),1);
- await page.locator('#warcaby-loss-rematch').click();
- await page.waitForFunction(()=>document.querySelector('#warcaby-loss-notice')?.textContent.includes('zostało wysłane'));
- assert.deepEqual(invites[0],{action:'send',game:'warcaby',nickname:'Mistrz_Andrzej',timeLimitMinutes:10,incrementSeconds:2});
+ assert.doesNotMatch(await page.locator('#warcaby-loss-tables').innerText(),/Mistrz_Andrzej/,'current finished game not in available tables');
+ assert.deepEqual(await page.locator('.warcaby-tables-menu button').allTextContents(),['Wolne stoły','W trakcie gry','Moje stoły']);
+ assert.equal(await page.locator('#warcaby-loss-tables button').textContent(),'Dołącz');
+ await page.locator('#warcaby-tables-close').click();
  const old=page.locator('#game-result-modal');
  await old.evaluate(el=>{el.hidden=false;});
  await page.waitForFunction(()=>document.querySelector('#game-result-modal')?.hidden===true);
- await page.locator('#warcaby-loss-close').click();
- assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false);
+ assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),false,
+  'a stale native modal must not reopen after switching to Stoły');
  await old.evaluate(el=>{el.querySelector('.result-card').dataset.result='loss';el.hidden=false;});
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Komputer','training original result provides a fallback');
@@ -86,7 +93,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await actual.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/');
  await actual.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,{timeout:10000});
  assert.equal(await actual.locator('#warcaby-loss-name').textContent(),'Komputer');
- assert.equal(await actual.locator('#warcaby-loss-lobby').isVisible(),true);
+ assert.equal(await actual.locator('#warcaby-tables-overlay').isVisible(),false,'tables open only when requested');
  assert.equal(await actual.locator('#board .square').count(),64);
  assert.deepEqual(runtimeErrors,[],'real controller rendering never breaks browser runtime');
  await actual.close();
@@ -97,7 +104,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await online.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/?match='+priorId);
  await online.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,null,{timeout:10000});
  assert.equal(await online.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
- assert.equal(await online.locator('#warcaby-loss-lobby').isVisible(),true);
+ assert.equal(await online.locator('#warcaby-tables-overlay').isVisible(),false);
  assert.deepEqual(onlineErrors,[]);
  await online.close();
 });

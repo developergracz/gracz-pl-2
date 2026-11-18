@@ -54,13 +54,16 @@ export const productionModules=Object.freeze([
   // randomUUID from already-approved node:crypto, full auth and version CAS
   // stay in the existing public-identity match handler.
   'auth/checkers-draw-agreement.mjs',
+  // Reviewed durable Warcaby tables router: same-origin session, strict input,
+  // atomic PostgreSQL seat reservation and existing accepted game challenges.
+  'auth/checkers-tables.mjs',
   // Presentation-only chess-style shell for Warcaby: same-origin DOM reparenting and
   // authenticated inbox metadata GET, no move engine, new routes or external hosts.
   'auth/checkers-chess-shell.mjs',
   // Local-only DOM parity for checkers (mobile header, annotations, move replay).
   'auth/checkers-ui-parity.mjs',
-  // Isolated Warcaby loss-only dialog: scoped CSS and browser UI, existing authenticated
-  // social/challenges and friends/presence APIs; no new routes or privileged data.
+  // Isolated Warcaby result+tables lobby: same-origin social and warcaby tables APIs;
+  // strict textContent DOM writes; no new routes or privileged data.
   'auth/checkers-loss-popup.mjs',
   // P1 chess preview, no match API or gameplay actions.
   'auth/chess-console.mjs',

@@ -12,6 +12,7 @@ import { initialGame, playMove } from './game-engine.mjs';
 import {initialChessMatch,playChessMatch,undoLastChessMove} from './chess-match.mjs';
 import {chessTimeoutIsDraw} from './chess-rules.mjs';
 import {applyCheckersDrawAgreement} from './checkers-draw-agreement.mjs';
+import {ensureCheckersTablesSchema,createCheckersTablesRouter} from './checkers-tables.mjs';
 import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
@@ -303,6 +304,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
        body text NOT NULL CHECK (char_length(body) BETWEEN 1 AND 600),
        created_at timestamptz NOT NULL DEFAULT now())`);
      await database.query('CREATE INDEX IF NOT EXISTS gracz_match_messages_recent ON gracz_public_identity.game_match_messages(match_id,created_at DESC,id DESC)');
+     await ensureCheckersTablesSchema(database);
      await ensurePremiumProfileSchema(database);
    })().catch(e=>{initialized=undefined;throw e;});
   }
@@ -315,6 +317,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
  const notificationCenter=createNotificationRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const messageCenter=createMessageCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  const challengeCenter=createChallengeCenterRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
+ const checkersTables=createCheckersTablesRouter({database,ready,sessionToken,digest,authorizedOrigin,readBody,allow});
  // SameSite=Lax __Host- session is readable only when navigating to this origin.
  const searchAccess=createSearchAccessRouter({isAuthenticated:async req=>{
   await ready();
@@ -335,6 +338,7 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
   if(await notificationCenter.handle(req,res,url))return true;
   if(await messageCenter.handle(req,res,url))return true;
   if(await challengeCenter.handle(req,res,url))return true;
+  if(await checkersTables.handle(req,res,url))return true;
   if(!url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/konto'))return false;
   if(url.pathname==='/auth/status'){
    try{await ready();return json(res,200,{ok:true,ready:true}),true;}catch{return bad(res,503,'SYSTEM_NIEDOSTEPNY'),true;}
