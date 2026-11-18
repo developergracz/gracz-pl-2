@@ -11,7 +11,7 @@ test('Chess initial paint does not reveal the shared Gomoku shell before chess i
   assert.match(page.body,/<body class="chess-console cc-owner chess-booting">/);
   assert.match(page.body,/<div id="chess-initial-load" role="status" aria-live="polite">/);
   assert.doesNotMatch(page.body,/Wczytywanie szachów/,'no visible loading splash');
-  assert.ok(css.body.includes('body.chess-console.chess-booting > *{visibility:hidden!important}'));
+  assert.ok(css.body.includes('body.chess-console.chess-booting > :not(#chess-initial-load){visibility:hidden!important;opacity:0!important;pointer-events:none!important}'));
   assert.ok(css.body.includes('html.chess-booting,body.chess-console.chess-booting{background:#002529!important}'));
   assert.ok(css.body.includes('opacity:0;animation:chess-boot-timeout 1ms steps(1,end) 12s forwards'));
   assert.ok(css.body.includes('body.chess-console #chess-initial-load{display:none!important}'));
