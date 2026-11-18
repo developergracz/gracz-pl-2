@@ -2,8 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initial,parseFen,legal,move,check,result,square,san} from '../auth/chess-rules.mjs';
 import {serveChessConsole} from '../auth/chess-console.mjs';
+import {getSharedGameConsoleHtml} from '../auth/gomoku-console.mjs';
 import {readFileSync} from 'node:fs';
 function load(path,method='GET'){let status=0,headers={},body='';const res={writeHead(code,h){status=code;headers=h},end(text){body=String(text)}};const served=serveChessConsole({method},res,new URL('https://example.com'+path));return {served,status,headers,body};}
+test('Chess initial paint does not reveal the shared Gomoku shell before chess is ready',()=>{
+  const page=load('/konto/szachy/'),css=load('/konto/szachy/styl.css'),app=load('/konto/szachy/app.js');
+  assert.match(page.body,/<body class="chess-console cc-owner chess-booting">/);
+  assert.match(page.body,/<div id="chess-initial-load" role="status" aria-live="polite">/);
+  assert.ok(css.body.includes('body.chess-console.chess-booting #game{visibility:hidden!important}'));
+  assert.ok(css.body.includes('body.chess-console #chess-initial-load{display:none}'));
+  assert.ok(app.body.includes("body.classList.remove('chess-booting')"));
+  assert.ok(app.body.lastIndexOf("body.classList.remove('chess-booting')") > app.body.lastIndexOf('syncFullscreen();'),
+    'boot splash must disappear only after the owner panel and clocks finish initializing');
+  assert.doesNotMatch(getSharedGameConsoleHtml(),/chess-booting/,'Gomoku keeps its existing loading behavior');
+  assert.match(page.headers['Content-Security-Policy'],/style-src 'self'/);
+});
+
 test('Szachy P3 premium console exposes authenticated online controls',()=>{
  const page=load('/konto/szachy/'),app=load('/konto/szachy/app.js'),style=load('/konto/szachy/styl.css'),rules=load('/konto/szachy/rules.mjs');
  assert.equal(page.served,true);assert.equal(page.status,200);

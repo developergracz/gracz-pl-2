@@ -997,6 +997,8 @@ export const chessOwnerConsoleJs = String.raw`
   syncAll();
   syncFullscreen();
   body.classList.add('cc-owner');
+  // Reveal only after the real chess board and right-side panel are composed.
+  body.classList.remove('chess-booting');
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
  else init();
