@@ -124,7 +124,7 @@ export function setupTraining(a){
    tick();
    if(finished)return;
    let move;
-   try{move=chooseComputerMove(game(),$('ai-level').value)}catch{announce('Nie udało się obliczyć ruchu komputera.');return}
+   try{move=chooseComputerMove(game(),$('ai-level').value,{computerSide:computerSide()})}catch{announce('Nie udało się obliczyć ruchu komputera.');return}
    if(version!==generation||mode!=='training'||finished)return;
    if(!move){
     game().winner=humanSide;finish();return;
