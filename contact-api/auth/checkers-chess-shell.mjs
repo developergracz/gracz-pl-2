@@ -277,10 +277,12 @@ export const checkersChessShellJs=String.raw`
  const rules=E('a','','Zasady gry w warcaby');
  rules.href='https://gracz.pl/gry/warcaby/zasady/';
  const panel=E('a','','Moje partie i zaproszenia');panel.href='/konto/panel/?sekcja=play';
+ const classic=E('a','','Wróć do klasycznej konsoli');classic.href='/konto/warcaby/?konsola=klasyczna';
+ classic.title='Awaryjny powrót do poprzedniego układu bez zmiany zasad ani partii';
  const refresh=E('button','','Odśwież partię online');refresh.type='button';
  refresh.addEventListener('click',()=>{$('refresh-match')?.click();});
  const links=E('ul','cc-info-links');
- for(const node of [rules,panel,refresh]){const li=E('li');li.append(node);links.append(li);}
+ for(const node of [rules,panel,classic,refresh]){const li=E('li');li.append(node);links.append(li);}
  info.append(E('h3','cc-info-heading','Bieżąca partia'),detail,E('h3','cc-info-heading','Zasady i pomoc'),links);
  match.insertBefore(info,match.querySelector('.mini-chat'));
  function showInfo(){
