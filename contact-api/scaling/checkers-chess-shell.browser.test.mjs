@@ -196,3 +196,27 @@ test('P0: console remains playable when web-font readiness never resolves',{time
  await page.locator('#board .square').nth(24).click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
 });
+
+test('P0: same service always offers a fully playable classic Warcaby fallback',{timeout:30000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(base+'/konto/warcaby/?konsola=klasyczna',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
+ const state=await page.evaluate(()=>({
+  classic:document.body.classList.contains('warcaby-console')&&
+   !document.body.classList.contains('chess-console'),
+  noBootBlock:!document.body.classList.contains('checkers-shell-loading'),
+  boardSquares:document.querySelectorAll('#board .square').length,
+  pawns:document.querySelectorAll('#board .piece').length,
+  js:[...document.scripts].map(x=>x.src).filter(Boolean).some(x=>x.includes('/konto/warcaby/app.js?konsola=klasyczna')),
+  css:[...document.querySelectorAll('link[rel=stylesheet]')].some(x=>x.href.includes('/konto/warcaby/styl.css?konsola=klasyczna'))
+ }));
+ assert.deepEqual(state,{classic:true,noBootBlock:true,boardSquares:64,pawns:24,js:true,css:true});
+ await page.locator('#board .square').nth(17).locator('.piece').click();
+ await page.locator('#board .square').nth(24).click();
+ await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
+ assert.deepEqual(errors,[]);
+});
