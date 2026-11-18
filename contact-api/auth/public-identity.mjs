@@ -11,6 +11,7 @@ import { randomBytes, createHash, timingSafeEqual, randomUUID, scrypt as rawScry
 import { initialGame, playMove } from './game-engine.mjs';
 import {initialChessMatch,playChessMatch,undoLastChessMove} from './chess-match.mjs';
 import {chessTimeoutIsDraw} from './chess-rules.mjs';
+import {applyCheckersDrawAgreement} from './checkers-draw-agreement.mjs';
 import {validateChessInviteSchedule} from './chess-invite-contract.mjs';
 import { promisify } from 'node:util';
 
@@ -797,25 +798,11 @@ export function createPublicIdentityRouter({database,emailFrom,resendKey,onGomok
         if(match.state.winner)return bad(res,409,'PARTIA_ZAKONCZONA'),true;
         if(!Number.isInteger(body.version)||body.version!==match.version)
           return bad(res,409,'ODSWIEZ_PARTIE'),true;
-        const pending=match.state.drawOffer;
-        let next={...match.state};
-        if(body.action==='offerDraw'){
-          if(pending)return bad(res,409,'PROPOZYCJA_JUZ_ISTNIEJE'),true;
-          if(!Number.isInteger(next.moves)||next.moves<1)return bad(res,409,'PARTIA_NIE_ROZPOCZETA'),true;
-          next.drawOffer={id:randomUUID(),requester:player,createdAt:new Date().toISOString()};
-        }else{
-          if(!pending||typeof pending.id!=='string'||body.offerId!==pending.id)
-            return bad(res,409,'PROPOZYCJA_NIEAKTUALNA'),true;
-          if(body.action==='cancelDraw'){
-            if(pending.requester!==player)return bad(res,403,'NIE_TWOJA_PROPOZYCJA'),true;
-          }else if(pending.requester===player)return bad(res,403,'BRAK_ZGODY_PRZECIWNIKA'),true;
-          delete next.drawOffer;
-          if(body.action==='acceptDraw'){
-            next.winner=3;
-            next.drawReason='ZGODA_GRACZY';
-            if(next.clock)next.clock={...next.clock,since:null};
-          }
-        }
+        const decision=applyCheckersDrawAgreement(match.state,player,body.action,body.offerId);
+        if(decision.error)return bad(res,
+          decision.error==='NIE_TWOJA_PROPOZYCJA'||decision.error==='BRAK_ZGODY_PRZECIWNIKA'?403:409,
+          decision.error),true;
+        const next=decision.state;
         const updated=await database.query(`UPDATE gracz_public_identity.game_matches m
           SET state=$1::jsonb,version=m.version+1,updated_at=now()
           FROM gracz_public_identity.game_challenges c
