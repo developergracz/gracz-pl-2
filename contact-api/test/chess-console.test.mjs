@@ -9,9 +9,9 @@ test('Chess initial paint does not reveal the shared Gomoku shell before chess i
   const page=load('/konto/szachy/'),css=load('/konto/szachy/styl.css'),app=load('/konto/szachy/app.js');
   assert.match(page.body,/<body class="chess-console cc-owner chess-booting">/);
   assert.match(page.body,/<div id="chess-initial-load" role="status" aria-live="polite">/);
-  assert.match(css.body,/body\\.chess-console\\.chess-booting #game\\{visibility:hidden!important\\}/);
-  assert.match(css.body,/body\\.chess-console #chess-initial-load\\{display:none\\}/);
-  assert.match(app.body,/body\\.classList\\.remove\\('chess-booting'\\)/);
+  assert.ok(css.body.includes('body.chess-console.chess-booting #game{visibility:hidden!important}'));
+  assert.ok(css.body.includes('body.chess-console #chess-initial-load{display:none}'));
+  assert.ok(app.body.includes("body.classList.remove('chess-booting')"));
   assert.ok(app.body.lastIndexOf("body.classList.remove('chess-booting')") > app.body.lastIndexOf('syncFullscreen();'),
     'boot splash must disappear only after the owner panel and clocks finish initializing');
   assert.doesNotMatch(getSharedGameConsoleHtml(),/chess-booting/,'Gomoku keeps its existing loading behavior');
