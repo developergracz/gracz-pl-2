@@ -10,7 +10,7 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
    elements.set(id,{
     value:id==='training-time'?'7':id==='training-increment'?'0':id==='ai-level'?'normal':'',
     textContent:'',hidden:false,disabled:false,style:{},dataset:{},selectedOptions:[{textContent:'Normalny'}],
-    classList:{toggle(){}},addEventListener(){},setAttribute(){},
+    classList:{toggle(){}},addEventListener(event,fn){if(event==='change')this.onChange=fn},setAttribute(){},
     click(){},focus(){},append(){},replaceChildren(){},
    });
   }
@@ -34,6 +34,14 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
   getCurrent:()=>game,setCurrent:value=>{game=value},setSelected(){},setMode(){},
   renderBoard(){},renderPreview(){},loadRooms(){},refresh(){},refreshChat(){}
  });
+ $('create-room-time').value='7';
+ training.setMode('online');
+ assert.equal($('clock-1').textContent,'07:00','waiting black online clock previews default 7 minutes');
+ assert.equal($('clock-2').textContent,'07:00','waiting white online clock previews default 7 minutes');
+ $('create-room-time').value='10';$('create-room-time').onChange();
+ assert.equal($('clock-1').textContent,'10:00','online clock previews changed invite limit');
+ $('create-room-time').value='0';$('create-room-time').onChange();
+ assert.equal($('clock-2').textContent,'--:--','untimed invitation has no countdown');
  training.setMode('training');
  assert.equal($('clock-2').textContent,'07:00');
  assert.equal($('clock-1').textContent,'07:00');
