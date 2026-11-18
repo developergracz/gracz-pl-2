@@ -275,6 +275,10 @@ test('Owner parity: chess-dark background, correctly oriented coordinates, chess
   await page.locator('#board .square').nth(17).locator('.piece').click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+  // Wait for the computer's immediate reply. A new live move legitimately
+  // resets a historical preview; do not race that state transition.
+  await page.waitForFunction(()=>document.getElementById('turn-label')?.textContent==='Twój ruch'&&
+    Number(document.getElementById('history-count')?.textContent)>=2,{timeout:18000});
   await page.locator('#history-tab').click();
   await page.locator('#moves-panel').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelectorAll('#moves-list .checkers-history-move').length>=1);
