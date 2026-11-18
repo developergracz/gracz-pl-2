@@ -12,7 +12,7 @@ const headers={'Content-Security-Policy':"default-src 'none'; script-src 'self';
 const chessBootCss=String.raw`
 /* Zero-flash initial paint: the browser lays out the full chess console offscreen.
    Show no transitional text, inherited Gomoku UI or unfinished controls. */
-html.chess-booting,body.chess-console.chess-booting{background:#002529!important}
+html:root.chess-booting,body.chess-console.chess-booting{background:#002529!important}
 body.chess-console.chess-booting > :not(#chess-initial-load){visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 body.chess-console #chess-initial-load{display:none!important}
 /* Fail visibly after 12s if a module is blocked instead of leaving an endless blank page. */
