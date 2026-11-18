@@ -221,7 +221,7 @@ test('P0: same service always offers a fully playable classic Warcaby fallback',
  assert.deepEqual(errors,[]);
 });
 
-test('Owner parity: flat light background, correctly oriented coordinates, chess-style move history and mobile topbar',{timeout:120000},async t=>{
+test('Owner parity: chess-dark background, correctly oriented coordinates, chess-style move history and mobile topbar',{timeout:120000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  t.after(()=>browser.close());
@@ -255,8 +255,8 @@ test('Owner parity: flat light background, correctly oriented coordinates, chess
     viewport:document.documentElement.clientWidth
    };
   });
-  assert.equal(visuals.body,'rgb(241, 246, 244)','same clean light-page family as chess');
-  assert.equal(visuals.game,'rgba(0, 0, 0, 0)','no dark game console background');
+  assert.equal(visuals.body,'rgb(3, 21, 25)','same midnight body as chess');
+  assert.equal(visuals.game,'rgb(0, 55, 57)','same dark game canvas as chess');
   assert.equal(visuals.shadow,'none','no surrounding game frame shadow');
   assert.equal(visuals.mobileBar,mobile,'mobile navigation bar only on phones');
   assert.equal(visuals.header,true);
@@ -321,4 +321,59 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  await page.goto(base+'/konto/warcaby/?konsola=klasyczna');
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  assert.equal(await page.locator('.checkers-mobile-heading').count(),0,'classic route unchanged');
+});
+
+test('Warcaby chat uses content-sized bubbles and no red focus border on desktop/mobile',{timeout:50000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<=800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage();const errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading')&&
+    typeof window.GraczChat?.createMessage==='function');
+  await page.locator('#chat-tab').click();
+  await page.locator('#chat-panel').waitFor({state:'visible'});
+  const bubbles=await page.evaluate(()=>{
+   const container=document.getElementById('chat-messages');
+   const mine=window.GraczChat.createMessage({sender:'Ty',body:'Witam',mine:true,
+      createdAt:new Date().toISOString(),timestamps:false});
+   const long=window.GraczChat.createMessage({sender:'Gość',
+      body:'To jest dłuższa wiadomość do sprawdzenia zawijania tekstu w dymku. '.repeat(9),
+      mine:false,createdAt:new Date().toISOString(),timestamps:false});
+   container.replaceChildren(mine,long);
+   const cr=container.getBoundingClientRect(),a=mine.getBoundingClientRect(),b=long.getBoundingClientRect();
+   return {
+    container:cr.width,short:a.width,long:b.width,
+    ownRightGap:Math.round(cr.right-a.right),otherLeftGap:Math.round(b.left-cr.left),
+    wraps:b.height>a.height,
+    align:getComputedStyle(mine).alignSelf,
+    overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
+   };
+  });
+  assert.ok(bubbles.container>200,'chat has real usable width');
+  assert.ok(bubbles.short<bubbles.container*.72,'short text must not fill the row: '+JSON.stringify(bubbles));
+  assert.ok(bubbles.long<=bubbles.container*.9,'long messages are bounded');
+  assert.equal(bubbles.wraps,true,'long text must wrap');
+  assert.ok(bubbles.ownRightGap<25,'own bubble aligns to the right');
+  assert.ok(bubbles.otherLeftGap<25,'opponent bubble aligns to the left');
+  assert.equal(bubbles.align,'flex-end');
+  assert.ok(bubbles.overflow<=2,'chat must not cause horizontal page scroll');
+  const focus=await page.locator('#chat-input').evaluate(input=>{
+   input.focus();
+   const css=getComputedStyle(input);
+   return {outline:css.outlineStyle,shadow:css.boxShadow,border:css.borderColor,
+     background:css.backgroundColor,focused:document.activeElement===input};
+  });
+  assert.equal(focus.focused,true,'input remains keyboard accessible');
+  assert.equal(focus.outline,'none','no red or browser-default focus frame');
+  assert.equal(focus.shadow,'none','no focus halo');
+  assert.equal(focus.border,'rgb(79, 131, 138)','focus border must use existing neutral teal');
+  assert.equal(focus.background,'rgb(9, 45, 52)','keyboard focus uses a subtle background cue');
+  assert.deepEqual(errors,[],'no JavaScript errors');
+  await context.close();
+ }
 });
