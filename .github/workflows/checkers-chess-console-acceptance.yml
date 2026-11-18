@@ -7,6 +7,7 @@ on:
       - 'contact-api/auth/checkers-ui-parity.mjs'
       - 'contact-api/auth/chess-console.mjs'
       - 'contact-api/scaling/checkers-chess-shell.browser.test.mjs'
+      - 'contact-api/test/checkers-console.test.mjs'
       - '.github/workflows/checkers-chess-console-acceptance.yml'
   workflow_dispatch:
 
