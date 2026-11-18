@@ -111,7 +111,7 @@ test('a real Warcaby board can render 64 squares and 24 figures when training st
   const context={
    document:{createDocumentFragment:fragment,createElement:element},
    board,current:{state:initial,player:1,playable:true,players:['Ty','Komputer']},
-   selected:null,rotated,mode:'training',
+   selected:null,rotated,mode:'training',captureAlertActive:false,
    $,
    squareLabel:i=>'ABCDEFGH'[i%8]+(8-Math.floor(i/8)),
    captureSources:()=>[],captureTargets:()=>[],destinations:()=>[],
@@ -124,4 +124,44 @@ test('a real Warcaby board can render 64 squares and 24 figures when training st
   assert.equal(tokens.filter(t=>t.className.includes('piece black')).length,12);
   assert.equal(board.children[0].attributes['aria-label'],rotated?'H1':'A8');
  }
+});
+
+test('mandatory capture warning appears on another own piece, not the capturing piece',()=>{
+ const js=asset('/konto/warcaby/app.js'),css=asset('/konto/warcaby/styl.css');
+ const from=js.indexOf('function showMandatoryCaptureOnHover(');
+ const to=js.indexOf('function destinations(from)',from);
+ assert.ok(from>0&&to>from);
+ let warnings=0;
+ const board={contains:()=>true,addEventListener(){}};
+ const state={board:Array(64).fill(0),turn:1,winner:0};
+ state.board[17]=1;state.board[26]=2;state.board[40]=1;
+ const context={board,current:{state,player:1,playable:true},busy:false,
+  captureSources:()=>[17],syncCaptureNotice:()=>warnings++};
+ const hover=new Script(js.slice(from,to)+'\nshowMandatoryCaptureOnHover').runInNewContext(context);
+ const event=i=>({type:'pointerover',pointerType:'mouse',relatedTarget:null,
+  target:{closest:()=>({dataset:{index:String(i)},querySelector:()=>({})})}});
+ hover(event(17));assert.equal(warnings,0,'correct capturing piece is silent');
+ hover(event(26));assert.equal(warnings,0,'opponent piece is silent');
+ hover(event(40));assert.equal(warnings,1,'hovering other own piece warns');
+ assert.ok(js.includes("if(!reopen){if(!captureAlertActive)notice.hidden=true;return}"));
+ assert.ok(js.includes("captureAlertActive&&sources.includes(i)"));
+ assert.ok(css.includes('animation:checkers-capture-red-cycle 4500ms'));
+ assert.ok(css.includes('@keyframes checkers-capture-red-cycle'));
+});
+
+test('new game button shows central dismissible block only during a live game',()=>{
+ const js=asset('/konto/warcaby/app.js'),css=asset('/konto/warcaby/styl.css');
+ const start=js.indexOf('function isCheckersGameInProgress(');
+ const end=js.indexOf(" newGame.addEventListener('click'",start);
+ assert.ok(start>0&&end>start);
+ const ongoing=new Script(js.slice(start,end)+'\nisCheckersGameInProgress').runInNewContext();
+ assert.equal(ongoing({mode:'training',playable:true,winner:0,moves:3}),true);
+ assert.equal(ongoing({mode:'online',matchId:'game1',playable:true,winner:0,moves:0}),true);
+ assert.equal(ongoing({mode:'training',playable:false,winner:0,moves:0}),false);
+ assert.equal(ongoing({mode:'training',playable:true,winner:1,moves:10}),false);
+ assert.equal(ongoing(null),false);
+ assert.ok(js.includes('Nie możesz rozpocząć nowej gry podczas trwania obecnej rozgrywki.'));
+ assert.ok(js.includes('checkers-newgame-close'));
+ assert.ok(js.includes('if(isCheckersGameInProgress(lastResult))'));
+ assert.ok(css.includes('checkers-newgame-blocker'));
 });

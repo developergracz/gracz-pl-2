@@ -900,7 +900,7 @@ test('Remis action sits below Cofnij and requests a two-player draw, never a uni
 });
 
 
-test('P0: single mandatory capture warns on hover, first invalid click and invalid drag',{timeout:65000},async t=>{
+test('P0: mandatory capture warns on wrong pawn, pulses red and keeps illegal moves blocked',{timeout:65000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  t.after(()=>browser.close());
@@ -926,10 +926,15 @@ test('P0: single mandatory capture warns on hover, first invalid click and inval
  const notice=page.locator('#checkers-capture-notice');
  assert.equal(await notice.isVisible(),false,'single capture is initially quiet before hovering');
  await page.locator('#board .square[data-index="17"] .piece').evaluate(el=>
-  el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
+   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
+ assert.equal(await notice.isVisible(),false,'hover on correct capturing pawn is silent');
+ await page.locator('#board .square[data-index="21"] .piece').evaluate(el=>
+   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'})));
  await notice.waitFor({state:'visible'});
- assert.match(await notice.textContent(),/Bicie obowiązkowe/,'hover warns without clicking');
+ assert.match(await notice.textContent(),/Bicie obowiązkowe/,'hovering wrong own pawn warns');
  assert.match(await notice.textContent(),/Ten pionek musi bić/);
+ assert.equal(await page.locator('#board .square[data-index="17"] .piece.capture-alert').count(),1,
+  'capturing pawn becomes red after warning');
  await page.locator('#checkers-capture-dismiss').click();
  await page.locator('#board .square[data-index="21"]').evaluate(el=>
   el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerType:'mouse',button:0,pointerId:12,isPrimary:true})));
@@ -937,12 +942,11 @@ test('P0: single mandatory capture warns on hover, first invalid click and inval
  assert.deepEqual(calls,[],'another pawn cannot bypass mandatory capture');
  await page.locator('#checkers-capture-dismiss').click();
  await page.locator('#board .square[data-index="17"]').evaluate(el=>el.click());
- await notice.waitFor({state:'visible'});
- await page.locator('#checkers-capture-dismiss').click();
+ assert.equal(await notice.isVisible(),false,'correct pawn selection is silent');
  await page.locator('#board .square[data-index="24"]').evaluate(el=>el.click());
- await notice.waitFor({state:'visible'});
- assert.deepEqual(calls,[],'illegal click target must not reach online API');
- await page.locator('#checkers-capture-dismiss').click();
+ assert.equal(await notice.isVisible(),false,'illegal empty-square click does not warn');
+ assert.deepEqual(calls,[],'invalid click must not reach online API');
+ // Empty-square attempts stay silent; no duplicate warning is expected.
  const drag=async(from,to)=>{
   const a=await page.locator('#board .square[data-index="'+from+'"] .piece').boundingBox();
   const b=await page.locator('#board .square[data-index="'+to+'"]').boundingBox();
@@ -951,9 +955,8 @@ test('P0: single mandatory capture warns on hover, first invalid click and inval
   await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
  };
  await drag(17,24);
- await notice.waitFor({state:'visible'});
- assert.deepEqual(calls,[],'illegal drag snaps back and warns immediately');
- await page.locator('#checkers-capture-dismiss').click();
+ assert.equal(await notice.isVisible(),false,'illegal drop to empty square is silent');
+ assert.deepEqual(calls,[],'illegal drag snaps back without reaching API');
  await drag(17,35);
  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"] .piece.white')&&
   document.getElementById('move-count')?.textContent==='Ruch 4');
