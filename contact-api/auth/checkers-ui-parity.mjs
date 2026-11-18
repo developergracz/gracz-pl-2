@@ -75,6 +75,21 @@ body.warcaby-console.chess-console.cc-owner #game #chat-input:focus-visible{
  outline:none!important;outline-offset:0!important;box-shadow:none!important
 }
 
+/* The mandatory-capture notice was physically overlaying some landing squares.
+   Keep its dismiss button usable while allowing drags through the notification. */
+body.warcaby-console #checkers-capture-notice:not([hidden]){
+ pointer-events:none!important
+}
+body.warcaby-console #checkers-capture-notice #checkers-capture-dismiss{
+ pointer-events:auto!important
+}
+@media(min-width:801px){
+ body.warcaby-console #checkers-capture-notice:not([hidden]){
+  left:auto!important;right:12px!important;bottom:14px!important;
+  transform:none!important;max-width:min(29vw,370px)!important
+ }
+}
+
 /* Pointer drag is a visual adapter. Rule enforcement stays in choose()/destinations(). */
 body.warcaby-console #board .square .piece{touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}
 body.warcaby-console #board .square.checkers-drag-source .piece{opacity:.55!important}
