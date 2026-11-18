@@ -107,6 +107,7 @@ body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner:not([hid
 }
 body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner[hidden]{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner .checkers-draw-choices{display:flex;gap:6px}
+body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner .checkers-draw-choices[hidden]{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner button{
  flex:1;min-height:30px;border:1px solid var(--cc-line);border-radius:6px;
  background:var(--cc-bg);color:var(--cc-ink);font:700 12px system-ui,sans-serif;cursor:pointer
