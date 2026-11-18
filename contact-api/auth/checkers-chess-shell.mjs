@@ -87,6 +87,30 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-own
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-action:last-child{border-right:0}
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-action svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8}
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-action:disabled{opacity:.42;cursor:not-allowed}
+/* Split only the fourth existing action column: Cofnij above Remis. */
+body.warcaby-console.chess-console.cc-owner #game .checkers-undo-draw{
+ display:grid;grid-template-rows:1fr 1fr;min-width:0;min-height:0
+}
+body.warcaby-console.chess-console.cc-owner #game .checkers-undo-draw .checkers-owner-action{
+ display:flex!important;flex-direction:row!important;gap:4px!important;
+ padding:3px 1px!important;border:0!important;font-size:11px!important;min-height:28px
+}
+body.warcaby-console.chess-console.cc-owner #game .checkers-undo-draw .checkers-owner-action+.checkers-owner-action{
+ border-top:1px solid var(--cc-line)!important
+}
+body.warcaby-console.chess-console.cc-owner #game .checkers-undo-draw .checkers-owner-action svg{
+ width:17px!important;height:17px!important;flex:none!important
+}
+body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner:not([hidden]){
+ order:3;display:grid;gap:5px;padding:7px 10px;border:1px solid var(--cc-line);
+ border-radius:8px;background:var(--cc-soft);color:var(--cc-ink);font:600 12px/1.3 system-ui,sans-serif
+}
+body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner[hidden]{display:none!important}
+body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner .checkers-draw-choices{display:flex;gap:6px}
+body.warcaby-console.chess-console.cc-owner #game .checkers-draw-banner button{
+ flex:1;min-height:30px;border:1px solid var(--cc-line);border-radius:6px;
+ background:var(--cc-bg);color:var(--cc-ink);font:700 12px system-ui,sans-serif;cursor:pointer
+}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.checkers-owner-status{
  order:3!important;min-height:0!important;margin:0!important;padding:4px 2px!important;
  background:transparent!important;border:0!important;box-shadow:none!important;color:var(--cc-muted)!important;
@@ -198,6 +222,7 @@ export const checkersChessShellJs=String.raw`
   rematch:'<path d="M20 10A8 8 0 0 0 6 6L4 9V4h5M4 14a8 8 0 0 0 14 4l2-3v5h-5"/>',
   invite:'<path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/>',
   undo:'<path d="m9 14-5-5 5-5M4 9h9a7 7 0 0 1 0 14"/>',
+  draw:'<path d="M4 8h16M4 16h16M7 5h10M7 19h10"/>',
   settings:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2"/>',
   board:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/>',
   pieces:'<circle cx="12" cy="8" r="4"/><ellipse cx="12" cy="15" rx="7" ry="4"/><path d="M4 21h16"/>',
@@ -319,8 +344,17 @@ export const checkersChessShellJs=String.raw`
   button.append(icon(name),E('span','',label));button.setAttribute('aria-label',label);actions.append(button);return button;
  }
  const newGame=action('Nowa gra','new'),rematch=action('Rewanż','rematch');
- const invite=action('Zaproś','invite'),undo=action('Cofnij','undo');
+ const invite=action('Zaproś','invite'),undo=action('Cofnij','undo'),draw=action('Remis','draw');
+ const undoDraw=E('div','checkers-undo-draw');undoDraw.append(undo,draw);actions.append(undoDraw);
+ draw.id='checkers-offer-draw';undo.id='checkers-owner-undo';
  dock.insertBefore(actions,status);
+ const drawBanner=E('div','checkers-draw-banner');drawBanner.hidden=true;
+ drawBanner.setAttribute('role','status');drawBanner.setAttribute('aria-live','polite');
+ const drawText=E('span','checkers-draw-text');drawBanner.append(drawText);
+ const drawChoices=E('div','checkers-draw-choices');
+ const acceptDraw=E('button','','Przyjmij'),rejectDraw=E('button','','Odrzuć');
+ acceptDraw.type='button';rejectDraw.type='button';drawChoices.append(acceptDraw,rejectDraw);
+ drawBanner.append(drawChoices);dock.insertBefore(drawBanner,status);
  const infoTab=E('button','checkers-info-tab');infoTab.type='button';
  infoTab.setAttribute('role','tab');infoTab.setAttribute('aria-selected','false');
  infoTab.append(icon('info'),E('span','','Info'));match.querySelector('.dock-tabs')?.append(infoTab);
@@ -454,12 +488,63 @@ export const checkersChessShellJs=String.raw`
   openSheet('online',invite);
   $('create-room-friend')?.focus({preventScroll:true});
  });
- let lastResult=null;
+ let lastResult=null,drawBusy=false,drawMessage='';
+ function updateDraw(){
+  const active=$('online-mode')?.classList.contains('active');
+  const offer=active?lastResult?.drawOffer:null;
+  const mine=!!offer&&offer.requester===lastResult?.player;
+  const incoming=!!offer&&!mine;
+  draw.disabled=drawBusy||!!lastResult?.winner;
+  draw.title=!active?'W treningu remis następuje automatycznie zgodnie z zasadami':
+    !lastResult?.matchId?'Najpierw dołącz do partii online':
+    mine?'Kliknij, aby wycofać propozycję remisu':
+    incoming?'Odpowiedz na propozycję przeciwnika':'Zaproponuj remis przeciwnikowi';
+  drawBanner.hidden=!incoming&&!mine&&!drawMessage;
+  if(drawMessage)drawText.textContent=drawMessage;
+  else if(mine)drawText.textContent='Propozycja remisu wysłana. Czekamy na odpowiedź przeciwnika.';
+  else if(incoming)drawText.textContent='Przeciwnik proponuje remis. Przyjmujesz?';
+  drawChoices.hidden=!incoming;
+  acceptDraw.disabled=rejectDraw.disabled=drawBusy;
+ }
+ async function sendDraw(action){
+  if(drawBusy)return;
+  const old=lastResult;
+  if(!old?.matchId||old.mode!=='online'||!old.playable||old.winner){
+   drawMessage='Najpierw rozpocznij aktywną partię online.';updateDraw();return;
+  }
+  drawBusy=true;drawMessage='';updateDraw();
+  try{
+   const payload={id:old.matchId,version:old.version,action};
+   if(action!=='offerDraw')payload.offerId=old.drawOffer?.id;
+   const response=await fetch('/auth/match',{method:'POST',credentials:'same-origin',
+    headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||data.ok!==true||!data.match)throw Error(
+    response.status===409?'Partia zmieniła się. Odśwież i spróbuj ponownie.':
+    'Nie udało się obsłużyć propozycji remisu.');
+   lastResult={...old,version:data.match.version,winner:data.match.state.winner,
+    drawOffer:data.match.state.drawOffer||null,moves:data.match.state.moves,playable:data.match.playable};
+   window.dispatchEvent(new Event('gracz:warcaby:refresh-requested'));
+  }catch(error){drawMessage=error.message||'Nie udało się obsłużyć propozycji.';}
+  finally{drawBusy=false;updateDraw();}
+ }
+ draw.addEventListener('click',()=>{
+  if(!$('online-mode')?.classList.contains('active')){
+   drawMessage='W treningu z komputerem remis następuje automatycznie z zasad gry.';
+   updateDraw();return;
+  }
+  if(lastResult?.drawOffer?.requester===lastResult?.player)void sendDraw('cancelDraw');
+  else if(lastResult?.drawOffer){drawMessage='Wybierz Przyjmij albo Odrzuć.';updateDraw();}
+  else if(window.confirm('Czy zaproponować przeciwnikowi remis?'))void sendDraw('offerDraw');
+ });
+ acceptDraw.addEventListener('click',()=>void sendDraw('acceptDraw'));
+ rejectDraw.addEventListener('click',()=>void sendDraw('rejectDraw'));
  function updateRewind(){
   const local=$('training-mode')?.classList.contains('active');
   undo.disabled=!local;undo.title=local?'Cofnij ostatnią pełną turę':'W rozgrywce online cofanie nie jest dostępne';
   const finished=lastResult?.winner>0||!$('game-result-modal')?.hidden;
   rematch.disabled=!finished;
+  updateDraw();
  }
  undo.addEventListener('click',()=>{if(!undo.disabled)$('training-undo')?.click();});
  rematch.addEventListener('click',()=>{
@@ -474,7 +559,7 @@ export const checkersChessShellJs=String.raw`
   }
  });
  for(const name of ['training-mode','online-mode']){
-  $(name)?.addEventListener('click',()=>{lastResult=null;closeSheet();updateRewind();});
+  $(name)?.addEventListener('click',()=>{lastResult=null;drawMessage='';closeSheet();updateRewind();});
  }
  window.addEventListener('gracz:warcaby:position',event=>{
   lastResult=event.detail||null;updateRewind();sync();
