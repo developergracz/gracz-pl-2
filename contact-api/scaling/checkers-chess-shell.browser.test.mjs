@@ -466,6 +466,12 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    if(mobile){
     const cdp=await context.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+    const touchCaptured=await page.evaluate(from=>{
+     const probe=window.__checkersPointerProbe||[];
+     const down=[...probe].reverse().find(item=>item.type==='pointerdown');
+     return !!down&&!!document.querySelector('#board .square[data-index="'+from+'"]')?.hasPointerCapture(down.pointerId);
+    },from);
+    assert.equal(touchCaptured,true,'touch capture begins on the source square, before movement');
     for(let n=1;n<=8;n++){
      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',
       touchPoints:[{x:x+(u-x)*n/8,y:y+(v-y)*n/8,id:1}]});
@@ -474,6 +480,12 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
     await cdp.detach();
    }else{
     await page.mouse.move(x,y);await page.mouse.down();
+    const mouseCaptured=await page.evaluate(from=>{
+     const probe=window.__checkersPointerProbe||[];
+     const down=[...probe].reverse().find(item=>item.type==='pointerdown');
+     return !!down&&!!document.querySelector('#board .square[data-index="'+from+'"]')?.hasPointerCapture(down.pointerId);
+    },from);
+    assert.equal(mouseCaptured,true,'mouse capture begins on the source square, before movement');
     await page.mouse.move(u,v,{steps:12});await page.mouse.up();
    }
   };
@@ -494,6 +506,19 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    }
   });
   assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
+  // Clicking a pawn must NOT leave a yellow square border; valid moves still
+  // show their original small dots. Click-to-select must still work.
+  await page.locator('#board .square[data-index="17"]').click();
+  const selected=await page.evaluate(()=>{
+   const square=document.querySelector('#board .square[data-index="17"]');
+   return {selected:square.classList.contains('selected'),shadow:getComputedStyle(square).boxShadow,
+    possible:document.querySelectorAll('#board .square.possible').length,
+    dot:getComputedStyle(document.querySelector('#board .square.possible'),'::before').content};
+  });
+  assert.equal(selected.selected,true,'click still selects the pawn');
+  assert.equal(selected.shadow,'none','no yellow selection frame');
+  assert.ok(selected.possible>0,'legal targets remain visible');
+  assert.notEqual(selected.dot,'none','small target dots remain');
   if(!mobile){
    // The ghost must use viewport coordinates, not a transformed board's origin.
    const box=await page.locator('#board .square[data-index="17"] .piece').boundingBox();
@@ -509,6 +534,14 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    assert.ok(Math.abs(ghost.x-(x+28))<3&&Math.abs(ghost.y-(y+24))<3,'ghost tracks mouse position');
    await page.mouse.up();
    assert.equal(await page.locator('.checkers-drag-ghost').count(),0,'ghost always removed on release');
+   // Move completely outside the board with ONE pointermove frame. Capture
+   // must retain pointerup and snap back instead of leaving a stuck ghost.
+   const bb=await page.locator('#board').boundingBox();
+   await page.mouse.move(x,y);await page.mouse.down();
+   await page.mouse.move(Math.min(viewport.width-15,bb.x+bb.width+22),y,{steps:1});
+   await page.mouse.up();
+   assert.equal(await page.locator('.checkers-drag-ghost').count(),0,'outside-board fast release cleans ghost');
+   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','outside-board drop never moves');
   }
   await drag(17,19); // Illegal sideways drag, source must snap back.
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
