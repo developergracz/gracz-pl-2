@@ -27,7 +27,7 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
   }
   if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
   const send=(code,data)=>{res.writeHead(code,{'content-type':'application/json'});res.end(JSON.stringify(data));};
-  if(url.pathname==='/auth/session')return send(200,{ok:true,loggedIn:true,nickname:'gracz'});
+  if(url.pathname==='/auth/session')return send(200,{ok:true,loggedIn:true,nickname:'GrAcZ'});
   if(url.pathname==='/auth/warcaby/tables')return send(200,{ok:true,tables:[{
    id:roomId,title:'Warcaby 5 min',host:'Zosia_PL',guest:null,minutes:5,incrementSeconds:0,
    visibility:'public',color:'white',mine:false,joined:false,status:'waiting'
@@ -59,6 +59,9 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  assert.equal(await page.locator('#warcaby-loss-emotion').textContent(),'😢');
  assert.equal(await page.locator('#warcaby-loss-title').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(246, 232, 204)');
  assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).color),'rgb(35, 121, 171)');
+ assert.equal(await page.locator('#warcaby-loss-player').textContent(),'gracz','the account name is shown lowercase without changing account data');
+ assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).fontSize),'25.92px',
+  'nickname is larger than the surrounding 24px headline');
  assert.equal(await page.locator('#warcaby-loss-rematch').evaluate(el=>getComputedStyle(el).fontSize),'16px');
  assert.equal(await page.locator('#board').evaluate(el=>el.innerHTML),before,'board must not be touched');
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
