@@ -22,6 +22,10 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea,
 body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
  background:#000!important;border:0!important;border-radius:0!important;box-shadow:none!important
 }
+body.warcaby-console.chess-console.cc-owner #game::before,
+body.warcaby-console.chess-console.cc-owner #game::after{
+ content:none!important;display:none!important;background:none!important;box-shadow:none!important
+}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea::before,
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea::after{
  display:none!important;content:none!important
