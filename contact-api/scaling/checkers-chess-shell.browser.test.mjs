@@ -148,7 +148,7 @@ test('signed-in loss result and real tables navigation, creation, join and mobil
   await page.locator('#warcaby-tables-overlay').waitFor({state:'visible'});
   assert.deepEqual(await page.locator('.warcaby-tables-menu button').allTextContents(),
    ['Wolne stoły','W trakcie gry','Moje stoły']);
-  assert.match(await page.locator('#warcaby-loss-tables').textContent(),/Nie ma obecnie wolnych stołów/);
+  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-tables')?.textContent.includes('Nie ma obecnie wolnych stołów'));
   await page.locator('#warcaby-tables-create-toggle').click();
   await page.locator('input[name="title"]').fill('Warcaby Test');
   await page.locator('select[name="minutes"]').selectOption('5');
