@@ -74,6 +74,7 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.c
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-top .player-clock{
  display:block!important;font-variant-numeric:tabular-nums;font-weight:800!important
 }
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-top .player-clock[hidden]{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.chess-reference-actions{
  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;order:2!important;
  padding:5px 0!important;margin:0!important;gap:0!important;border:0!important;box-shadow:none!important;background:none!important
