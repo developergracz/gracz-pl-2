@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import qrcode from '../auth/assets/qrcode.mjs';
 import {checkersLossHtml,checkersLossCss,checkersLossJs} from '../auth/checkers-loss-popup.mjs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
@@ -36,5 +37,7 @@ test('QR generator is served by existing same-origin Warcaby endpoint',()=>{
  assert.equal(status,200);
  assert.match(headers['Content-Type'],/application\/javascript/);
  assert.ok(output.includes('export default qrcode;'));
+ assert.equal(output,readFileSync(new URL('../auth/assets/qrcode.mjs',import.meta.url),'utf8'),
+  'inline QR source must remain byte-for-byte identical to audited vendor file');
  assert.equal(serveCheckersConsole({method:'POST'},res,url),false);
 });
