@@ -47,7 +47,7 @@ async function takeSeat(page){
   });
  }
  await page.locator('#checkers-start-gate').waitFor({state:'visible'});
- await page.locator('#checkers-start-button').click();
+ await page.getByRole('button',{name:'Wybierz białe pionki'}).click();
  await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
 }
@@ -82,7 +82,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   await gate.waitFor({state:'visible'});
   assert.equal(await gate.getAttribute('role'),'dialog');
   assert.equal(await gate.getAttribute('aria-modal'),'true');
-  assert.match(await gate.textContent(),/Aby rozpocząć grę, usiądź do gry/);
+  assert.match(await gate.textContent(),/Wybierz kolor pionków/);
   const bbox=await page.locator('.checkers-start-card').boundingBox();
   assert.ok(Math.abs(bbox.x+bbox.width/2-viewport.width/2)<5,'prompt horizontally centered');
   assert.ok(Math.abs(bbox.y+bbox.height/2-viewport.height/2)<5,'prompt vertically centered');
@@ -93,7 +93,7 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
   const initial=await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent()));
   assert.deepEqual(initial,['07:00','07:00']);
-  await page.locator('#checkers-start-button').click();
+  await page.getByRole('button',{name:'Wybierz białe pionki'}).click();
   await gate.waitFor({state:'hidden'});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
   await page.waitForTimeout(1250);
@@ -278,8 +278,8 @@ test('Warcaby use the chess console with untouched 24 pieces, AI moves, undo, on
   assert.ok(Math.abs(view.boardWidth-view.boardHeight)<3,'board stays square');
   if(!mobile)assert.ok(view.boardX<view.dockX,'board left, controls right');
   await takeSeat(page);
-  await page.locator('#board .square').nth(17).click();
-  await page.locator('#board .square').nth(24).click();
+  await page.locator('#board .square[data-index="17"]').click();
+  await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
   assert.ok((await page.locator('#moves-list .checkers-history-move').count())>=1,'existing move history');
   const undo=page.getByRole('button',{name:'Cofnij',exact:true});
@@ -352,7 +352,7 @@ test('P0: visible checker is clickable by real cursor/touch after cold load and 
    await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
    await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'));
    await page.waitForTimeout(2400); // also cross the formerly indefinite CSS-boot mask
-   const first=page.locator('#board .square').nth(17),dest=page.locator('#board .square').nth(24);
+   const first=page.locator('#board .square[data-index="17"]'),dest=page.locator('#board .square[data-index="24"]');
    await first.scrollIntoViewIfNeeded();
    const preflight=await first.evaluate(cell=>{
     const piece=cell.querySelector('.piece'),rect=piece?.getBoundingClientRect();
@@ -399,8 +399,8 @@ test('P0: console remains playable when web-font readiness never resolves',{time
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await page.waitForFunction(()=>!document.body.classList.contains('checkers-shell-loading'),{timeout:6000});
  await takeSeat(page);
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
 });
 
@@ -422,8 +422,8 @@ test('P0: same service always offers a fully playable classic Warcaby fallback',
   css:[...document.querySelectorAll('link[rel=stylesheet]')].some(x=>x.href.includes('/konto/warcaby/styl.css?konsola=klasyczna'))
  }));
  assert.deepEqual(state,{classic:true,noBootBlock:true,boardSquares:64,pawns:24,js:true,css:true});
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:10000});
  assert.deepEqual(errors,[]);
 });
@@ -481,8 +481,8 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
    assert.equal(await page.locator('.checkers-mobile-menu').evaluate(e=>e.open),false);
   }
   await takeSeat(page);
-  await page.locator('#board .square').nth(17).locator('.piece').click();
-  await page.locator('#board .square').nth(24).click();
+  await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+  await page.locator('#board .square[data-index="24"]').click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
   // Wait for the computer's immediate reply. A new live move legitimately
   // resets a historical preview; do not race that state transition.
@@ -525,8 +525,8 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>document.querySelectorAll('#board .square').length===64);
  await takeSeat(page);
- await page.locator('#board .square').nth(17).locator('.piece').click();
- await page.locator('#board .square').nth(24).click();
+ await page.locator('#board .square[data-index="17"]').locator('.piece').click();
+ await page.locator('#board .square[data-index="24"]').click();
  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>0);
  await page.locator('#history-tab').click();
  await page.getByRole('button',{name:'Pierwsza pozycja'}).click();
