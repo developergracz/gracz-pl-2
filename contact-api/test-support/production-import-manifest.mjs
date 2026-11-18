@@ -50,6 +50,10 @@ export const productionModules=Object.freeze([
   'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
+  // Reviewed pure Warcaby draw-consent transition: no IO or persistence;
+  // randomUUID from already-approved node:crypto, full auth and version CAS
+  // stay in the existing public-identity match handler.
+  'auth/checkers-draw-agreement.mjs',
   // Presentation-only chess-style shell for Warcaby: same-origin DOM reparenting and
   // authenticated inbox metadata GET, no move engine, new routes or external hosts.
   'auth/checkers-chess-shell.mjs',
