@@ -65,7 +65,7 @@ test('Small signed-in nickname sits below the unchanged clock boxes on desktop a
   assert.deepEqual(info.labels,['Komputer','ZalogowanyGracz'],'real signed-in nickname, not placeholder');
   assert.equal(info.order,true,'name is immediately after the clock in each existing player box');
   assert.equal(info.labelSize,11,'compact name text');
-  assert.equal(info.labelColor,'rgb(255, 255, 255)','white name text');
+  assert.equal(info.labelColor,'rgb(10, 58, 61)','dark readable clock labels on the pale chess-style panel');
   assert.ok(info.fontSize>=21&&info.fontSize<=27,'clock digits are slightly smaller');
   const originalWidth=Math.min(99,Math.max(75.9,viewport.width*.066));
   const originalHeight=Math.min(33.5,Math.max(26.15,viewport.width*.021+2));
