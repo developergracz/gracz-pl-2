@@ -599,5 +599,7 @@ test('P0: forced two-step capture is draggable only from required pawn and to le
   throw Error('Forced follow-on capture failed: '+JSON.stringify({calls,debug}));
  }
  assert.deepEqual(calls,[[17,35],[35,53]],'second mandatory capture also via original API');
+ await page.waitForFunction(()=>document.querySelectorAll('.checkers-turn-token.black.is-turn').length===1);
+ assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),0,'turn outline moves to black after final capture');
  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
 });
