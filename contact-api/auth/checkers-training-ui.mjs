@@ -165,7 +165,7 @@ export function setupTraining(a){
    if(snapshots.length>20)snapshots.shift();
   }
   tick();
-  if(!finished)turnFinished(move,1);
+  if(!finished)turnFinished(move,humanSide);
  }
  function undoTraining(){
   if(mode!=='training'||finished||!snapshots.length){

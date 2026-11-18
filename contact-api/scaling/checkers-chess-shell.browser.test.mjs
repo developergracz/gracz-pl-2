@@ -222,9 +222,32 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   assert.equal(await page.locator('#board').getAttribute('data-checkers-human-side'),'2',
    'computer has completed the first legal white move and it is now the black player turn');
   await page.waitForFunction(()=>document.getElementById('clock-1')?.textContent!=='07:00',null,{timeout:7000});
-  await page.locator('#board .square[data-index="49"] .piece.black').click();
-  await page.locator('#board .square[data-index="40"]').click();
-  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="40"] .piece.black'));
+  // Regression: the previous test clicked 49→40, which is blocked by a
+  // black pawn already occupying 40. It therefore passed without a move.
+  assert.equal(await page.locator('#board .square[data-index="33"] .piece').count(),0,
+   'the actual black destination must be empty before the move');
+  assert.equal(await page.locator('#turn-label').textContent(),'Twój ruch',
+   'after the white AI opener it is the black human player turn');
+  assert.match(await page.locator('#board-help').textContent(),/grasz czarnymi pionkami/);
+  await page.locator('#board .square[data-index="40"] .piece.black').click();
+  await page.locator('#board .square[data-index="33"]').click();
+  await page.waitForFunction(()=>!!document.querySelector('#board .square[data-index="33"] .piece.black')&&
+   !document.querySelector('#board .square[data-index="40"] .piece'));
+  await page.waitForFunction(()=>Number(document.getElementById('history-count')?.textContent)>=2);
+  // Observe the black move and subsequent AI reply before opening the
+  // history preview; otherwise a new live move can close the preview.
+  await page.waitForFunction(()=>document.getElementById('turn-label')?.textContent==='Twój ruch'&&
+   Number(document.getElementById('history-count')?.textContent)>=3);
+  await page.locator('#history-tab').click();
+  await page.locator('#moves-panel').waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelectorAll('#moves-list .checkers-history-move').length>=3);
+  const blackEntry=page.locator('#moves-list .checkers-history-move').nth(1);
+  assert.match(await blackEntry.getAttribute('aria-label'),/Czarne/,
+   'second recorded move is a real black move, not an existing pawn');
+  await blackEntry.click();
+  await page.locator('.checkers-replay-board').waitFor({state:'visible'});
+  assert.match(await page.locator('.checkers-history-nav-status').textContent(),/Pozycja 2/,
+   'history replay shows the position after the actual black move');
   assert.deepEqual(errors,[]);
   await context.close();
  }
