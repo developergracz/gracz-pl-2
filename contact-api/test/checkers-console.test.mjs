@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Script} from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
+import {chooseComputerMove,initialGame,playMove} from '../auth/checkers-training-ai.mjs';
 
 function load(path,method='GET'){
  let status=0,headers={},body='';
@@ -10,6 +11,24 @@ function load(path,method='GET'){
  const served=serveCheckersConsole({method},response,new URL('https://example.com'+path));
  return {served,status,headers,body};
 }
+test('Warcaby AI moves for either color; default black engine stays backwards-compatible',()=>{
+ const initial=initialGame('warcaby');
+ const white=chooseComputerMove(initial,'normal',{computerSide:1,maxNodes:400,maxMs:70});
+ assert.ok(white&&Number.isInteger(white.from)&&Number.isInteger(white.to),'computer can open with white');
+ const started=playMove('warcaby',initial,1,white);
+ assert.equal(started.error,undefined);
+ assert.equal(started.state.turn,2);
+ assert.equal(started.state.moves,1);
+ const black=chooseComputerMove(started.state,'normal',{computerSide:2,maxNodes:400,maxMs:70});
+ assert.ok(black&&Number.isInteger(black.from)&&Number.isInteger(black.to),'computer still plays black');
+ assert.equal(playMove('warcaby',started.state,2,black).error,undefined);
+ assert.equal(chooseComputerMove(initial,'normal'),null,'old default never plays white without the explicit side');
+ assert.ok(chooseComputerMove(started.state,'normal'),'old default still plays black');
+ const view=load('/konto/warcaby/bot.mjs').body;
+ assert.ok(view.includes('options.computerSide===1?1:2'),'served bot matches the real dual-side engine');
+ const ctrl=load('/konto/warcaby/training-ui.mjs').body;
+ assert.ok(ctrl.includes('{computerSide:computerSide()}'),'training forwards the selected AI color');
+});
 test('premium checkers console serves isolated assets with strict CSP',()=>{
  const page=load('/konto/warcaby/');
  assert.equal(page.served,true);
