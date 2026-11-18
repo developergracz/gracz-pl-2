@@ -143,7 +143,7 @@ test('mandatory capture warning appears on another own piece, not the capturing 
  hover(event(17));assert.equal(warnings,0,'correct capturing piece is silent');
  hover(event(26));assert.equal(warnings,0,'opponent piece is silent');
  hover(event(40));assert.equal(warnings,1,'hovering other own piece warns');
- assert.ok(js.includes("if(!reopen){if(!captureAlertActive)notice.hidden=true;return}"));
+ assert.ok(js.includes("if(!reopen&&!captureAlertActive){notice.hidden=true;return}"),'notice persists while capture is required');
  assert.ok(js.includes("captureAlertActive&&sources.includes(i)"));
  assert.ok(css.includes('animation:checkers-capture-red-cycle 4500ms'));
  assert.ok(css.includes('@keyframes checkers-capture-red-cycle'));
