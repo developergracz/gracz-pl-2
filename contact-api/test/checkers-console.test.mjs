@@ -150,7 +150,7 @@ test('checkers loss dialog is the only new visual surface and is linked to actua
  assert.match(page.body,/role="dialog" aria-modal="true"/);
  assert.match(page.body,/Zagraj z innym graczem/);
  assert.match(script.body,/gracz:warcaby:position/);
- assert.match(script.body,/winner:s.winner,players:current.players/);
+ assert.match(script.body,/winner:s.winner,turn:s.turn,playable:current.playable,players:current.players/);
  assert.match(script.body,/detail.winner===detail.player/);
  assert.match(script.body,/if\(!detail\|\|!detail.winner\)/);
  assert.match(script.body,/social\/challenges/);
