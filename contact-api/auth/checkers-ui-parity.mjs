@@ -27,6 +27,7 @@ body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
  html:root.checkers-shell-loading,
  body.warcaby-console.chess-console.cc-owner,
  body.warcaby-console.chess-console.cc-owner.checkers-shell-loading,
+ body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading),
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus),
  body.warcaby-console.chess-console.cc-owner #game.game-focus,
  body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea,
