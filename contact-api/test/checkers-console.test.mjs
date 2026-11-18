@@ -272,7 +272,8 @@ test('Seat-to-play gate exists only in modern Warcaby and does not start clocks 
  assert.ok(js.body.includes("board.addEventListener('pointerover',showSeatGate)"));
  assert.ok(js.body.includes("board.addEventListener('pointerover',showMandatoryCaptureOnHover)"),'mandatory capture announced on hover');
  assert.ok(js.body.includes("board.addEventListener('focusin',showMandatoryCaptureOnHover)"),'keyboard focus announces mandatory capture');
- assert.ok(js.body.includes("syncCaptureNotice(true,d.from)"),'invalid drop warns on first attempt');
+ assert.ok(js.body.includes("if(sources.length&&(piece===current.player||piece===current.player+2)&&!sources.includes(from))syncCaptureNotice(true)"),'only another own non-capturing piece triggers the warning');
+ assert.ok(!js.body.includes("syncCaptureNotice(true,d.from)"),'invalid drop does not raise an unsolicited warning');
  assert.ok(js.body.includes("seatPending=false;seatModal.hidden=true"));
  assert.ok(js.body.includes("trainingController?.activateSeat?.(side)"),'user chooses actual engine side, not CSS-only skin');
  assert.ok(js.body.includes("chatSignature='',rotated=true"),'initial board places white at bottom');
