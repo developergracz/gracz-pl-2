@@ -26,18 +26,23 @@ export function setupTraining(a){
   // White moves first; shared Gomoku clock-1 is black, clock-2 is white.
   for(const [player,id] of [[1,'clock-2'],[2,'clock-1']]){
    // Timed online matches use only authoritative server time; an untimed match shows --:--.
-   $(id).hidden=false;
-   $(id).title=training||timedOnline?'Pozostały czas':onlinePreviewMinutes>0?
+   const clock=$(id);clock.hidden=false;
+   clock.title=training||timedOnline?'Pozostały czas':onlinePreviewMinutes>0?
     'Ustawiony czas przed partią — odliczanie jeszcze nie trwa':'Bez limitu czasu';
-   if(training)$(id).textContent=format(clocks[player]);
+   let remainingMs=null;
+   if(training)remainingMs=clocks[player];
    else if(timedOnline){
-    let ms=online.remaining[player-1];
+    remainingMs=online.remaining[player-1];
     if(!game().winner&&game().turn===player&&online.ready?.every(Boolean)&&online.since){
      const since=Date.parse(online.since);
-     if(Number.isFinite(since))ms-=Math.max(0,Date.now()-since);
+     if(Number.isFinite(since))remainingMs-=Math.max(0,Date.now()-since);
     }
-    $(id).textContent=format(ms);
-   }else $(id).textContent=onlinePreviewMinutes>0?format(onlinePreviewMinutes*60000):'--:--';
+   }
+   clock.textContent=remainingMs!==null?format(remainingMs):
+    onlinePreviewMinutes>0?format(onlinePreviewMinutes*60000):'--:--';
+   // Red digits only for a genuinely running timed game with 30 seconds or less.
+   clock.classList.toggle('checkers-clock-critical',
+    Number.isFinite(remainingMs)&&remainingMs<=30000);
   }
  }
  function readStats(){

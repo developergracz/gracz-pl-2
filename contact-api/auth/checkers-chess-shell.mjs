@@ -1,5 +1,23 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
+/* Keep the existing capture message in the chat panel rather than over the board. */
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice:not([hidden]){
+ position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+ transform:none!important;width:calc(100% - 12px)!important;max-width:none!important;
+ z-index:auto!important;box-sizing:border-box!important;flex:0 0 auto!important;
+ margin:4px 6px 10px!important;padding:10px!important;
+ background:#fff0ee!important;color:#67232e!important;
+ border:1px solid #ebacb4!important;box-shadow:none!important;
+ pointer-events:auto!important;
+}
+body.warcaby-console.chess-console.cc-owner #chat-panel #checkers-capture-notice .capture-notice-copy p{
+ color:#67232e!important;
+}
+/* Only the clock numerals change color for the final 30 seconds. */
+body.warcaby-console #clock-1.checkers-clock-critical,
+body.warcaby-console #clock-2.checkers-clock-critical{
+ color:#d12438!important;
+}
 /* Seat-to-play dialog is independent of board and clock geometry. */
 body.warcaby-console .checkers-newgame-blocker[hidden]{display:none!important}
 body.warcaby-console .checkers-newgame-blocker{
