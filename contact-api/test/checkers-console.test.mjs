@@ -183,3 +183,34 @@ test('Warcaby retain their original engine and controls inside the owner-approve
  assert.doesNotMatch(script.body,/\/konto\/szachy\/rules\.mjs/,'never run chess rules in Warcaby');
  assert.equal(page.headers['Content-Security-Policy'].includes("script-src 'self'"),true);
 });
+
+test('Warcaby owner parity: recorded history drives replay, coordinates and mobile chrome without changing the engine',()=>{
+ const page=load('/konto/warcaby/');
+ const script=load('/konto/warcaby/app.js');
+ const style=load('/konto/warcaby/styl.css');
+ assert.equal(page.status,200);
+ assert.equal(script.status,200);
+ assert.equal(style.status,200);
+ assert.doesNotThrow(()=>new Script(script.body),'controller and presentation scripts must parse');
+ assert.ok(script.body.includes("new CustomEvent('gracz:warcaby:history'"),'live history notification');
+ assert.ok(script.body.includes("board.dataset.checkersRotated=rotated?'true':'false'"));
+ assert.ok(script.body.includes('checkers-coordinate-rank'));
+ assert.ok(script.body.includes('checkers-coordinate-file'));
+ assert.ok(script.body.includes('checkers-mobile-heading'));
+ assert.ok(script.body.includes('checkers-history-turn'));
+ assert.ok(script.body.includes("import('/konto/warcaby/rules.mjs')"),'replay uses original checkers rules');
+ assert.ok(script.body.includes("mod.playMove('warcaby'"),'recorded moves replayed with unchanged rules');
+ assert.ok(script.body.includes("frame?.append(replay)"),'preview does not replace real board');
+ assert.ok(script.body.includes("replay.hidden=true"),'live play remains available');
+ assert.ok(script.body.includes("data.checkersRotated")===false,'no alternate game state introduced');
+ assert.ok(style.body.includes('background:#f1f6f4!important'),'clean light game page');
+ assert.ok(style.body.includes('checkers-history-columns'));
+ assert.ok(style.body.includes('checkers-history-nav'));
+ assert.ok(style.body.includes('checkers-mobile-menu-panel'));
+ assert.ok(style.body.includes('pointer-events:none!important'),'coordinates never swallow gameplay clicks');
+ const classic=load('/konto/warcaby/?konsola=klasyczna');
+ assert.equal(classic.status,200);
+ assert.doesNotMatch(classic.body,/chess-console cc-owner/,'classic URL remains original');
+ const classicJs=load('/konto/warcaby/app.js?konsola=klasyczna');
+ assert.doesNotMatch(classicJs.body,/checkers-history-nav/,'classic script remains unchanged');
+});

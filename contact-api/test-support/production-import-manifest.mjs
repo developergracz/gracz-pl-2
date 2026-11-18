@@ -53,6 +53,8 @@ export const productionModules=Object.freeze([
   // Presentation-only chess-style shell for Warcaby: same-origin DOM reparenting and
   // authenticated inbox metadata GET, no move engine, new routes or external hosts.
   'auth/checkers-chess-shell.mjs',
+  // Local-only DOM parity for checkers (mobile header, annotations, move replay).
+  'auth/checkers-ui-parity.mjs',
   // Isolated Warcaby loss-only dialog: scoped CSS and browser UI, existing authenticated
   // social/challenges and friends/presence APIs; no new routes or privileged data.
   'auth/checkers-loss-popup.mjs',
