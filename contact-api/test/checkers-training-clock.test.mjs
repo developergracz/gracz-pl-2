@@ -10,7 +10,7 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
    elements.set(id,{
     value:id==='training-time'?'7':id==='training-increment'?'0':id==='ai-level'?'normal':'',
     textContent:'',hidden:false,disabled:false,style:{},dataset:{},selectedOptions:[{textContent:'Normalny'}],
-    classList:{toggle(){}},addEventListener(event,fn){if(event==='change')this.onChange=fn},setAttribute(){},
+    classList:{classes:new Set(),toggle(name,enabled){if(enabled)this.classes.add(name);else this.classes.delete(name)},contains(name){return this.classes.has(name)}},addEventListener(event,fn){if(event==='change')this.onChange=fn},setAttribute(){},
     click(){},focus(){},append(){},replaceChildren(){},
    });
   }
@@ -42,6 +42,19 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  assert.equal($('clock-1').textContent,'10:00','online clock previews changed invite limit');
  $('create-room-time').value='0';$('create-room-time').onChange();
  assert.equal($('clock-2').textContent,'--:--','untimed invitation has no countdown');
+ assert.equal($('clock-2').classList.contains('checkers-clock-critical'),false);
+ game={state:{clock:{remaining:[30000,31000],ready:[false,false],since:null},turn:1,winner:0}};
+ clockTick();
+ assert.equal($('clock-2').textContent,'00:30');
+ assert.equal($('clock-2').classList.contains('checkers-clock-critical'),true,
+  'white time turns red at exactly thirty seconds online');
+ assert.equal($('clock-1').classList.contains('checkers-clock-critical'),false,
+  'black still has 31 seconds online');
+ game.state.clock.remaining=[31000,29000];clockTick();
+ assert.equal($('clock-2').classList.contains('checkers-clock-critical'),false);
+ assert.equal($('clock-1').classList.contains('checkers-clock-critical'),true,
+  'black time is red with 29 seconds');
+ game=null;
  training.setMode('training');
  assert.equal($('clock-2').textContent,'07:00');
  assert.equal($('clock-1').textContent,'07:00');
@@ -60,6 +73,11 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  now=28000;clockTick();
  assert.equal($('clock-2').textContent,'07:00');
  assert.equal($('clock-1').textContent,'06:57','black clock must now run');
+ now=415000;clockTick();
+ assert.equal($('clock-1').textContent,'00:30');
+ assert.equal($('clock-1').classList.contains('checkers-clock-critical'),true,
+  'training black clock turns red with 30 seconds left');
+ assert.equal($('clock-2').classList.contains('checkers-clock-critical'),false);
  training.undoTraining();
  assert.equal(game.state.turn,1);
  assert.equal($('clock-1').textContent,'07:00','undo restores computer time');
