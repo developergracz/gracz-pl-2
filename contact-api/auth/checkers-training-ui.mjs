@@ -18,23 +18,27 @@ export function setupTraining(a){
   return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
  }
  function displayClocks(){
-  const online=mode==='online'?game()?.clock:null;
-  const timedOnline=online&&Array.isArray(online.remaining)&&online.remaining.length===2;
+  const state=mode==='online'?game():null;
+  const online=state?.clock;
+  const timedOnline=!!(online&&Array.isArray(online.remaining)&&online.remaining.length===2);
   const training=mode==='training'&&Number($('training-time').value)>0;
+  const waiting=mode==='online'&&!state;
+  const previewMinutes=waiting?Math.max(0,Number($('create-room-time')?.value)||0):0;
   // White moves first; shared Gomoku clock-1 is black, clock-2 is white.
   for(const [player,id] of [[1,'clock-2'],[2,'clock-1']]){
-   // The clocks remain visible; a match without a time control shows --:--.
-   $(id).hidden=false;
-   $(id).title=training||timedOnline?'Pozostały czas':'Bez limitu czasu';
-   if(training)$(id).textContent=format(clocks[player]);
+   const clock=$(id);
+   clock.hidden=false;
+   clock.title=training||timedOnline?'Pozostały czas':previewMinutes>0?'Wybrany czas partii — odliczanie rozpocznie się po rozpoczęciu gry':'Gra bez limitu czasu';
+   if(training)clock.textContent=format(clocks[player]);
    else if(timedOnline){
     let ms=online.remaining[player-1];
-    if(!game().winner&&game().turn===player&&online.ready?.every(Boolean)&&online.since){
+    if(!state.winner&&state.turn===player&&online.ready?.every(Boolean)&&online.since){
      const since=Date.parse(online.since);
      if(Number.isFinite(since))ms-=Math.max(0,Date.now()-since);
     }
-    $(id).textContent=format(ms);
-   }else $(id).textContent='--:--';
+    clock.textContent=format(ms);
+   }else if(previewMinutes>0)clock.textContent=format(previewMinutes*60000);
+   else clock.textContent='∞';
   }
  }
  function readStats(){
@@ -230,6 +234,7 @@ export function setupTraining(a){
  function updateHint(){$('ai-hint').textContent=hints[$('ai-level').value]||hints.normal}
  $('training-mode').addEventListener('click',()=>setMode('training'));
  $('online-mode').addEventListener('click',()=>setMode('online'));
+ $('create-room-time').addEventListener('change',()=>{if(mode==='online'&&!game())displayClocks()});
  $('restart').addEventListener('click',()=>void startTraining());
  $('training-undo').addEventListener('click',undoTraining);
  $('training-hint').addEventListener('click',hint);
