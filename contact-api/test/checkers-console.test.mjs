@@ -164,3 +164,22 @@ test('checkers loss dialog is the only new visual surface and is linked to actua
  assert.doesNotMatch(page.body,/Szachista_PL|Mistrz_Andrzej|Stół #1284/,'no invented opponents or rooms');
  assert.doesNotThrow(()=>new Script(script.body));
 });
+
+test('Warcaby retain their original engine and controls inside the owner-approved chess console',()=>{
+ const page=load('/konto/warcaby/'),style=load('/konto/warcaby/styl.css'),script=load('/konto/warcaby/app.js');
+ assert.match(page.body,/<html lang="pl" class="checkers-shell-loading">/);
+ assert.match(page.body,/class="warcaby-console chess-console cc-owner checkers-shell-loading"/);
+ assert.match(page.body,/class="board checkers-grid"/,'the original 8x8 board element is not replaced');
+ assert.match(page.body,/id="training-undo"/);
+ assert.match(page.body,/id="training-hint"/);
+ assert.match(page.body,/id="create-room-friend"/);
+ assert.match(style.body,/checkers-owner-mode/);
+ assert.match(style.body,/checkers-shell-loading/);
+ assert.match(script.body,/gracz:warcaby:position/);
+ assert.match(script.body,/checkers-shell-loading/);
+ assert.match(script.body,/training-undo/);
+ assert.match(script.body,/create-room-friend/);
+ assert.match(script.body,/board.querySelectorAll\('\.square'\)\.length===64/);
+ assert.doesNotMatch(script.body,/\/konto\/szachy\/rules\.mjs/,'never run chess rules in Warcaby');
+ assert.equal(page.headers['Content-Security-Policy'].includes("script-src 'self'"),true);
+});

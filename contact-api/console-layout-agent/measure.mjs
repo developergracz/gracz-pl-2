@@ -120,6 +120,38 @@ async function snapshot(page) {
   return result;
 }
 function compare(base,target,game,viewport){
+  // Warcaby now use the owner-approved chess CONSOLE, while their board, state and
+  // controls remain checkers-specific. The former Gomoku 1:1 geometry is not
+  // applicable: verify actual Warcaby board + dock coordinates in Chromium.
+  if(game==='warcaby'){
+    const board=target.parts['game-board']?.rect;
+    const frame=target.parts['board-frame']?.rect;
+    const dock=target.parts['chat-dock']?.rect;
+    const mobile=Number(viewport.split('x')[0])<=800;
+    const issues=[];
+    const boardSquare=!!board&&board.width>=80&&board.height>=80&&
+      Math.abs(board.width-board.height)<=2;
+    if(!boardSquare)issues.push('Warcaby: plansza musi być widoczna i kwadratowa');
+    const boardContained=!!frame&&!!board&&
+      board.x>=frame.x-2&&board.y>=frame.y-2&&
+      board.x+board.width<=frame.x+frame.width+2&&
+      board.y+board.height<=frame.y+frame.height+2;
+    if(!boardContained)issues.push('Warcaby: plansza wychodzi poza swój obszar');
+    if(!dock||dock.width<180||dock.height<100)issues.push('Warcaby: brak widocznego panelu');
+    else if(board){
+      if(!mobile&&board.x+board.width>dock.x+3)
+        issues.push('Warcaby: panel nachodzi na planszę');
+      if(mobile&&dock.y<board.y+board.height-3)
+        issues.push('Warcaby: panel musi być poniżej planszy');
+    }
+    if(target.documentOverflow)issues.push('Warcaby: poziomy overflow strony');
+    return {game,viewport,contract:'owner-approved chess-style Warcaby console',
+      differences:[],missing:[],missingInReference:[],criticalDifferences:issues.length,
+      contractIssues:issues,documentOverflow:target.documentOverflow,
+      documentScrollWidth:target.documentScrollWidth,
+      horizontalOverflowElements:target.horizontalOverflowElements,
+      boardContained,boardSquare};
+  }
   if(game==='szachy')return {
     game,viewport,contract:'owner-approved chess layout',differences:[],missing:[],missingInReference:[],
     criticalDifferences:target.chess.issues.length,contractIssues:target.chess.issues,
@@ -165,11 +197,11 @@ function markdown(report) {
   const text=[
     '# GRACZ.PL — agent geometrii konsol (Gomoku → Warcaby / Szachy)',
     '',
-    '- Warcaby: referencja **renderowane Gomoku**. Szachy: osobny kontrakt zaakceptowanego układu PR #800 (duża plansza po lewej, ustawienia i czat po prawej; na telefonie panel poniżej).',
+    '- Warcaby i Szachy: zaakceptowany układ konsoli (duża plansza po lewej, panel po prawej; na telefonie panel poniżej). Silnik Warcabów i jego pierwotne sterowanie są weryfikowane osobno testem Chromium.',
     '- Źródło: '+(report.source==='local'?'lokalne strony generowane bezpośrednio z aktualnego kodu':'zewnętrzny adres '+report.baseUrl)+'.',
-    '- Tolerancja: **±'+TOLERANCE+' px** dla wspólnego układu konsoli. Wewnętrzna rama/plansza są diagnostyczne: plansze 8×8 muszą być kwadratowe i mieścić się w obszarze Gomoku, który bywa prostokątny.',
+    '- Tolerancja: **±'+TOLERANCE+' px**. Plansze Warcabów i Szachów 8×8 muszą być kwadratowe i mieścić się w swoim obszarze, nie nachodzić na panel i nie powodować poziomego przewijania.',
     '- Pomiary w CSS-pikselach są odczytywane z getBoundingClientRect(), a nie zgadywane z wartości CSS.',
-    '- Mobile (≤800px): układ pionowy dostosowuje wysokość do liczby ustawień danej gry. Krytyczne porównanie 1:1 obejmuje x i szerokość wspólnych elementów; różnice y i wysokości raportujemy diagnostycznie bez ukrywania funkcji.',
+    '- Mobile (≤800px): układ pionowy, panel Warcabów poniżej planszy; zachowany własny silnik i interakcje Warcabów.',
     '',
     '| Okno | Gra | Odchylenia wspólnej geometrii | Odchylenia łącznie | Poziomy overflow | Plansza w obszarze | Kwadratowa |',
     '|---|---|---:|---:|---|---|---|'
@@ -195,10 +227,10 @@ function markdown(report) {
     }
   }
   text.push('','## Mandat korygujący','',
-    '1. Warcaby zachowują geometrię Gomoku; Szachy zachowują kontrakt PR #800, widoczne zegary, dostępne kontrolki, brak kolizji i stabilność podczas interakcji.',
+    '1. Warcaby i Szachy zachowują konsolę zaakceptowaną przez Ownera: kwadratowa plansza, panel obok lub poniżej, widoczne zegary i brak kolizji.',
     '2. Koryguj wyłącznie CSS/strukturę wizualną Warcabów i Szachów; nie kopiuj planszy 15×15, nie zmieniaj zasad, AI, czatu, autoryzacji ani protokołów.',
     '3. Jeśli odchylenie wynika z ukrycia elementu przez funkcję gry, udokumentuj wyjątek; nie dodawaj fikcyjnych elementów.',
-    '4. Po poprawkach uruchom agenta ponownie. Kryterium: 0 odchyleń wspólnej geometrii > 2 px, brak poziomego overflow, kwadratowa plansza 8×8 w granicach obszaru gry. Rama nie musi być identycznie prostokątna jak w Gomoku.',
+    '4. Po poprawkach uruchom agenta ponownie. Kryterium: brak kolizji z prawym panelem, brak poziomego overflow, kwadratowa plansza 8×8 i działające interakcje zweryfikowane dedykowanym testem przeglądarkowym.',
     '5. Do raportu dołącz porównawcze zrzuty ekranu; różne treści plansz są zamierzone.',
     ''
   );
@@ -237,9 +269,13 @@ function dynamicMarkdown(dynamic){
 }
 async function measureDynamic(browser,base,viewports){
   const runs=[];let shots=0;
+  // Warcaby interactions are exercised by checkers-chess-shell.browser.test.mjs
+  // against the new chess-style UI. Gomoku parity scenarios target the old
+  // left-sidebar geometry and would assert intentionally removed elements.
+  const scenarioGames=['gomoku','szachy'];
   for(const [width,height] of viewports){
     const viewport={width,height},label=width+'x'+height,mobile=width<=800;
-    const records=await Promise.all(GAMES.map(async game=>{
+    const records=await Promise.all(scenarioGames.map(async game=>{
       const context=await browser.newContext({viewport,deviceScaleFactor:1,locale:'pl-PL',reducedMotion:'reduce',screen:{width:Math.max(width,1920),height:Math.max(height,1200)}});
       const page=await context.newPage();
       try{
@@ -257,8 +293,8 @@ async function measureDynamic(browser,base,viewports){
         }});
       } finally { await context.close(); }
     }));
-    const byGame=Object.fromEntries(GAMES.map((g,i)=>[g,records[i]]));
-    for(const game of GAMES){
+    const byGame=Object.fromEntries(scenarioGames.map((g,i)=>[g,records[i]]));
+    for(const game of scenarioGames){
       const own=byGame[game],ref=game==='gomoku'?null:byGame.gomoku;
       const steps=own.steps.map((record,i)=>analyseStep({
         step:record.step,viewport:label,game,mobile,records:record,
@@ -403,7 +439,7 @@ async function main(){
       generatedAt:new Date().toISOString(),
       source:externalBase?'external':'local',
       baseUrl:externalBase||'local fixture',
-      reference:'Gomoku (Warcaby); owner-approved PR #800 (Szachy)',tolerancePx:TOLERANCE,
+      reference:'Gomoku; owner-approved chess-style console (Warcaby + Szachy)',tolerancePx:TOLERANCE,
       measurements,comparisons,focusMeasurements,boardOnlyAudits,dynamic
     };
     await writeFile(path.join(outDir,'measurements.json'),JSON.stringify(report,null,2)+'\n');

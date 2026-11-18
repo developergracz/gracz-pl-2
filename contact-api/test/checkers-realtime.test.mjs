@@ -28,7 +28,14 @@ function setup(){
   setInterval:(fn,ms)=>intervals.push({fn,ms}),setTimeout:()=>1,clearTimeout(){},
   fetch:async path=>{calls.push(path);return {ok:true,json:async()=>({ok:true,match:structuredClone(match),messages:[],challenges:[]})};}};
  let js;serveCheckersConsole({method:'GET'},{writeHead(){},end(x){js=x;}},new URL('https://example.test/konto/warcaby/app.js'));
- js=js.replace(/\}\)\(\);\s*$/,';globalThis.currentMatch=()=>current;})();');
+ // Inject the observation hook into the ORIGINAL Warcaby controller, not the
+ // independent chess-style presentation adapter appended after it.
+ const adapterMarker='/* Presentation-only chess console adapter';
+ const adapterAt=js.indexOf(adapterMarker);
+ assert.ok(adapterAt>0,'the existing Warcaby controller precedes presentation code');
+ const controller=js.slice(0,adapterAt);
+ assert.match(controller,/\}\)\(\);\s*$/,'original controller footer found');
+ js=controller.replace(/\}\)\(\);\s*$/,';globalThis.currentMatch=()=>current;})();\n')+js.slice(adapterAt);
  new Script(js).runInNewContext(context);
  return {context,document,events,intervals,calls,sockets,match};
 }
