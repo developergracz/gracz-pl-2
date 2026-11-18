@@ -466,11 +466,11 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
    if(mobile){
     const cdp=await context.newCDPSession(page);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
-    const touchCaptured=await page.evaluate(()=>{
+    const touchCaptured=await page.evaluate(from=>{
      const probe=window.__checkersPointerProbe||[];
      const down=[...probe].reverse().find(item=>item.type==='pointerdown');
      return !!down&&!!document.querySelector('#board .square[data-index="'+from+'"]')?.hasPointerCapture(down.pointerId);
-    });
+    },from);
     assert.equal(touchCaptured,true,'touch capture begins on the source square, before movement');
     for(let n=1;n<=8;n++){
      await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',
@@ -480,11 +480,11 @@ test('P0: real mouse/touch drag onto highlighted destination, invalid snapback a
     await cdp.detach();
    }else{
     await page.mouse.move(x,y);await page.mouse.down();
-    const mouseCaptured=await page.evaluate(()=>{
+    const mouseCaptured=await page.evaluate(from=>{
      const probe=window.__checkersPointerProbe||[];
      const down=[...probe].reverse().find(item=>item.type==='pointerdown');
      return !!down&&!!document.querySelector('#board .square[data-index="'+from+'"]')?.hasPointerCapture(down.pointerId);
-    });
+    },from);
     assert.equal(mouseCaptured,true,'mouse capture begins on the source square, before movement');
     await page.mouse.move(u,v,{steps:12});await page.mouse.up();
    }
