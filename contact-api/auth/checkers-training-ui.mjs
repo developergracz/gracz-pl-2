@@ -137,7 +137,8 @@ export function setupTraining(a){
   const minutes=Number($('training-time').value)||0;
   clocks={1:minutes*60000,2:minutes*60000};
   const state={...initialGame('warcaby'),history:[]};
-  a.setCurrent({type:'training',state,players:['Ty','Komputer'],player:1,playable:true});
+  a.resetSeatGate?.();
+  a.setCurrent({type:'training',state,players:['Ty','Komputer'],player:1,playable:!a.isSeatPending?.()});
   a.setSelected(null);lastTick=performance.now();
   a.renderBoard();displayClocks();renderNotes();updateStats();
   $('chat-tab').click();
