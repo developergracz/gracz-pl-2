@@ -1,6 +1,16 @@
 export const checkersChessShellCss=String.raw`
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Seat-to-play dialog is independent of board and clock geometry. */
+body.warcaby-console.chess-console.cc-owner .checkers-color-confirmation[hidden]{display:none!important}
+body.warcaby-console.chess-console.cc-owner .checkers-color-confirmation:not([hidden]){
+ position:fixed;z-index:100011;left:50%;bottom:clamp(20px,6vh,60px);
+ transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);
+ box-sizing:border-box;padding:11px 20px;border-radius:12px;border:1px solid #a5d6d1;
+ box-shadow:0 8px 25px #001e233d;background:#075c5f;color:white;
+ font:700 14px/1.4 system-ui,-apple-system,'Segoe UI',sans-serif;
+ pointer-events:none;text-align:center
+}
+
 body.warcaby-console.chess-console.cc-owner .checkers-start-colors{
  display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:12px
 }
