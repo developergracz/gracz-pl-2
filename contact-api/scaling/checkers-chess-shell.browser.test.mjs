@@ -246,8 +246,10 @@ test('Owner parity: chess-dark background, correctly oriented coordinates, chess
    const game=document.getElementById('game'),body=document.body,area=game.querySelector('.boardarea');
    const mobileBar=area.querySelector('.checkers-mobile-heading');
    return {
+    root:getComputedStyle(document.documentElement).backgroundColor,
     body:getComputedStyle(body).backgroundColor,
     game:getComputedStyle(game).backgroundColor,
+    boardarea:getComputedStyle(area).backgroundColor,
     shadow:getComputedStyle(game).boxShadow,
     mobileBar:mobileBar&&getComputedStyle(mobileBar).display!=='none',
     header:mobileBar?.textContent?.includes('GRACZ.PL')&&mobileBar?.textContent?.includes('Warcaby'),
@@ -255,8 +257,10 @@ test('Owner parity: chess-dark background, correctly oriented coordinates, chess
     viewport:document.documentElement.clientWidth
    };
   });
-  assert.equal(visuals.body,'rgb(3, 21, 25)','same midnight body as chess');
-  assert.equal(visuals.game,'rgb(0, 55, 57)','same dark game canvas as chess');
+  assert.equal(visuals.root,'rgb(0, 0, 0)','document root is black');
+  assert.equal(visuals.body,'rgb(0, 0, 0)','Owner requested pure black page');
+  assert.equal(visuals.boardarea,'rgb(0, 0, 0)','no green board surroundings');
+  assert.equal(visuals.game,'rgb(0, 0, 0)','Owner requested pure black game canvas');
   assert.equal(visuals.shadow,'none','no surrounding game frame shadow');
   assert.equal(visuals.mobileBar,mobile,'mobile navigation bar only on phones');
   assert.equal(visuals.header,true);
@@ -271,6 +275,10 @@ test('Owner parity: chess-dark background, correctly oriented coordinates, chess
   await page.locator('#board .square').nth(17).locator('.piece').click();
   await page.locator('#board .square').nth(24).click();
   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+  // Wait for the computer's immediate reply. A new live move legitimately
+  // resets a historical preview; do not race that state transition.
+  await page.waitForFunction(()=>document.getElementById('turn-label')?.textContent==='Twój ruch'&&
+    Number(document.getElementById('history-count')?.textContent)>=2,{timeout:18000});
   await page.locator('#history-tab').click();
   await page.locator('#moves-panel').waitFor({state:'visible'});
   await page.waitForFunction(()=>document.querySelectorAll('#moves-list .checkers-history-move').length>=1);
@@ -348,7 +356,7 @@ test('Warcaby chat uses content-sized bubbles and no red focus border on desktop
    const cr=container.getBoundingClientRect(),a=mine.getBoundingClientRect(),b=long.getBoundingClientRect();
    return {
     container:cr.width,short:a.width,long:b.width,
-    ownRightGap:Math.round(cr.right-a.right),otherLeftGap:Math.round(b.left-cr.left),
+    ownLeftGap:Math.round(a.left-cr.left),otherLeftGap:Math.round(b.left-cr.left),
     wraps:b.height>a.height,
     align:getComputedStyle(mine).alignSelf,
     overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth
@@ -358,9 +366,9 @@ test('Warcaby chat uses content-sized bubbles and no red focus border on desktop
   assert.ok(bubbles.short<bubbles.container*.72,'short text must not fill the row: '+JSON.stringify(bubbles));
   assert.ok(bubbles.long<=bubbles.container*.9,'long messages are bounded');
   assert.equal(bubbles.wraps,true,'long text must wrap');
-  assert.ok(bubbles.ownRightGap<25,'own bubble aligns to the right');
+  assert.ok(bubbles.ownLeftGap<25,'own bubble aligns to the left');
   assert.ok(bubbles.otherLeftGap<25,'opponent bubble aligns to the left');
-  assert.equal(bubbles.align,'flex-end');
+  assert.equal(bubbles.align,'flex-start');
   assert.ok(bubbles.overflow<=2,'chat must not cause horizontal page scroll');
   const focus=await page.locator('#chat-input').evaluate(input=>{
    input.focus();
@@ -371,9 +379,147 @@ test('Warcaby chat uses content-sized bubbles and no red focus border on desktop
   assert.equal(focus.focused,true,'input remains keyboard accessible');
   assert.equal(focus.outline,'none','no red or browser-default focus frame');
   assert.equal(focus.shadow,'none','no focus halo');
-  assert.equal(focus.border,'rgb(79, 131, 138)','focus border must use existing neutral teal');
-  assert.equal(focus.background,'rgb(9, 45, 52)','keyboard focus uses a subtle background cue');
+  assert.equal(focus.border,'rgb(165, 181, 181)','input focus border is neutral');
+  assert.equal(focus.background,'rgb(255, 255, 255)','input stays white when focused');
   assert.deepEqual(errors,[],'no JavaScript errors');
   await context.close();
  }
+});
+
+test('P0: real mouse/touch drag onto highlighted destination, invalid snapback and old click controls',{timeout:95000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const mobile=viewport.width<=800;
+  const context=await browser.newContext({viewport,isMobile:mobile,hasTouch:mobile});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  const drag=async(from,to)=>{
+   const source=page.locator('#board .square[data-index="'+from+'"] .piece');
+   const target=page.locator('#board .square[data-index="'+to+'"]');
+   await source.scrollIntoViewIfNeeded();
+   const a=await source.boundingBox(),b=await target.boundingBox();
+   assert.ok(a&&b,'source piece and destination square are visible');
+   const x=a.x+a.width/2,y=a.y+a.height/2,u=b.x+b.width/2,v=b.y+b.height/2;
+   if(mobile){
+    const cdp=await context.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y,id:1}]});
+    for(let n=1;n<=8;n++){
+     await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',
+      touchPoints:[{x:x+(u-x)*n/8,y:y+(v-y)*n/8,id:1}]});
+    }
+    await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await cdp.detach();
+   }else{
+    await page.mouse.move(x,y);await page.mouse.down();
+    await page.mouse.move(u,v,{steps:12});await page.mouse.up();
+   }
+  };
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length===12);
+  await page.evaluate(()=>{
+   window.__checkersPointerProbe=[];
+   const target=document.getElementById('board');
+   for(const type of ['pointerdown','pointermove','pointerup','lostpointercapture','click']){
+    target.addEventListener(type,e=>{
+     const a=window.__checkersPointerProbe;if(a.length>70)return;
+     const at=document.elementFromPoint(e.clientX??0,e.clientY??0);
+     a.push({type,pointerId:e.pointerId,from:e.target?.className?.baseVal||e.target?.className,
+      physical:at?.closest?.('.square[data-index]')?.dataset.index||null,
+      ghost:document.querySelectorAll('.checkers-drag-ghost').length,
+      targets:document.querySelectorAll('.checkers-drag-target').length});
+    },true);
+   }
+  });
+  assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
+  await drag(17,19); // Illegal sideways drag, source must snap back.
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0');
+  assert.equal(await page.locator('#board .square[data-index="17"] .piece').count(),1);
+  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
+  await drag(17,24); // Real legal white opening.
+  try{
+   await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0',{timeout:6500});
+  }catch(err){
+   const snapshot=await page.evaluate(()=>({
+    state:document.getElementById('move-count')?.textContent,
+    status:document.getElementById('game-state')?.textContent,
+    notices:document.getElementById('checkers-capture-notice')?.hidden,
+    start:document.querySelector('#board .square[data-index="17"]')?.className,
+    target:document.querySelector('#board .square[data-index="24"]')?.className,
+    ghostCount:document.querySelectorAll('.checkers-drag-ghost').length,
+    highlighted:document.querySelectorAll('#board .square.possible').length,
+    pointerProbe:window.__checkersPointerProbe
+   }));
+   throw Error('Legal mouse/touch drag failed: '+JSON.stringify({viewport,snapshot,errors}));
+  }
+  assert.ok(Number(await page.locator('#history-count').textContent())>=1);
+  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
+  assert.equal(await page.locator('#board .square').count(),64);
+  await page.locator('#restart').evaluate(el=>el.click());
+  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent==='Ruch 0');
+  await page.locator('#board .square[data-index="17"]').click();
+  await page.locator('#board .square[data-index="24"]').click();
+  await page.waitForFunction(()=>document.getElementById('move-count')?.textContent!=='Ruch 0');
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }
+});
+
+test('P0: forced two-step capture is draggable only from required pawn and to legal highlighted squares',{timeout:65000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ const page=await browser.newPage({viewport:{width:1366,height:768}});
+ const id='12345678-1234-4234-8234-1234567890ab';
+ const board=Array(64).fill(0);
+ board[17]=1;board[21]=1;board[26]=2;board[44]=2;
+ let match={id,game:'warcaby',version:10,player:1,players:['Ty','Rywal'],playable:true,
+  state:{board,turn:1,winner:0,forced:17,moves:0,quiet:0,history:[]}};
+ const calls=[];
+ await page.route('**/auth/match?*',route=>route.fulfill({json:{ok:true,match}}));
+ await page.route('**/auth/match',route=>{
+  const payload=route.request().postDataJSON(),move=payload?.move;
+  if(payload?.version!==match.version||!move||move.from!==(calls.length?35:17)||
+      move.to!==(calls.length?53:35)){
+   return route.fulfill({status:400,json:{ok:false,error:'ILLEGAL_MOVE'}});
+  }
+  const next=match.state.board.slice();next[move.to]=next[move.from];
+  next[move.from]=0;next[calls.length?44:26]=0;
+  calls.push([move.from,move.to]);
+  match={...match,version:match.version+1,state:{...match.state,
+   board:next,forced:calls.length===1?35:null,turn:calls.length===1?1:2,
+   moves:calls.length,history:[...match.state.history,{player:1,from:move.from,to:move.to}]}};
+  return route.fulfill({json:{ok:true,match}});
+ });
+ await page.goto(base+'/konto/warcaby/?match='+id,{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="17"].must-continue'));
+ const drag=async(from,to)=>{
+  const a=await page.locator('#board .square[data-index="'+from+'"] .piece').boundingBox();
+  const b=await page.locator('#board .square[data-index="'+to+'"]').boundingBox();
+  assert.ok(a&&b);
+  await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();
+  await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:12});await page.mouse.up();
+ };
+ await drag(21,28);
+ assert.deepEqual(calls,[],'unmarked pawn cannot move during forced capture');
+ await drag(17,35);
+ await page.waitForFunction(()=>document.querySelector('#board .square[data-index="35"].must-continue'));
+ assert.deepEqual(calls,[[17,35]],'first capture accepted through original server API');
+ await drag(35,53);
+ try{
+  await page.waitForFunction(()=>document.querySelector('#board .square[data-index="53"] .piece.white')&&
+   document.getElementById('move-count')?.textContent==='Ruch 2',{timeout:7000});
+ }catch(err){
+  const debug=await page.evaluate(()=>({
+   count:document.getElementById('move-count')?.textContent,
+   forced:[...document.querySelectorAll('#board .must-continue')].map(e=>e.dataset.index),
+   status:document.getElementById('game-state')?.textContent,
+   target53:document.querySelector('#board .square[data-index="53"]')?.className,
+   notice:document.getElementById('checkers-capture-notice')?.hidden
+  }));
+  throw Error('Forced follow-on capture failed: '+JSON.stringify({calls,debug}));
+ }
+ assert.deepEqual(calls,[[17,35],[35,53]],'second mandatory capture also via original API');
+ assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
 });

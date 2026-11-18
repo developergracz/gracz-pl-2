@@ -1,15 +1,30 @@
 export const checkersUiParityCss=String.raw`
 /* Warcaby owner console visual parity — no alterations to chess or checkers rules. */
+/* Owner-selected pure black page, not the previous green-tinted midnight theme.
+   Scope to Warcaby only, including the first-paint loading state. */
+html:root,
+html:root.checkers-shell-loading,
+body.warcaby-console.chess-console.cc-owner,
+body.warcaby-console.chess-console.cc-owner.checkers-shell-loading,
 body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading){
- /* Same midnight canvas as chess, never the previous pale checkers page. */
- background:#031519!important;
+ background:#000!important;
 }
-body.warcaby-console.chess-console.cc-owner:not(.checkers-shell-loading) #game:not(.game-focus){
- background:#003739!important;border:0!important;border-radius:0!important;
+body.warcaby-console.chess-console.cc-owner::before,
+body.warcaby-console.chess-console.cc-owner::after{
+ background:none!important;box-shadow:none!important
+}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus),
+body.warcaby-console.chess-console.cc-owner #game.game-focus{
+ background:#000!important;border:0!important;border-radius:0!important;
  box-shadow:none!important;text-shadow:none!important;
 }
-body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea{
- background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea,
+body.warcaby-console.chess-console.cc-owner #game.game-focus>.boardarea{
+ background:#000!important;border:0!important;border-radius:0!important;box-shadow:none!important
+}
+body.warcaby-console.chess-console.cc-owner #game::before,
+body.warcaby-console.chess-console.cc-owner #game::after{
+ content:none!important;display:none!important;background:none!important;box-shadow:none!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea::before,
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus)>.boardarea::after{
@@ -47,16 +62,50 @@ body.warcaby-console.chess-console.cc-owner #game #chat-messages .game-chat-mess
  margin:0!important;overflow-wrap:anywhere!important;word-break:normal!important
 }
 body.warcaby-console.chess-console.cc-owner #game #chat-messages .game-chat-message.own{
- align-self:flex-end!important
+ align-self:flex-start!important
 }
-/* Remove the inherited red focus ring without hiding keyboard focus entirely:
-   a subtle change of input fill/caret supplies an accessible focus cue. */
+/* White compose field at rest AND during mouse/keyboard focus.
+   Remove only the inherited red focus ring; preserve a muted neutral border
+   and a visible caret for keyboard users. */
+body.warcaby-console.chess-console.cc-owner #game #chat-input,
 body.warcaby-console.chess-console.cc-owner #game #chat-input:focus,
 body.warcaby-console.chess-console.cc-owner #game #chat-input:focus-visible{
- outline:none!important;outline-offset:0!important;
- box-shadow:none!important;border-color:#4f838a!important;
- background:#092d34!important;color:#ecf6f9!important;caret-color:#9be5dc!important
+ background:#fff!important;color:#17383b!important;caret-color:#00595d!important;
+ border:1px solid #a5b5b5!important;border-radius:8px!important;
+ outline:none!important;outline-offset:0!important;box-shadow:none!important
 }
+
+/* The mandatory-capture notice was physically overlaying some landing squares.
+   Keep its dismiss button usable while allowing drags through the notification. */
+body.warcaby-console #checkers-capture-notice:not([hidden]){
+ pointer-events:none!important
+}
+body.warcaby-console #checkers-capture-notice #checkers-capture-dismiss{
+ pointer-events:auto!important
+}
+@media(min-width:801px){
+ body.warcaby-console #checkers-capture-notice:not([hidden]){
+  left:auto!important;right:12px!important;bottom:14px!important;
+  transform:none!important;max-width:min(29vw,370px)!important
+ }
+}
+
+/* Pointer drag is a visual adapter. Rule enforcement stays in choose()/destinations(). */
+body.warcaby-console #board .square .piece{touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}
+body.warcaby-console #board .square.checkers-drag-source .piece{opacity:.55!important}
+body.warcaby-console #board .square.checkers-drag-target{
+ box-shadow:inset 0 0 0 3px #e7c676!important
+}
+body.warcaby-console #board .square.checkers-drag-hover{
+ box-shadow:inset 0 0 0 4px #00a99d!important
+}
+body.warcaby-console .checkers-drag-ghost{
+ position:fixed!important;left:0;top:0;z-index:99999!important;
+ transform:translate(-50%,-50%)!important;pointer-events:none!important;
+ width:clamp(32px,4vw,74px)!important;height:clamp(32px,4vw,74px)!important;
+ margin:0!important;opacity:.9!important;filter:drop-shadow(0 4px 7px #0008)!important
+}
+body.warcaby-console .checkers-drag-ghost .crown{pointer-events:none!important}
 
 /* Same move history structure as chess: numbered rows, two columns and playback. */
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) #moves-panel:not([hidden]){
