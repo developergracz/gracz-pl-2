@@ -560,9 +560,9 @@ test('Owner parity: exact chess desktop/mobile background, coordinates, move his
   await page.locator('#checkers-owner-info').count();
   // Check board-rotation metadata and labels without changing the actual rules.
   await page.locator('#rotate-board').evaluate(button=>button.click());
-  await page.waitForFunction(()=>document.getElementById('board')?.dataset.checkersRotated==='true');
+  await page.waitForFunction(()=>document.getElementById('board')?.dataset.checkersRotated==='false');
   const flipped=await page.locator('#board .square').first().locator('.checkers-coordinate-rank').textContent();
-  assert.equal(flipped,'1','rank labels follow rotation');
+  assert.equal(flipped,'8','rank labels follow the manual flip back from white-bottom view');
   assert.deepEqual(errors,[],'no browser JS errors');
   await context.close();
  }
