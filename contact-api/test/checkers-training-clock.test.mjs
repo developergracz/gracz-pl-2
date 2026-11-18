@@ -50,6 +50,7 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  assert.equal($('clock-2').textContent,'00:30');
  assert.equal($('clock-2').classList.contains('checkers-clock-critical'),true,
   'white time turns red at exactly thirty seconds online');
+ assert.equal($('clock-2').style.vars.color,'rgb(95,43,50)','the real digit node receives urgent inline color');
  assert.equal($('clock-2').style.vars['--checkers-clock-shade'],'rgb(95,43,50)',
   'at 30 seconds the digits are only subtly red');
  assert.equal($('clock-2').classList.contains('checkers-clock-pulse-twice'),true,
@@ -75,10 +76,12 @@ test('Warcaby clocks start after the first legal white move, not New game',t=>{
  game.state.clock.remaining=[31000,1000];clockTick();
  assert.equal($('clock-1').style.vars['--checkers-clock-shade'],'rgb(255,0,0)',
   'the last second is fully saturated pure red');
+ assert.equal($('clock-1').style.vars.color,'rgb(255,0,0)','the actual clock text becomes pure red');
  game.state.clock.remaining=[31000,35000];clockTick();
  assert.equal($('clock-1').classList.contains('checkers-clock-critical'),false);
  assert.equal($('clock-1').style.vars['--checkers-clock-shade'],undefined,
   'time restored above 30 seconds clears the warning color');
+ assert.equal($('clock-1').style.vars.color,undefined,'the inline urgency color gets cleared too');
  assert.equal($('clock-1').classList.contains('checkers-clock-pulse-once'),false);
  game=null;
  training.setMode('training');
