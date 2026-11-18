@@ -322,7 +322,18 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .play
  width:clamp(75.9px,6.6vw,99px)!important;
  min-width:clamp(75.9px,6.6vw,99px)!important;
  min-height:clamp(26.15px,calc(2.1vw + 2px),33.5px)!important;
- font-size:clamp(21px,1.7vw,27px)!important
+ font-size:clamp(21px,1.7vw,27px)!important;
+ box-sizing:border-box!important;
+ border:1px solid #286b6a!important;
+ border-radius:7px!important;
+ background:#103f44!important;
+ color:#fff8e8!important;
+ font-weight:800!important;
+ font-variant-numeric:tabular-nums!important;
+ text-align:center!important;
+ text-shadow:none!important;
+ line-height:1!important;
+ padding:1px 3px!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .cc-top .players>.player>.cc-side{
  display:block!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;
