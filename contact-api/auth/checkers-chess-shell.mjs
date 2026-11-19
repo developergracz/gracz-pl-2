@@ -436,7 +436,7 @@ export const checkersChessShellJs=String.raw`
   for(const [id,label] of clockNameLabels){
    const source=$(id)?.textContent?.trim()||'';
    const value=training
-    ?((id==='black-name'?2:1)===humanSide?(sessionNickname||'Gość'):'Komputer')
+    ?((id==='black-name'?2:1)===humanSide?(sessionNickname||'Gość'):(document.body.dataset.checkersBotName||'Komputer'))
     :(source==='Ty'?(sessionNickname||'Gość'):source||(id==='black-name'?'Czarne':'Białe'));
    if(label.textContent!==value)label.textContent=value;
    label.title=value;
@@ -745,7 +745,7 @@ export const checkersChessShellJs=String.raw`
   const local=$('training-mode')?.classList.contains('active');
   refresh.disabled=local;
   fields.mode.textContent=local?'Komputer':'Online';
-  fields.opponent.textContent=local?'Komputer':($('room-select')?.selectedOptions?.[0]?.textContent||'Zaproś znajomego');
+  fields.opponent.textContent=local?(document.body.dataset.checkersBotName||'Komputer'):($('room-select')?.selectedOptions?.[0]?.textContent||'Zaproś znajomego');
   fields.state.textContent=$('game-state')?.textContent?.trim()||'—';
   fields.clock.textContent=local?($('training-time')?.selectedOptions?.[0]?.textContent||'Bez limitu'):($('create-room-time')?.selectedOptions?.[0]?.textContent||'—');
   fields.moves.textContent=$('move-count')?.textContent?.trim()||'0';
