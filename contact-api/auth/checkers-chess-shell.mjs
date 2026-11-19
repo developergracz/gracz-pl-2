@@ -1,4 +1,8 @@
 export const checkersChessShellCss=String.raw`
+body.warcaby-console.chess-console.cc-owner #checkers-chat-bot-header:not([hidden]){display:flex;align-items:center;justify-content:flex-start;gap:9px;width:100%;box-sizing:border-box;padding:8px 12px;margin:0 0 8px;border-radius:9px;background:#e6f4f2;color:#064c4d;font:700 14px/1.3 system-ui,sans-serif;text-align:left}
+body.warcaby-console.chess-console.cc-owner #checkers-chat-bot-header .checkers-chat-bot-header-avatar{font-size:27px;line-height:1}
+body.warcaby-console.chess-console.cc-owner #checkers-chat-bot-header strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* The engine keeps #training-mode; the visible tab is the selected bot's avatar and name. */
 body.warcaby-console.chess-console.cc-owner #game .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
 body.warcaby-console.chess-console.cc-owner .checkers-bot-identity{display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;height:48px;min-width:0;margin:0;padding:2px 8px;border-radius:10px;background:#e6f4f2;color:#064c4d;font:700 13px/1.1 system-ui,sans-serif}
@@ -486,11 +490,13 @@ export const checkersChessShellJs=String.raw`
  async function readClockSession(){
   try{
    const response=await fetch('/auth/session',{credentials:'same-origin',cache:'no-store'});
-   if(!response.ok){sessionNickname='';refreshClockNameLabels();return;}
+   if(!response.ok)throw Error('Sesja niedostępna');
    const data=await response.json();
    sessionNickname=data?.ok===true&&data.loggedIn===true&&typeof data.nickname==='string'
     ?data.nickname.trim().slice(0,32):'';
   }catch(_error){sessionNickname='';}
+  document.body.dataset.checkersSessionNickname=sessionNickname||'Gość';
+  window.dispatchEvent(new Event('gracz:warcaby:session-nickname'));
   refreshClockNameLabels();
  }
  void readClockSession();
