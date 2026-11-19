@@ -198,21 +198,27 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.s
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.sidebar>*:not(.mode){display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode{
- display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:0!important;
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px!important;
  margin:0!important;padding:4px!important;border:1px solid var(--cc-line)!important;
  border-radius:15px!important;background:var(--cc-soft)!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice{
- display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
- height:48px!important;min-height:48px!important;margin:0!important;padding:0 10px!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;
+ height:58px!important;min-height:58px!important;min-width:0!important;margin:0!important;padding:5px 2px!important;
  color:var(--cc-ink)!important;background:transparent!important;border:0!important;border-radius:10px!important;
- box-shadow:none!important;font:700 15px/1.2 system-ui,sans-serif!important
+ box-shadow:none!important;font:700 12px/1.2 system-ui,sans-serif!important;white-space:nowrap!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice.active{
  background:var(--cc-accent)!important;color:#fff!important
 }
 body.warcaby-console.chess-console.cc-owner .checkers-owner-mode .cc-mode-label{font:inherit}
-body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7}
+body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:19px;height:19px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:focus-visible{outline:2px solid var(--cc-accent)!important;outline-offset:-3px!important}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:hover:not(.active){background:var(--cc-surface)!important}
+@media(max-width:380px){
+ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice{font-size:11px!important}
+ body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:17px;height:17px}
+}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-top .players{display:grid!important;position:static!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-top .players .player .cc-side{
  display:block;font-size:13px;font-weight:650;color:var(--cc-ink)
@@ -368,6 +374,7 @@ export const checkersChessShellJs=String.raw`
   profile:'<circle cx="12" cy="8" r="4"/><path d="M4.5 21v-2c0-3.5 3-5.5 7.5-5.5s7.5 2 7.5 5.5v2"/>',
   computer:'<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4"/>',
   online:'<circle cx="9" cy="8" r="3"/><circle cx="18" cy="9" r="2.5"/><path d="M3 20v-2c0-4 3-6 6-6s6 2 6 6v2M15.5 15c3 0 5.5 2 5.5 5"/>',
+  bot:'<rect x="4" y="7" width="16" height="13" rx="3"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M9 17h6M12 7V4m-2 0h4"/>',
   new:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>',
   rematch:'<path d="M20 10A8 8 0 0 0 6 6L4 9V4h5M4 14a8 8 0 0 0 14 4l2-3v5h-5"/>',
   invite:'<path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/>',
@@ -485,7 +492,17 @@ export const checkersChessShellJs=String.raw`
  }
  area.insertBefore(nav,area.firstChild);
  mode.classList.add('checkers-owner-mode');
- for(const [id,label,name] of [['training-mode','Komputer','computer'],['online-mode','Online','online']]){
+ const botMode=E('button','mode-choice checkers-bots-mode');
+ botMode.type='button';botMode.id='checkers-bots-mode';
+ botMode.setAttribute('aria-haspopup','dialog');
+ botMode.setAttribute('aria-controls','checkers-bots-overlay');
+ botMode.setAttribute('aria-expanded','false');
+ mode.insertBefore(botMode,$('online-mode'));
+ for(const [id,label,name] of [
+  ['training-mode','Komputer','computer'],
+  ['checkers-bots-mode','Graj z botami','bot'],
+  ['online-mode','Online','online']
+ ]){
   const button=$(id);if(button)button.replaceChildren(icon(name),E('span','cc-mode-label',label));
  }
  const status=$('game-state');status.classList.add('checkers-owner-status');dock.insertBefore(status,match);
