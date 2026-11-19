@@ -148,3 +148,38 @@ test('Verified black diagonal is recognized without trusting client winner value
  assert.match(res.payload.answer,/C4–G8/);
  assert.equal(called,0);
 });
+
+test('Warcaby bot comments only on a position replayed from legal recorded moves',async()=>{
+ const bodies=[];let clock=0;
+ // Each call is a minute apart, so the unchanged shared limit of 3 requests/minute applies normally.
+ const handler=createGomokuAiChatRoute({apiKey:'provider-key',now:()=>(clock+=61000),fetchImpl:async(url,options)=>{
+  bodies.push(JSON.parse(options.body));
+  return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})};
+ }});
+ const checkers=new URL('https://gracz-contact-api.onrender.com/konto/warcaby/ai-chat');
+ const ask=async(data,url=checkers)=>{
+  const res=response();await handler(request(data),res,url);
+  assert.equal(res.status,200);return bodies.at(-1).messages.filter(m=>m.role==='system').map(m=>m.content);
+ };
+ // White B6–A5 (17→24), black C3–B4 (42→33): real engine moves; then a white capture is mandatory.
+ const [base,persona,context]=await ask({message:'Jak idzie?',botId:'T2',game:{moves:[[17,24],[42,33]],human:1,winner:0}});
+ assert.match(base,/odtworzony przez serwer z zapisu ruchów/);
+ assert.match(persona,/Adam/);
+ assert.match(persona,/Sposób wypowiedzi: zwięźle/);
+ const facts=JSON.parse(context.slice(context.indexOf('{')));
+ assert.equal(facts.liczbaPosunięć,2);
+ assert.deepEqual(facts.ostatniePosunięcia.map(m=>m.ruch),['B6–A5','C3–B4']);
+ assert.equal(facts.naRuchu,'białe (gracz)');
+ assert.equal(facts.wynik,'partia trwa');
+ assert.equal(facts.bicieObowiązkowe,true);
+ assert.deepEqual(facts.dostępneBicia,['A5×C3']);
+ // A forged or illegal move list yields no game facts at all.
+ const forged=await ask({message:'Kto wygrywa?',botId:'T2',game:{moves:[[17,24],[17,24]],human:1,winner:1}});
+ assert.match(forged.at(-1),/Brak zweryfikowanych danych aktualnej planszy/);
+ assert.doesNotMatch(forged.join(' '),/Kontekst Warcabów/);
+ // Unknown bot IDs and other consoles never receive a Warcaby persona or context.
+ const chess=await ask({message:'Hej',botId:'T2',game:{moves:[[17,24]]}},new URL('https://gracz-contact-api.onrender.com/konto/szachy/ai-chat'));
+ assert.equal(chess.length,2);
+ assert.match(chess[0],/W Szachach i Warcabach nie otrzymujesz bieżącej planszy/);
+ assert.equal((await ask({message:'Hej',botId:'X9'})).length,2);
+});

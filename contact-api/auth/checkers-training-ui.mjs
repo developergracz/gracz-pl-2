@@ -126,6 +126,7 @@ export function setupTraining(a){
   displayClocks();
  }
  function renderNotes(){
+  if(a.renderChat){a.renderChat();return} // The console owns the bot conversation.
   const list=$('chat-messages');list.replaceChildren();
   if(!notes.length){
    const p=document.createElement('p');p.className='dock-empty';
