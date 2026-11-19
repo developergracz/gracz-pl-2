@@ -343,7 +343,8 @@ test('Modern Warcaby serves a four-profile bot catalog backed by its existing of
  for(const id of ['mila','bruno','nela','leon'])
   assert.ok(html.body.includes('data-bot="'+id+'"'),id);
  assert.ok(js.body.includes("level:'hard'"),'real engine difficulty selected');
- assert.ok(js.body.includes("modeButton.addEventListener('click',event=>"),'computer mode opens selector');
+ assert.ok(js.body.includes("botButton.addEventListener('click',openPicker)"),'dedicated Graj z botami button opens selector');
+ assert.ok(js.body.includes("modeButton.addEventListener('click',()=>"),'Komputer remains an independent quick training mode');
  assert.ok(js.body.includes("document.body.dataset.checkersTrainingReady='yes'"),'selection waits for engine');
  assert.ok(css.body.includes('#checkers-bots-overlay:not([hidden])'));
  assert.ok(!load('/konto/warcaby/?konsola=klasyczna').body.includes('id="checkers-bots-overlay"'),
