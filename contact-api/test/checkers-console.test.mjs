@@ -284,7 +284,12 @@ test('Seat-to-play gate exists only in modern Warcaby and does not start clocks 
  assert.doesNotMatch(modern.body,/Zegar ruszy dopiero/);
  assert.doesNotMatch(classic.body,/id="checkers-start-gate"/,'classic game is unchanged');
  assert.ok(css.body.includes('checkers-start-gate[hidden]'),'hidden overlay stays hidden on initial load');
- assert.ok(js.body.includes("board.addEventListener('pointerover',showSeatGate)"));
+ assert.ok(!js.body.includes("board.addEventListener('pointerover',showSeatGate)"),
+  'seat prompt never opens on a pawn hover');
+ assert.ok(js.body.includes("window.addEventListener('gracz:warcaby:new-game-seat',openSeatGate)"),
+  'New Game owns the prompt trigger');
+ assert.ok(js.body.includes("window.dispatchEvent(new Event('gracz:warcaby:new-game-seat'))"),
+  'the New Game action sends the request');
  assert.ok(js.body.includes("board.addEventListener('pointerover',showMandatoryCaptureOnHover)"),'mandatory capture announced on hover');
  assert.ok(js.body.includes("board.addEventListener('focusin',showMandatoryCaptureOnHover)"),'keyboard focus announces mandatory capture');
  assert.ok(js.body.includes("if(sources.length&&(piece===current.player||piece===current.player+2)&&!sources.includes(from))syncCaptureNotice(true)"),'only another own non-capturing piece triggers the warning');
