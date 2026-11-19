@@ -213,7 +213,7 @@ test('Warcaby retain their original engine and controls inside the owner-approve
  assert.match(script.body,/gracz:warcaby:position/);
  assert.match(script.body,/checkers-shell-loading/);
  assert.match(script.body,/checkers-bots-mode/,'dedicated button for named opponents');
- assert.match(script.body,/Graj z botami/,'bot entry shows own title');
+ assert.match(script.body,/Graj z botem/,'bot entry shows own title');
  assert.match(style.body,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three equal mode columns');
  assert.match(script.body,/botButton\.addEventListener\('click',openPicker\)/,'picker only from bot button');
  assert.match(script.body,/training-undo/);
