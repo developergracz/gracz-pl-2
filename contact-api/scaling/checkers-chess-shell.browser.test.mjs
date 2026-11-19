@@ -1074,12 +1074,13 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   await page.waitForFunction(()=>document.body.dataset.checkersTrainingReady==='yes'&&
    !document.body.classList.contains('checkers-shell-loading')&&
    document.querySelector('#board')?.dataset.checkersPlayable==='false');
-  const controls=await page.locator('.checkers-owner-mode > .mode-choice').evaluateAll(nodes=>nodes.map(node=>{
+  const controls=await page.locator('.checkers-owner-mode > .mode-choice:visible').evaluateAll(nodes=>nodes.map(node=>{
    const b=node.getBoundingClientRect();return {text:node.textContent.trim(),x:b.x,y:b.y,width:b.width,height:b.height};
   }));
-  assert.deepEqual(controls.map(c=>c.text),['Komputer','Graj z botem','Graj ze znajomym']);
+  assert.deepEqual(controls.map(c=>c.text),['Graj z botem','Graj ze znajomym']);
+   assert.equal(await page.locator('#training-mode').isVisible(),false,'internal Computer mode is hidden');
   assert.ok(controls.every(c=>Math.abs(c.y-controls[0].y)<2&&Math.abs(c.height-controls[0].height)<2),
-   'three mode buttons share one line and matching height');
+   'two mode buttons share one line and matching height');
   assert.ok(controls.every((c,i)=>i===0||c.x>=controls[i-1].x+controls[i-1].width-1),
    'mode buttons must not overlap');
   await page.locator('#checkers-bots-mode').click();

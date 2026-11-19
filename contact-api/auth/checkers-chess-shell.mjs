@@ -198,7 +198,7 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.s
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.sidebar>*:not(.mode){display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus):not(.console-hide-mode) .side-dock .checkers-owner-mode{
- display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;
  margin:0!important;padding:4px!important;border:1px solid var(--cc-line)!important;
  border-radius:15px!important;background:var(--cc-soft)!important
 }
@@ -208,6 +208,8 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-own
  color:var(--cc-ink)!important;background:transparent!important;border:0!important;border-radius:10px!important;
  box-shadow:none!important;font:700 11px/1.1 system-ui,sans-serif!important
 }
+/* Keep the legacy Computer controller for the bot engine, never expose a duplicate mode button. */
+body.warcaby-console.chess-console.cc-owner .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice.active{
  background:var(--cc-accent)!important;color:#fff!important
 }
@@ -497,6 +499,8 @@ export const checkersChessShellJs=String.raw`
  }
  area.insertBefore(nav,area.firstChild);
  mode.classList.add('checkers-owner-mode');
+  const internalComputerMode=$('training-mode');
+  if(internalComputerMode){internalComputerMode.hidden=true;internalComputerMode.setAttribute('aria-hidden','true');internalComputerMode.tabIndex=-1;}
  const botMode=E('button','mode-choice checkers-bots-mode');
  botMode.type='button';botMode.id='checkers-bots-mode';
  botMode.setAttribute('aria-haspopup','dialog');
