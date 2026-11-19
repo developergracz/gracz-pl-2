@@ -37,7 +37,11 @@ test('QR generator is served by existing same-origin Warcaby endpoint',()=>{
  assert.equal(status,200);
  assert.match(headers['Content-Type'],/application\/javascript/);
  assert.ok(output.includes('export default qrcode;'));
- assert.equal(output,readFileSync(new URL('../auth/assets/qrcode.mjs',import.meta.url),'utf8'),
-  'inline QR source must remain byte-for-byte identical to audited vendor file');
+ const vendorSource=readFileSync(new URL('../auth/assets/qrcode.mjs',import.meta.url),'utf8');
+ const mitLicense=readFileSync(new URL('../auth/assets/QR-CODE-LICENSE.txt',import.meta.url),'utf8');
+ assert.equal(output,`/*\n${mitLicense}*/\n${vendorSource}`,
+  'the served QR module must include the complete MIT notice and the unchanged audited vendor source');
+ assert.match(output,/Permission is hereby granted, free of charge/);
+ assert.match(output,/Copyright \(c\) 2009 Kazuhiko Arase/);
  assert.equal(serveCheckersConsole({method:'POST'},res,url),false);
 });
