@@ -1074,33 +1074,29 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   await page.waitForFunction(()=>document.body.dataset.checkersTrainingReady==='yes'&&
    !document.body.classList.contains('checkers-shell-loading')&&
    document.querySelector('#board')?.dataset.checkersPlayable==='false');
-  const controls=await page.locator('.checkers-owner-mode > .mode-choice').evaluateAll(nodes=>nodes.map(node=>{
+  // The selected bot's avatar and name replace the visible Komputer tab; the engine button stays hidden.
+  assert.equal(await page.locator('#training-mode').isHidden(),true,'Komputer tab is not visible');
+  const controls=await page.locator('#checkers-bot-identity, #checkers-bots-mode, #online-mode').evaluateAll(nodes=>nodes.map(node=>{
    const b=node.getBoundingClientRect();return {text:node.textContent.trim(),x:b.x,y:b.y,width:b.width,height:b.height};
   }));
-  assert.deepEqual(controls.map(c=>c.text),['Komputer','Graj z botem','Graj ze znajomym']);
+  assert.deepEqual(controls.map(c=>c.text),['🤖Komputer','Graj z botem','Graj ze znajomym']);
   assert.ok(controls.every(c=>Math.abs(c.y-controls[0].y)<2&&Math.abs(c.height-controls[0].height)<2),
-   'three mode buttons share one line and matching height');
+   'three mode tiles share one line and matching height');
   assert.ok(controls.every((c,i)=>i===0||c.x>=controls[i-1].x+controls[i-1].width-1),
-   'mode buttons must not overlap');
+   'mode tiles must not overlap');
   await page.locator('#checkers-bots-mode').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
   assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('#training-mode').getAttribute('aria-pressed'),'false');
-  const botTabColors=await page.evaluate(()=>({
-   bot:getComputedStyle(document.getElementById('checkers-bots-mode')).backgroundColor,
-   computer:getComputedStyle(document.getElementById('training-mode')).backgroundColor
-  }));
-  assert.notEqual(botTabColors.bot,botTabColors.computer,'only bot tab receives active background');
-  assert.equal(await page.locator('.checkers-bots-card').count(),4);
+  assert.equal(await page.locator('.checkers-bots-card').count(),20);
   const bounds=await page.locator('.checkers-bots-dialog').boundingBox();
   assert.ok(bounds.x>=0&&bounds.x+bounds.width<=viewport.width+1,'catalog stays within viewport');
-  await page.locator('[data-bot="bruno"]').click();
-  assert.equal(await page.locator('#checkers-bots-name').textContent(),'Bruno');
+  // Settings first: clicking a bot card launches the match immediately.
   await page.locator('input[name="checkers-bots-color"][value="2"]').check();
   await page.locator('#checkers-bots-time').selectOption('5');
   await page.locator('#checkers-bots-bonus').selectOption('2');
-  await page.locator('#checkers-bots-play').click();
+  await page.locator('[data-bot="T2"]').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'hidden'});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2'&&
    document.querySelector('#board')?.dataset.checkersPlayable==='true');
@@ -1115,16 +1111,22 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
    name:document.body.dataset.checkersBotName,
    cells:document.querySelectorAll('#board .square').length
   }));
-  assert.deepEqual(settings,{difficulty:'hard',minutes:'5',bonus:'2',name:'Bruno',cells:64},
+  assert.deepEqual(settings,{difficulty:'hard',minutes:'5',bonus:'2',name:'Adam 👨🏾',cells:64},
    'selected bot launches the existing real Warcaby engine');
-  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-side')].some(el=>el.textContent==='Bruno'));
+  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-side')].some(el=>el.textContent==='Adam 👨🏾'));
+  assert.equal(await page.locator('#checkers-bot-identity').textContent(),'👨🏾Adam');
+  // The selected bot opens the existing chat under its own name.
+  await page.waitForFunction(()=>document.querySelector('#chat-messages')?.textContent.includes('Bicie jest obowiązkowe'));
+  assert.match(await page.locator('#chat-messages').textContent(),/Adam 👨🏾/);
+  // Choosing another bot starts a new match with that bot and its own conversation.
   await page.locator('#checkers-bots-mode').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
-  await page.locator('[data-bot="mila"]').click();
-  await page.locator('#checkers-bots-play').click();
-  assert.match(await page.locator('#checkers-bots-status').textContent(),/Nie możesz rozpocząć nowej gry/);
-  assert.equal(await page.locator('#ai-level').inputValue(),'hard','active game is not silently replaced');
-  await page.locator('#checkers-bots-close').click();
+  await page.locator('[data-bot="N1"]').click();
+  await page.locator('#checkers-bots-overlay').waitFor({state:'hidden'});
+  assert.equal(await page.locator('#ai-level').inputValue(),'normal');
+  assert.equal(await page.locator('#checkers-bot-identity').textContent(),'👩🏻Mila');
+  await page.waitForFunction(()=>document.querySelector('#chat-messages')?.textContent.includes('Mila'));
+  assert.doesNotMatch(await page.locator('#chat-messages').textContent(),/Adam/,'previous bot conversation is not shown');
   assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'false');
   assert.deepEqual(errors,[],'bot selection runs without browser JS errors');
   await context.close();

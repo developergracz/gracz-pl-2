@@ -4,6 +4,7 @@ on:
     paths:
       - 'contact-api/auth/checkers-console.mjs'
       - 'contact-api/auth/checkers-chess-shell.mjs'
+      - 'contact-api/auth/checkers-bots-picker.mjs'
       - 'contact-api/auth/checkers-ui-parity.mjs'
       - 'contact-api/auth/chess-console.mjs'
       - 'contact-api/scaling/checkers-chess-shell.browser.test.mjs'
