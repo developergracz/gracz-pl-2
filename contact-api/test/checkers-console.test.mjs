@@ -331,3 +331,17 @@ test('Warcaby dark chat styling and drag controls are isolated from chess/Gomoku
  assert.ok(script.body.includes("if(document.body?.classList?.contains?.('chess-console'))"),'pointer handlers only activate inside modern console');
  assert.doesNotMatch(load('/konto/warcaby/?konsola=klasyczna').body,/class="warcaby-console chess-console/,'classic fallback remains a separate UI');
 });
+
+test('Modern Warcaby serves a four-profile bot catalog backed by its existing offline AI',()=>{
+ const html=load('/konto/warcaby/'),css=load('/konto/warcaby/styl.css'),js=load('/konto/warcaby/app.js');
+ for(const id of ['checkers-bots-overlay','checkers-bots-title','checkers-bots-play','checkers-bots-time','checkers-bots-bonus'])
+  assert.ok(html.body.includes('id="'+id+'"'),id);
+ for(const id of ['mila','bruno','nela','leon'])
+  assert.ok(html.body.includes('data-bot="'+id+'"'),id);
+ assert.ok(js.body.includes("level:'hard'"),'real engine difficulty selected');
+ assert.ok(js.body.includes("modeButton.addEventListener('click',event=>"),'computer mode opens selector');
+ assert.ok(js.body.includes("document.body.dataset.checkersTrainingReady='yes'"),'selection waits for engine');
+ assert.ok(css.body.includes('#checkers-bots-overlay:not([hidden])'));
+ assert.ok(!load('/konto/warcaby/?konsola=klasyczna').body.includes('id="checkers-bots-overlay"'),
+  'the legacy console remains unchanged');
+});
