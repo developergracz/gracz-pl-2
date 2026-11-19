@@ -9,6 +9,7 @@ import { serveCheckersConsole } from "./auth/checkers-console.mjs";
 import { serveChessConsole } from "./auth/chess-console.mjs";
 import { createGomokuAiChatRoute } from "./routes/gomoku-ai-chat-route.mjs";
 import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
 import { isIP } from "node:net";
@@ -366,6 +367,20 @@ const server = createServer(async (req, res) => {
 
   try {
     const url = new URL(req.url, "http://localhost");
+
+    // Only the two approved hand cursor assets can be served.
+    if (req.method === "GET" && (url.pathname === "/checkers-hand/open.png" || url.pathname === "/checkers-hand/grip.png")) {
+      const filename = url.pathname.endsWith("/open.png") ? "open.png" : "grip.png";
+      try {
+        const asset = await readFile(new URL("./public/checkers-hand/" + filename, import.meta.url));
+        res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
+        return res.end(asset);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        return res.end("Cursor asset not found");
+      }
+    }
 
     if (req.method === "GET" && url.pathname === "/health") {
       return json(res, lifecycle.stopping ? 503 : 200, {
