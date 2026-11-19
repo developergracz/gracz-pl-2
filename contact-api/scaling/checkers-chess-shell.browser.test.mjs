@@ -39,20 +39,16 @@ async function serverFor(t,{nickname=null}={}){
 async function takeSeat(page){
  await page.waitForFunction(()=>document.querySelectorAll('#board .piece.white').length>0&&
   document.querySelector('#board')?.dataset.checkersPlayable==='false');
- // Pointer can remain over a pawn after restart; in that case the dialog
- // has already opened automatically, which is correct user-facing behavior.
- if(await page.locator('#checkers-start-gate').isHidden()){
-  await page.locator('#board .piece.white').first().evaluate(el=>{
-   el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse'}));
-  });
- }
+ // The modal opens only after an explicit New Game action.
+ if(await page.locator('#checkers-start-gate').isHidden())
+  await page.getByRole('button',{name:'Nowa gra'}).click();
  await page.locator('#checkers-start-gate').waitFor({state:'visible'});
  await page.getByRole('button',{name:'Wybierz białe pionki'}).click();
  await page.locator('#checkers-start-gate').waitFor({state:'hidden'});
  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersPlayable==='true');
 }
 
-test('Seat-to-play modal is centered on first hover/tap and clocks start only after first valid move',{timeout:95000},async t=>{
+test('Seat-to-play modal opens only after Nowa gra and clocks start after the first valid move',{timeout:95000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  t.after(()=>browser.close());
@@ -79,6 +75,8 @@ test('Seat-to-play modal is centered on first hover/tap and clocks start only af
   }else{
    await page.mouse.move(x,y,{steps:5});
   }
+  assert.equal(await gate.isVisible(),false,'hover/touch does not open color choice');
+  await page.getByRole('button',{name:'Nowa gra'}).click();
   await gate.waitFor({state:'visible'});
   assert.equal(await gate.getAttribute('role'),'dialog');
   assert.equal(await gate.getAttribute('aria-modal'),'true');
@@ -226,11 +224,11 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   assert.equal(initial.rotation,'true');
   assert.ok(initial.white>initial.black,'opening screen displays white pieces at the bottom');
   const pawn=page.locator('#board .square[data-index="17"] .piece');
-  // Hover opens a blocking modal immediately. Dispatch the hover event as
-  // a real DOM pointer event, otherwise Playwright keeps retrying hover
-  // because the newly opened dialog correctly intercepts the pointer.
+  // Hovering a pawn does not create a new game.
   await pawn.evaluate((el,viewportWidth)=>el.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:viewportWidth<500?'touch':'mouse'})),viewport.width);
   const gate=page.locator('#checkers-start-gate');
+  assert.equal(await gate.isVisible(),false,'no color dialog on hover');
+  await page.getByRole('button',{name:'Nowa gra'}).click();
   await gate.waitFor({state:'visible'});
   assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
   assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),['07:00','07:00']);
@@ -1087,6 +1085,13 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   await page.locator('#checkers-bots-mode').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
   assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('#training-mode').getAttribute('aria-pressed'),'false');
+  const botTabColors=await page.evaluate(()=>({
+   bot:getComputedStyle(document.getElementById('checkers-bots-mode')).backgroundColor,
+   computer:getComputedStyle(document.getElementById('training-mode')).backgroundColor
+  }));
+  assert.notEqual(botTabColors.bot,botTabColors.computer,'only bot tab receives active background');
   assert.equal(await page.locator('.checkers-bots-card').count(),4);
   const bounds=await page.locator('.checkers-bots-dialog').boundingBox();
   assert.ok(bounds.x>=0&&bounds.x+bounds.width<=viewport.width+1,'catalog stays within viewport');
@@ -1099,6 +1104,10 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   await page.locator('#checkers-bots-overlay').waitFor({state:'hidden'});
   await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2'&&
    document.querySelector('#board')?.dataset.checkersPlayable==='true');
+  assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-pressed'),'true',
+   'bot button stays selected throughout the match');
+  assert.equal(await page.locator('#training-mode').getAttribute('aria-pressed'),'false',
+   'Komputer does not highlight during a bot match');
   const settings=await page.evaluate(()=>({
    difficulty:document.querySelector('#ai-level').value,
    minutes:document.querySelector('#training-time').value,
