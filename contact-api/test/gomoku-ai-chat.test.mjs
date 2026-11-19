@@ -172,7 +172,7 @@ test('Warcaby bot comments only on a position replayed from legal recorded moves
  assert.equal(facts.naRuchu,'białe (gracz)');
  assert.equal(facts.wynik,'partia trwa');
  assert.equal(facts.bicieObowiązkowe,true);
- assert.deepEqual(facts.legalneRuchyNaRuchu,['A5×C3']);
+ assert.deepEqual(facts.dostępneBicia,['A5×C3']);
  // A forged or illegal move list yields no game facts at all.
  const forged=await ask({message:'Kto wygrywa?',botId:'T2',game:{moves:[[17,24],[17,24]],human:1,winner:1}});
  assert.match(forged.at(-1),/Brak zweryfikowanych danych aktualnej planszy/);
