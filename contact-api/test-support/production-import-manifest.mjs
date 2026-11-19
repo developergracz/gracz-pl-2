@@ -50,6 +50,9 @@ export const productionModules=Object.freeze([
   'auth/gomoku-realtime-client.mjs',
   // Reviewed same-origin checkers console: static HTML/CSS/JS, existing authenticated match API.
   'auth/checkers-console.mjs',
+  // Reviewed original client-only bot picker. Fixed local profiles, no external assets,
+  // network, database access or dynamic code; only existing local AI difficulty settings.
+  'auth/checkers-bots-picker.mjs',
   // Reviewed pure Warcaby draw-consent transition: no IO or persistence;
   // randomUUID from already-approved node:crypto, full auth and version CAS
   // stay in the existing public-identity match handler.
