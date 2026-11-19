@@ -368,6 +368,20 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
 
+    // Public, immutable bot portraits. Restrict filenames to the 20 approved IDs.
+    if (req.method === "GET" && /^\/checkers-bots\/[NTEA][1-5]\.webp$/.test(url.pathname)) {
+      const id = url.pathname.slice("/checkers-bots/".length);
+      try {
+        const portrait = await readFile(new URL("./public/checkers-bots/" + id, import.meta.url));
+        res.writeHead(200, { "Content-Type": "image/webp", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
+        return res.end(portrait);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        return res.end("Avatar not found");
+      }
+    }
+
     // Only the two approved hand cursor assets can be served.
     if (req.method === "GET" && (url.pathname === "/checkers-hand/open.png" || url.pathname === "/checkers-hand/grip.png")) {
       const filename = url.pathname.endsWith("/open.png") ? "open.png" : "grip.png";
