@@ -211,6 +211,11 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-own
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice.active{
  background:var(--cc-accent)!important;color:#fff!important
 }
+/* Bot mode runs on the Computer engine, but only the selected UI button is highlighted. */
+body.warcaby-console.chess-console.cc-owner[data-checkers-bot-selected="true"] #game:not(.game-focus) .checkers-owner-mode>#training-mode.mode-choice.active,
+body.warcaby-console.chess-console.cc-owner[data-checkers-bot-selected="true"] #game:not(.game-focus) .checkers-owner-mode>#online-mode.mode-choice.active{
+ background:transparent!important;color:var(--cc-ink)!important
+}
 body.warcaby-console.chess-console.cc-owner .checkers-owner-mode .cc-mode-label{font:inherit;white-space:normal;text-align:center;overflow-wrap:normal}
 body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:17px;height:17px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:focus-visible{outline:2px solid var(--cc-accent)!important;outline-offset:-3px!important}
@@ -675,8 +680,10 @@ export const checkersChessShellJs=String.raw`
   if(isCheckersGameInProgress(lastResult)){
    closeSheet();blocker.hidden=false;blockerClose.focus({preventScroll:true});return;
   }
-  if($('training-mode')?.classList.contains('active'))$('restart')?.click();
-  else openSheet('online',newGame);
+  if($('training-mode')?.classList.contains('active')){
+   $('restart')?.click();
+   window.dispatchEvent(new Event('gracz:warcaby:new-game-seat'));
+  }else openSheet('online',newGame);
  });
  invite.addEventListener('click',()=>{
   if(!$('online-mode')?.classList.contains('active'))$('online-mode')?.click();
