@@ -668,6 +668,8 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  await page.getByRole('button',{name:'Pierwsza pozycja'}).click();
  await page.locator('.checkers-replay-board').waitFor({state:'visible'});
  await page.locator('#training-mode').click();
+ await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
+ await page.locator('#checkers-bots-close').click();
  await page.locator('#restart').evaluate(el=>el.click());
  await page.waitForFunction(()=>document.getElementById('history-count')?.textContent==='0');
  assert.equal(await page.locator('.checkers-replay-board').isVisible(),false,'new game hides old preview');
@@ -1061,4 +1063,51 @@ test('P0: forced two-step capture is draggable only from required pawn and to le
  await page.waitForFunction(()=>document.querySelectorAll('.checkers-turn-token.black.is-turn').length===1);
  assert.equal(await page.locator('.checkers-turn-token.white.is-turn').count(),0,'turn outline moves to black after final capture');
  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
+});
+
+test('Warcaby bot catalog selects real opponent, color and clock on desktop and mobile', {timeout:80000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});t.after(()=>browser.close());
+ for(const viewport of [{width:1366,height:768},{width:390,height:844}]){
+  const context=await browser.newContext({viewport,isMobile:viewport.width<700,hasTouch:viewport.width<700});
+  const page=await context.newPage(),errors=[];
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>document.body.dataset.checkersTrainingReady==='yes'&&
+   !document.body.classList.contains('checkers-shell-loading')&&
+   document.querySelector('#board')?.dataset.checkersPlayable==='false');
+  await page.locator('#training-mode').click();
+  await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
+  assert.equal(await page.locator('.checkers-bots-card').count(),4);
+  const bounds=await page.locator('.checkers-bots-dialog').boundingBox();
+  assert.ok(bounds.x>=0&&bounds.x+bounds.width<=viewport.width+1,'catalog stays within viewport');
+  await page.locator('[data-bot="bruno"]').click();
+  assert.equal(await page.locator('#checkers-bots-name').textContent(),'Bruno');
+  await page.locator('input[name="checkers-bots-color"][value="2"]').check();
+  await page.locator('#checkers-bots-time').selectOption('5');
+  await page.locator('#checkers-bots-bonus').selectOption('2');
+  await page.locator('#checkers-bots-play').click();
+  await page.locator('#checkers-bots-overlay').waitFor({state:'hidden'});
+  await page.waitForFunction(()=>document.querySelector('#board')?.dataset.checkersHumanSide==='2'&&
+   document.querySelector('#board')?.dataset.checkersPlayable==='true');
+  const settings=await page.evaluate(()=>({
+   difficulty:document.querySelector('#ai-level').value,
+   minutes:document.querySelector('#training-time').value,
+   bonus:document.querySelector('#training-increment').value,
+   name:document.body.dataset.checkersBotName,
+   cells:document.querySelectorAll('#board .square').length
+  }));
+  assert.deepEqual(settings,{difficulty:'hard',minutes:'5',bonus:'2',name:'Bruno',cells:64},
+   'selected bot launches the existing real Warcaby engine');
+  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-side')].some(el=>el.textContent==='Bruno'));
+  await page.locator('#training-mode').click();
+  await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
+  await page.locator('[data-bot="mila"]').click();
+  await page.locator('#checkers-bots-play').click();
+  assert.match(await page.locator('#checkers-bots-status').textContent(),/Nie możesz rozpocząć nowej gry/);
+  assert.equal(await page.locator('#ai-level').inputValue(),'hard','active game is not silently replaced');
+  await page.locator('#checkers-bots-close').click();
+  assert.deepEqual(errors,[],'bot selection runs without browser JS errors');
+  await context.close();
+ }
 });
