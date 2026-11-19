@@ -341,11 +341,11 @@ test('Warcaby dark chat styling and drag controls are isolated from chess/Gomoku
  assert.doesNotMatch(load('/konto/warcaby/?konsola=klasyczna').body,/class="warcaby-console chess-console/,'classic fallback remains a separate UI');
 });
 
-test('Modern Warcaby serves a four-profile bot catalog backed by its existing offline AI',()=>{
+test('Modern Warcaby serves a 20-profile bot catalog backed by its existing offline AI',()=>{
  const html=load('/konto/warcaby/'),css=load('/konto/warcaby/styl.css'),js=load('/konto/warcaby/app.js');
  for(const id of ['checkers-bots-overlay','checkers-bots-title','checkers-bots-play','checkers-bots-time','checkers-bots-bonus'])
   assert.ok(html.body.includes('id="'+id+'"'),id);
- for(const id of ['mila','bruno','nela','leon'])
+ for(const id of ['N1','N2','N3','N4','N5','T1','T2','T3','T4','T5','E1','E2','E3','E4','E5','A1','A2','A3','A4','A5'])
   assert.ok(html.body.includes('data-bot="'+id+'"'),id);
  assert.ok(js.body.includes("level:'hard'"),'real engine difficulty selected');
  assert.ok(js.body.includes("botButton.addEventListener('click',openPicker)"),'dedicated Graj z botami button opens selector');
