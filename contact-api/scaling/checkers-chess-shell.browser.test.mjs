@@ -667,7 +667,7 @@ test('Move-history rewind resets after a new match and classic fallback remains 
  await page.locator('#history-tab').click();
  await page.getByRole('button',{name:'Pierwsza pozycja'}).click();
  await page.locator('.checkers-replay-board').waitFor({state:'visible'});
- await page.locator('#training-mode').click();
+ await page.locator('#checkers-bots-mode').click();
  await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
  await page.locator('#checkers-bots-close').click();
  await page.locator('#restart').evaluate(el=>el.click());
@@ -1076,8 +1076,17 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   await page.waitForFunction(()=>document.body.dataset.checkersTrainingReady==='yes'&&
    !document.body.classList.contains('checkers-shell-loading')&&
    document.querySelector('#board')?.dataset.checkersPlayable==='false');
-  await page.locator('#training-mode').click();
+  const controls=await page.locator('.checkers-owner-mode > .mode-choice').evaluateAll(nodes=>nodes.map(node=>{
+   const b=node.getBoundingClientRect();return {text:node.textContent.trim(),x:b.x,y:b.y,width:b.width,height:b.height};
+  }));
+  assert.deepEqual(controls.map(c=>c.text),['Komputer','Graj z botami','Online']);
+  assert.ok(controls.every(c=>Math.abs(c.y-controls[0].y)<2&&Math.abs(c.height-controls[0].height)<2),
+   'three mode buttons share one line and matching height');
+  assert.ok(controls.every((c,i)=>i===0||c.x>=controls[i-1].x+controls[i-1].width-1),
+   'mode buttons must not overlap');
+  await page.locator('#checkers-bots-mode').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
+  assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'true');
   assert.equal(await page.locator('.checkers-bots-card').count(),4);
   const bounds=await page.locator('.checkers-bots-dialog').boundingBox();
   assert.ok(bounds.x>=0&&bounds.x+bounds.width<=viewport.width+1,'catalog stays within viewport');
@@ -1100,13 +1109,14 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   assert.deepEqual(settings,{difficulty:'hard',minutes:'5',bonus:'2',name:'Bruno',cells:64},
    'selected bot launches the existing real Warcaby engine');
   await page.waitForFunction(()=>[...document.querySelectorAll('.cc-side')].some(el=>el.textContent==='Bruno'));
-  await page.locator('#training-mode').click();
+  await page.locator('#checkers-bots-mode').click();
   await page.locator('#checkers-bots-overlay').waitFor({state:'visible'});
   await page.locator('[data-bot="mila"]').click();
   await page.locator('#checkers-bots-play').click();
   assert.match(await page.locator('#checkers-bots-status').textContent(),/Nie możesz rozpocząć nowej gry/);
   assert.equal(await page.locator('#ai-level').inputValue(),'hard','active game is not silently replaced');
   await page.locator('#checkers-bots-close').click();
+  assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'false');
   assert.deepEqual(errors,[],'bot selection runs without browser JS errors');
   await context.close();
  }
