@@ -1,4 +1,9 @@
 export const checkersChessShellCss=String.raw`
+body.warcaby-console.chess-console.cc-owner .checkers-owner-mode #training-mode{display:none!important}
+body.warcaby-console.chess-console.cc-owner .checkers-bot-identity{display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;padding:7px 12px;border-radius:10px;background:#e6f4f2;color:#064c4d;font-weight:700}
+body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-avatar{font-size:26px;line-height:1}
+body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Modern Warcaby: both announcements fill the chat content region, not the board. */
 body.warcaby-console.chess-console.cc-owner #chat-panel{
@@ -510,6 +515,19 @@ export const checkersChessShellJs=String.raw`
  ]){
   const button=$(id);if(button)button.replaceChildren(icon(name),E('span','cc-mode-label',label));
  }
+ const botIdentity=E('div','checkers-bot-identity');
+ botIdentity.id='checkers-bot-identity';
+ botIdentity.setAttribute('aria-live','polite');
+ const botAvatar=E('span','checkers-bot-identity-avatar','🤖');
+ const botName=E('span','checkers-bot-identity-name','Wybierz bota');
+ botIdentity.append(botAvatar,botName);
+ mode.insertBefore(botIdentity,$('training-mode'));
+ window.addEventListener('gracz:warcaby:bot-changed',event=>{
+  const name=event.detail?.name,avatar=event.detail?.avatar;
+  if(typeof name!=='string'||!name)return;
+  botName.textContent=name;
+  botAvatar.textContent=typeof avatar==='string'?avatar:'🤖';
+ });
  const status=$('game-state');status.classList.add('checkers-owner-status');dock.insertBefore(status,match);
  const actions=E('nav','chess-reference-actions');actions.setAttribute('aria-label','Akcje Warcabów');
  function action(label,name){
