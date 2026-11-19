@@ -9,6 +9,7 @@ import { serveCheckersConsole } from "./auth/checkers-console.mjs";
 import { serveChessConsole } from "./auth/chess-console.mjs";
 import { createGomokuAiChatRoute } from "./routes/gomoku-ai-chat-route.mjs";
 import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { resolveMx } from "node:dns/promises";
 import { isIP } from "node:net";
@@ -367,7 +368,7 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
 
-    if (req.method === "GET" && url.pathname === "/health") {
+    // Public, immutable bot portraits. Restrict filenames to the 20 approved IDs.\n    if (req.method === "GET" && /^\\/checkers-bots\\/[NTEA][1-5]\\.webp$/.test(url.pathname)) {\n      const id = url.pathname.slice("/checkers-bots/".length);\n      try {\n        const portrait = await readFile(new URL("./public/checkers-bots/" + id, import.meta.url));\n        res.writeHead(200, { "Content-Type": "image/webp", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });\n        return res.end(portrait);\n      } catch (error) {\n        if (error?.code !== "ENOENT") throw error;\n        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });\n        return res.end("Avatar not found");\n      }\n    }\n\n    if (req.method === "GET" && url.pathname === "/health") {
       return json(res, lifecycle.stopping ? 503 : 200, {
         status: lifecycle.stopping ? "stopping" : "ok",
         newsletterIntakePaused: newsletter.intakePaused,
