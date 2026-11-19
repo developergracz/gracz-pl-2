@@ -214,7 +214,8 @@ test('Warcaby retain their original engine and controls inside the owner-approve
  assert.match(script.body,/checkers-shell-loading/);
  assert.match(script.body,/checkers-bots-mode/,'dedicated button for named opponents');
  assert.match(script.body,/Graj z botem/,'bot entry shows own title');
- assert.match(style.body,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three equal mode columns');
+ assert.match(style.body,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'two visible mode columns');
+  assert.ok(style.body.includes('.checkers-owner-mode>#training-mode.mode-choice{display:none!important}'),'legacy Computer button is hidden');
  assert.match(script.body,/botButton\.addEventListener\('click',openPicker\)/,'picker only from bot button');
  assert.match(script.body,/training-undo/);
  assert.match(script.body,/create-room-friend/);
@@ -349,7 +350,8 @@ test('Modern Warcaby serves a four-profile bot catalog backed by its existing of
   assert.ok(html.body.includes('data-bot="'+id+'"'),id);
  assert.ok(js.body.includes("level:'hard'"),'real engine difficulty selected');
  assert.ok(js.body.includes("botButton.addEventListener('click',openPicker)"),'dedicated Graj z botami button opens selector');
- assert.ok(js.body.includes("modeButton.addEventListener('click',()=>"),'Komputer remains an independent quick training mode');
+ assert.ok(js.body.includes("modeButton.addEventListener('click',()=>"),'the internal training engine remains available for bot matches');
+  assert.ok(js.body.includes('internalComputerMode.hidden=true'),'only bot and friend choices are user-visible');
  assert.ok(js.body.includes("document.body.dataset.checkersTrainingReady='yes'"),'selection waits for engine');
  assert.ok(css.body.includes('#checkers-bots-overlay:not([hidden])'));
  assert.ok(!load('/konto/warcaby/?konsola=klasyczna').body.includes('id="checkers-bots-overlay"'),
