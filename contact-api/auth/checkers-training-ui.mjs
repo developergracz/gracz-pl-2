@@ -6,7 +6,7 @@ export function setupTraining(a){
  const $=a.$;
  let mode='online',generation=0,finished=false,recorded=false,humanSide=1;
  const computerSide=()=>3-humanSide;
- const trainingPlayers=()=>humanSide===1?['Ty','Komputer']:['Komputer','Ty'];
+ const trainingPlayers=()=>humanSide===1?['Ty',a.getBotName?.()||'Komputer']:[a.getBotName?.()||'Komputer','Ty'];
  let clocks={1:0,2:0},lastTick=0,clockStarted=false,snapshots=[],notes=[];
  const storageKey='gracz-warcaby-training-v1';
  const clone=value=>JSON.parse(JSON.stringify(value));
