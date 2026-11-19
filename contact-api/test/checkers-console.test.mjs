@@ -169,10 +169,16 @@ test('Warcaby loss dialog uses the signed-in nickname and an authenticated table
   assert.match(page.body,new RegExp('id="'+id+'"'));
  assert.ok(page.body.includes('<span id="warcaby-loss-verb">Przegrałeś</span> <span id="warcaby-loss-player">gracz</span> tę grę z <span id="warcaby-loss-name">komputerem</span>.'),'whole result headline stays on the beige panel');
  assert.match(page.body,/id="warcaby-loss-emotion"/);
+ assert.ok(page.body.includes('warcaby-loss-face--sad')&&page.body.includes('warcaby-loss-face--happy'),
+  'both emotion states use matching, tear-free inline SVG');
+ assert.doesNotMatch(page.body,/warcaby-loss-emotion"[^>]*>😢/,'no platform emoji');
  assert.match(style.body,/#warcaby-loss-player/);
  assert.match(style.body,/font-size:1\.08em!important/);
  assert.match(script.body,/toLocaleLowerCase\('pl-PL'\)/);
- assert.match(style.body,/font-size:16px!important/);
+ assert.match(style.body,/width:min\(840px,100%\)/);
+ assert.match(style.body,/font:800 clamp\(25px,3\.05vw,38px\)/);
+ assert.match(style.body,/font:800 clamp\(21px,2\.1vw,27px\)/);
+ assert.match(style.body,/warcaby-loss-overlay\[data-outcome="win"\] \.warcaby-loss-face--happy/);
  assert.match(page.body,/role="dialog" aria-modal="true"/);
  assert.match(page.body,/>Rewanż<\/button>/);
  assert.match(page.body,/>Stoły<\/button>/);

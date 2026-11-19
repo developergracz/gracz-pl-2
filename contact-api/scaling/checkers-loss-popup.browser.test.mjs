@@ -56,13 +56,28 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true);
  assert.equal(await page.locator('#warcaby-loss-name').textContent(),'Mistrz_Andrzej');
  assert.equal(await page.locator('#warcaby-loss-verb').textContent(),'Przegrałeś');
- assert.equal(await page.locator('#warcaby-loss-emotion').textContent(),'😢');
- assert.equal(await page.locator('#warcaby-loss-title').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(246, 232, 204)');
- assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).color),'rgb(35, 121, 171)');
+ assert.equal(await page.locator('#warcaby-loss-emotion .warcaby-loss-face--sad').isVisible(),true,'approved tear-free vector sad face is visible');
+ assert.equal(await page.locator('#warcaby-loss-emotion .warcaby-loss-face--happy').isVisible(),false);
+ assert.equal(await page.locator('#warcaby-loss-title').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)','headline sits directly on cream card');
+ assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).color),'rgb(0, 157, 168)');
  assert.equal(await page.locator('#warcaby-loss-player').textContent(),'gracz','the account name is shown lowercase without changing account data');
- assert.equal(await page.locator('#warcaby-loss-player').evaluate(el=>getComputedStyle(el).fontSize),'25.92px',
-  'nickname is larger than the surrounding 24px headline');
- assert.equal(await page.locator('#warcaby-loss-rematch').evaluate(el=>getComputedStyle(el).fontSize),'16px');
+ const officeDesign=await page.locator('.warcaby-loss-card').evaluate(el=>{
+  const card=getComputedStyle(el),heading=getComputedStyle(el.querySelector('#warcaby-loss-title'));
+  const btn=getComputedStyle(el.querySelector('#warcaby-loss-rematch'));
+  const nickname=getComputedStyle(el.querySelector('#warcaby-loss-player'));
+  const close=getComputedStyle(el.querySelector('#warcaby-loss-close'));
+  const rect=el.getBoundingClientRect();
+  return {width:rect.width,font:heading.fontFamily,size:parseFloat(heading.fontSize),
+   nickSize:parseFloat(nickname.fontSize),buttonSize:parseFloat(btn.fontSize),
+   background:card.backgroundColor,closeRadius:close.borderRadius,closeBorder:close.borderWidth};
+ });
+ assert.ok(officeDesign.width>=790&&officeDesign.width<=840,'approved office dialog has a wider card');
+ assert.match(officeDesign.font,/system-ui|Segoe UI|Arial/,'office sans-serif typography');
+ assert.ok(officeDesign.nickSize>officeDesign.size,'nickname is larger than adjacent heading');
+ assert.ok(officeDesign.buttonSize>=24,'buttons have large clear labels');
+ assert.equal(officeDesign.background,'rgb(255, 248, 235)');
+ assert.equal(officeDesign.closeRadius,'50%');
+ assert.equal(officeDesign.closeBorder,'3px');
  assert.equal(await page.locator('#board').evaluate(el=>el.innerHTML),before,'board must not be touched');
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-player')?.textContent==='gracz');
  assert.equal(await page.locator('#warcaby-tables-overlay').isVisible(),false,'tables initially hidden');
@@ -92,7 +107,8 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  })),priorId);
  assert.equal(await page.locator('#warcaby-loss-overlay').isVisible(),true,'win also shows the result modal');
  assert.equal(await page.locator('#warcaby-loss-verb').textContent(),'Wygrałeś');
- assert.equal(await page.locator('#warcaby-loss-emotion').textContent(),'😄');
+ assert.equal(await page.locator('#warcaby-loss-emotion .warcaby-loss-face--happy').isVisible(),true,'victory shows the matching joyful vector face');
+ assert.equal(await page.locator('#warcaby-loss-emotion .warcaby-loss-face--sad').isVisible(),false);
  await page.locator('#warcaby-loss-rematch').click();
  await page.waitForFunction(()=>document.querySelector('#warcaby-loss-notice')?.textContent.includes('Wysłano propozycję rewanżu'));
  assert.equal(invites.at(-1).nickname,'Mistrz_Andrzej','winning rematch targets the opponent, not yourself');
@@ -111,6 +127,11 @@ test('Warcaby loss shows the modal and only real authorized options, without cha
  await actual.goto('http://127.0.0.1:'+server.address().port+'/konto/warcaby/');
  await actual.waitForFunction(()=>document.querySelector('#warcaby-loss-overlay')?.hidden===false,{timeout:10000});
  assert.equal(await actual.locator('#warcaby-loss-name').textContent(),'komputerem');
+ const mobileFit=await actual.locator('.warcaby-loss-card').evaluate(el=>{
+  const box=el.getBoundingClientRect();return {left:box.left,right:box.right,width:box.width,viewport:innerWidth,scroll:el.scrollWidth};
+ });
+ assert.ok(mobileFit.left>=0&&mobileFit.right<=mobileFit.viewport,'approved dialog fits phone width');
+ assert.ok(mobileFit.scroll<=mobileFit.width+2,'no horizontal overflow on mobile');
  assert.equal(await actual.locator('#warcaby-tables-overlay').isVisible(),false,'tables open only when requested');
  assert.equal(await actual.locator('#board .square').count(),64);
  assert.deepEqual(runtimeErrors,[],'real controller rendering never breaks browser runtime');
