@@ -1139,11 +1139,11 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
  }
 });
 
-test('Dłoń Premium: glove cursor matches the pawn size, loads real PNGs and stays closed for any drag',{timeout:95000},async t=>{
+test('Dłoń Premium: scalable overlay fits the pawn and stays closed throughout a drag',{timeout:95000},async t=>{
  const {base}=await serverFor(t);
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  t.after(()=>browser.close());
- for(const [viewport,scale,tier,first] of [[{width:1366,height:768},1,'l','l'],[{width:1366,height:768},2,'l','l'],[{width:1024,height:700},1,'m','m'],[{width:1920,height:1080},1,'xl','l']]){
+ for(const [viewport,scale,tier] of [[{width:1366,height:768},1,'l'],[{width:1366,height:768},2,'l'],[{width:1024,height:700},1,'m'],[{width:1920,height:1080},1,'xl']]){
   const context=await browser.newContext({viewport,deviceScaleFactor:scale});
   const page=await context.newPage(),errors=[],loaded=new Map();
   page.on('pageerror',error=>errors.push(error.message));
@@ -1152,27 +1152,37 @@ test('Dłoń Premium: glove cursor matches the pawn size, loads real PNGs and st
   await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
   await takeSeat(page);
   await page.waitForFunction(()=>document.getElementById('board').dataset.checkersHand);
-  assert.equal(await page.locator('#board').getAttribute('data-checkers-hand'),tier,'glove size follows the real pawn');
-  const cursorAt=(x,y)=>page.evaluate(([x,y])=>getComputedStyle(document.elementFromPoint(x,y)).cursor,[x,y]);
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-hand'),tier,'tier follows real pawn diameter');
   const box=await page.locator('#board .square[data-index="17"] .piece').boundingBox();
   const x=box.x+box.width/2,y=box.y+box.height/2;
   await page.mouse.move(x,y);
-  const open=await cursorAt(x,y);
-  assert.match(open,new RegExp('image-set\\(url\\("[^"]+/checkers-hand/open-'+first+'\\.png"\\) 1dppx, url\\("[^"]+/checkers-hand/open-'+first+'-2x\\.png"\\) 2dppx\\) \\d+ \\d+'),'open glove with HiDPI pair');
-  assert.match(open,/open\.png"\) \d+ \d+, grab$/,'32px PNG and standard grab fallback');
+  await page.waitForFunction(()=>{const hand=document.querySelector('.checkers-hand-visual');
+   return hand&&!hand.hidden&&hand.querySelector('img')?.dataset.state==='open';});
+  assert.equal(await page.evaluate(([x,y])=>getComputedStyle(document.elementFromPoint(x,y)).cursor,[x,y]),'none','native cursor hidden while overlay is visible');
+  const hover=await page.evaluate(()=>{
+   const image=document.querySelector('.checkers-hand-visual img'),piece=document.querySelector('#board .square[data-index="17"] .piece');
+   return {width:parseFloat(image.style.width),diameter:piece.getBoundingClientRect().width,src:image.getAttribute('src'),pointerEvents:getComputedStyle(image).pointerEvents};
+  });
+  assert.ok(hover.src.endsWith('/checkers-hand/open-l-2x.png'),'approved hover glove, 2x source');
+  assert.equal(hover.pointerEvents,'none','overlay never intercepts game input');
+  assert.ok(Math.abs(hover.width/hover.diameter-120/73.5)<.03,'glove remains proportional to actual pawn, even above 128px');
+  if(tier==='xl')assert.ok(hover.width>128,'large board has a glove larger than the native browser cursor limit');
   const empty=await page.locator('#board .square[data-index="19"]').boundingBox(); // illegal sideways target
   await page.mouse.down();await page.mouse.move(empty.x+empty.width/2,empty.y+empty.height/2,{steps:8});
-  assert.match(await cursorAt(empty.x+empty.width/2,empty.y+empty.height/2),new RegExp('grip-'+first+'\\.png.*grabbing$'),'closed glove over an illegal square');
+  await page.waitForFunction(()=>{const hand=document.querySelector('.checkers-hand-visual');
+   return hand&&!hand.hidden&&hand.querySelector('img')?.dataset.state==='grip';});
+  assert.equal(await page.locator('.checkers-hand-visual img').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
   const frame=await page.locator('#board').boundingBox(),ox=Math.min(viewport.width-12,frame.x+frame.width+40),oy=frame.y+frame.height/2;
   await page.mouse.move(ox,oy,{steps:4});
-  assert.match(await cursorAt(ox,oy),/grip-.*grabbing$/,'closed glove also outside the board');
+  assert.equal(await page.locator('.checkers-hand-visual').getAttribute('hidden'),null,'glove remains visible outside board during drag');
+  assert.equal(await page.locator('.checkers-hand-visual img').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
   await page.mouse.up();
-  assert.doesNotMatch(await cursorAt(ox,oy),/checkers-hand/,'normal cursor after the snap-back');
-  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','illegal drag never moves');
+  await page.waitForFunction(()=>document.querySelector('.checkers-hand-visual')?.hidden);
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','illegal drag never moves the pawn');
   assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
-  const want=scale>1?'-2x.png':'.png';
-  await page.waitForFunction(names=>names.every(name=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/checkers-hand/'+name))),['open-'+first+want,'grip-'+first+want]);
-  for(const name of ['open-'+first+want,'grip-'+first+want])assert.equal(loaded.get(name),'200 image/png',name+' requested by the browser');
+  await page.waitForFunction(()=>['open-l-2x.png','grip-l-2x.png'].every(name=>
+   performance.getEntriesByType('resource').some(r=>r.name.endsWith('/checkers-hand/'+name))));
+  for(const name of ['open-l-2x.png','grip-l-2x.png'])assert.equal(loaded.get(name),'200 image/png',name+' loaded');
   assert.deepEqual(errors,[]);
   await context.close();
  }
