@@ -1,9 +1,6 @@
 export const checkersChessShellCss=String.raw`
-/* The engine keeps #training-mode; the visible tab is the selected bot's avatar and name. */
+/* Keep the legacy engine control hidden; only the bot and friends buttons are visible. */
 body.warcaby-console #training-mode[hidden],body.warcaby-console.chess-console.cc-owner #game .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
-body.warcaby-console.chess-console.cc-owner .checkers-bot-identity{display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;height:48px;min-width:0;margin:0;padding:2px 8px;border-radius:10px;background:#e6f4f2;color:#064c4d;font:700 13px/1.1 system-ui,sans-serif}
-body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-avatar{flex:0 0 auto;font-size:24px;line-height:1}
-body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Modern Warcaby: both announcements fill the chat content region, not the board. */
@@ -518,24 +515,6 @@ export const checkersChessShellJs=String.raw`
  ]){
   const button=$(id);if(button)button.replaceChildren(icon(name),E('span','cc-mode-label',label));
  }
- const botIdentity=E('div','checkers-bot-identity');
- botIdentity.id='checkers-bot-identity';
- botIdentity.setAttribute('aria-live','polite');
- const botAvatar=E('span','checkers-bot-identity-avatar','🤖');
- const botName=E('span','checkers-bot-identity-name','Komputer');
- botAvatar.setAttribute('aria-hidden','true');
- botIdentity.append(botAvatar,botName);
- mode.insertBefore(botIdentity,$('training-mode'));
- const showBot=(name,avatar)=>{
-  botName.textContent=name;botAvatar.textContent=avatar;
-  botIdentity.title='Przeciwnik: '+name;
- };
- showBot('Komputer','🤖');
- window.addEventListener('gracz:warcaby:bot-changed',event=>{
-  const name=event.detail?.name,avatar=event.detail?.avatar;
-  if(typeof name!=='string'||!name){showBot('Komputer','🤖');return}
-  showBot(name,typeof avatar==='string'&&avatar?avatar:'🤖');
- });
  const status=$('game-state');status.classList.add('checkers-owner-status');dock.insertBefore(status,match);
  const actions=E('nav','chess-reference-actions');actions.setAttribute('aria-label','Akcje Warcabów');
  function action(label,name){
