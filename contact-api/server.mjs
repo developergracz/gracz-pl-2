@@ -6,6 +6,7 @@ import { servePlayerPanel } from "./auth/panel.mjs";
 import { createAugustPortal } from "./auth/august-portal.mjs";
 import { serveGomokuConsole } from "./auth/gomoku-console.mjs";
 import { serveCheckersConsole } from "./auth/checkers-console.mjs";
+import { CHECKERS_HAND_FILES } from "./auth/checkers-hand-cursor.mjs";
 import { serveChessConsole } from "./auth/chess-console.mjs";
 import { createGomokuAiChatRoute } from "./routes/gomoku-ai-chat-route.mjs";
 import { createServer } from "node:http";
@@ -38,6 +39,7 @@ import { createPremiumReplyRoute } from "./routes/premium-reply-route.mjs";
 import { createContactDataCrypto } from "./security/contact-data-crypto.mjs";
 
 const PORT = Number(process.env.PORT || 10000);
+const CHECKERS_HAND_ROUTES = new Set(CHECKERS_HAND_FILES.map((file) => "/checkers-hand/" + file));
 const HOST = process.env.HOST || "0.0.0.0";
 const RESEND_API_KEY = String(process.env.RESEND_API_KEY || "").trim();
 const RESEND_ENDPOINT = String(
@@ -382,8 +384,8 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    // Serve only the approved checkers cursor assets (SVG and PNG fallback).
-    if (req.method === "GET" && ["/checkers-hand/open.png", "/checkers-hand/grip.png", "/checkers-hand/open-large.svg", "/checkers-hand/grip-large.svg"].includes(url.pathname)) {
+    // Serve only the approved checkers cursor assets (raster glove sizes, 32px fallback, legacy SVG).
+    if (req.method === "GET" && (CHECKERS_HAND_ROUTES.has(url.pathname) || ["/checkers-hand/open-large.svg", "/checkers-hand/grip-large.svg"].includes(url.pathname))) {
       const filename = url.pathname.slice("/checkers-hand/".length);
       try {
         const asset = await readFile(new URL("./public/checkers-hand/" + filename, import.meta.url));
