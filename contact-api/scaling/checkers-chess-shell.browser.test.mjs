@@ -1157,28 +1157,43 @@ test('Dłoń Premium: scalable overlay fits the pawn and stays closed throughout
   const x=box.x+box.width/2,y=box.y+box.height/2;
   await page.mouse.move(x,y);
   await page.waitForFunction(()=>{const hand=document.querySelector('.checkers-hand-visual');
-   return hand&&!hand.hidden&&hand.querySelector('img')?.dataset.state==='open';});
+   return hand&&!hand.hidden&&hand.dataset.state==='open';});
   assert.equal(await page.evaluate(([x,y])=>getComputedStyle(document.elementFromPoint(x,y)).cursor,[x,y]),'none','native cursor hidden while overlay is visible');
   const hover=await page.evaluate(()=>{
-   const image=document.querySelector('.checkers-hand-visual img'),piece=document.querySelector('#board .square[data-index="17"] .piece');
-   return {width:parseFloat(image.style.width),diameter:piece.getBoundingClientRect().width,src:image.getAttribute('src'),pointerEvents:getComputedStyle(image).pointerEvents};
+   const layer=document.querySelector('.checkers-hand-visual'),image=layer.querySelector('.checkers-hand-open'),piece=document.querySelector('#board .square[data-index="17"] .piece');
+   return {width:parseFloat(image.style.width),diameter:piece.getBoundingClientRect().width,src:image.getAttribute('src'),
+    offsetX:-parseFloat(image.style.left),offsetY:-parseFloat(image.style.top),
+    centerX:parseFloat(layer.style.left),centerY:parseFloat(layer.style.top),
+    pointerEvents:getComputedStyle(image).pointerEvents,transition:getComputedStyle(image).transitionDuration};
   });
   assert.ok(hover.src.endsWith('/checkers-hand/open-l-2x.png'),'approved hover glove, 2x source');
   assert.equal(hover.pointerEvents,'none','overlay never intercepts game input');
-  assert.ok(Math.abs(hover.width/hover.diameter-120/73.5)<.03,'glove remains proportional to actual pawn, even above 128px');
+  assert.ok(Math.abs(hover.width/hover.diameter-120/56)<.05,'glove enlarged to wrap around the pawn');
+  assert.ok(Math.abs(hover.offsetX/hover.diameter-43/56)<.05,'palm opening centered further inside glove');
+  assert.ok(Math.abs(hover.offsetY/hover.diameter-51/56)<.05,'palm overlaps the pawn vertically');
+  assert.ok(Math.abs(hover.centerX-x)<1&&Math.abs(hover.centerY-y)<1,'hover anchored to pawn');
+  assert.match(hover.transition,/0\.14s|0\.155s/,'glove states animate smoothly');
   if(tier==='xl')assert.ok(hover.width>128,'large board has a glove larger than the native browser cursor limit');
   const empty=await page.locator('#board .square[data-index="19"]').boundingBox(); // illegal sideways target
   await page.mouse.down();await page.mouse.move(empty.x+empty.width/2,empty.y+empty.height/2,{steps:8});
   await page.waitForFunction(()=>{const hand=document.querySelector('.checkers-hand-visual');
-   return hand&&!hand.hidden&&hand.querySelector('img')?.dataset.state==='grip';});
-  assert.equal(await page.locator('.checkers-hand-visual img').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
+   return hand&&!hand.hidden&&hand.dataset.state==='grip';});
+  assert.equal(await page.locator('.checkers-hand-visual .checkers-hand-grip').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
   const frame=await page.locator('#board').boundingBox(),ox=Math.min(viewport.width-12,frame.x+frame.width+40),oy=frame.y+frame.height/2;
   await page.mouse.move(ox,oy,{steps:4});
   assert.equal(await page.locator('.checkers-hand-visual').getAttribute('hidden'),null,'glove remains visible outside board during drag');
-  assert.equal(await page.locator('.checkers-hand-visual img').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
+  const bounds=await page.evaluate(()=>{
+   const b=document.getElementById('board').getBoundingClientRect(),ghost=document.querySelector('.checkers-drag-ghost')?.getBoundingClientRect(),hand=document.querySelector('.checkers-hand-visual');
+   return {b:{left:b.left,top:b.top,right:b.right,bottom:b.bottom},ghost:ghost&&{left:ghost.left,top:ghost.top,right:ghost.right,bottom:ghost.bottom},handX:parseFloat(hand.style.left),handY:parseFloat(hand.style.top)};
+  });
+  assert.ok(bounds.ghost,'dragged pawn exists');
+  assert.ok(bounds.ghost.left>=bounds.b.left-1&&bounds.ghost.top>=bounds.b.top-1&&bounds.ghost.right<=bounds.b.right+1&&bounds.ghost.bottom<=bounds.b.bottom+1,'dragged pawn stays fully inside board');
+  assert.ok(bounds.handX>=bounds.b.left&&bounds.handX<=bounds.b.right&&bounds.handY>=bounds.b.top&&bounds.handY<=bounds.b.bottom,'hand follows confined pawn');
+  assert.equal(await page.locator('.checkers-hand-visual .checkers-hand-grip').getAttribute('src'),'/checkers-hand/grip-l-2x.png');
   await page.mouse.up();
   await page.waitForFunction(()=>document.querySelector('.checkers-hand-visual')?.hidden);
   assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','illegal drag never moves the pawn');
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('checkers-hand-overlay-enabled')),false,'native cursor restored after overlay disappears');
   assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
   await page.waitForFunction(()=>['open-l-2x.png','grip-l-2x.png'].every(name=>
    performance.getEntriesByType('resource').some(r=>r.name.endsWith('/checkers-hand/'+name))));
