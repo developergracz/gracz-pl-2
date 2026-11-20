@@ -1,10 +1,7 @@
-// Fail-closed campaign admission. Historical, fully verified self-service
-// withdrawals must not globally disable all future campaigns: recipient
-// eligibility separately requires a fresh DOI and excludes revoked addresses.
-// Unresolved requests (including legacy operator intake), uncertain provider
-// outcomes and legacy no-send obligations still block all campaign delivery.
-// A shared advisory lock is held through the provider effect; withdrawal intake
-// acquires the matching exclusive lock before persisting a new request.
+// #335: fail-closed GLOBAL admission. History remains append-only. Only a
+// self-service request linked to its verified mailbox challenge, immutable DOI
+// revocation and provider-OFF readback has a complete settlement proof.
+// Other sources (including legacy) stay on HOLD; provider-OFF alone is not proof.
 export const WITHDRAWAL_EGRESS_LOCK = Object.freeze([2820, 19283]);
 
 function refuse(code) {
@@ -27,13 +24,23 @@ export function createWithdrawalSendFence(database) {
         );
         result = await client.query(
           "SELECT " +
-          " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_requests r " +
-          " LEFT JOIN newsletter_recovery.self_service_verified v " +
-          " ON v.withdrawal_request_id=r.request_id " +
-          " LEFT JOIN newsletter_recovery.self_service_provider_verified p " +
-          " ON p.challenge_id=v.challenge_id " +
-          " WHERE r.intake_source<>'self_service' " +
-          " OR v.challenge_id IS NULL OR p.challenge_id IS NULL) AS unresolved_requests, " +
+          ` EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_requests r
+            WHERE NOT EXISTS (
+              SELECT 1 FROM newsletter_recovery.self_service_verified v
+              JOIN newsletter_recovery.self_service_challenges c USING (challenge_id)
+              JOIN newsletter_new.revocations d USING (challenge_id)
+              JOIN newsletter_recovery.self_service_provider_intents i USING (challenge_id)
+              JOIN newsletter_recovery.self_service_provider_verified p USING (challenge_id)
+              WHERE r.intake_source='self_service'
+                AND v.withdrawal_request_id=r.request_id
+                AND v.challenge_id=r.evidence_ref
+                AND c.requested_at<=d.recorded_at
+                AND d.recorded_at<=v.verified_at
+                AND r.received_at<=v.verified_at
+                AND v.verified_at<c.expires_at
+                AND i.created_at>=v.verified_at
+                AND p.verified_at>=i.created_at
+            ) LIMIT 1) AS unresolved_requests, ` +
           " EXISTS(SELECT 1 FROM newsletter_recovery.withdrawal_no_send_obligations LIMIT 1) AS obligations_exist"
         );
       } catch {
