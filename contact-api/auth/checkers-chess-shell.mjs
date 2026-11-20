@@ -1,6 +1,6 @@
 export const checkersChessShellCss=String.raw`
 /* The engine keeps #training-mode; the visible tab is the selected bot's avatar and name. */
-body.warcaby-console.chess-console.cc-owner #game .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
+body.warcaby-console #training-mode[hidden],body.warcaby-console.chess-console.cc-owner #game .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
 body.warcaby-console.chess-console.cc-owner .checkers-bot-identity{display:flex;align-items:center;justify-content:center;gap:6px;box-sizing:border-box;height:48px;min-width:0;margin:0;padding:2px 8px;border-radius:10px;background:#e6f4f2;color:#064c4d;font:700 13px/1.1 system-ui,sans-serif}
 body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-avatar{flex:0 0 auto;font-size:24px;line-height:1}
 body.warcaby-console.chess-console.cc-owner .checkers-bot-identity-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -509,10 +509,12 @@ export const checkersChessShellJs=String.raw`
  botMode.setAttribute('aria-controls','checkers-bots-overlay');
  botMode.setAttribute('aria-expanded','false');
  mode.insertBefore(botMode,$('online-mode'));
+ // Keep the legacy training control for the game engine, but never show it as a third mode button.
+ const trainingMode=$('training-mode');
+ if(trainingMode){trainingMode.hidden=true;trainingMode.style.setProperty('display','none','important');trainingMode.setAttribute('aria-hidden','true');trainingMode.tabIndex=-1;}
  for(const [id,label,name] of [
-  ['training-mode','Komputer','computer'],
   ['checkers-bots-mode','Graj z botem','bot'],
-  ['online-mode','Graj ze znajomym','online']
+  ['online-mode','Graj ze znajomymi','online']
  ]){
   const button=$(id);if(button)button.replaceChildren(icon(name),E('span','cc-mode-label',label));
  }
