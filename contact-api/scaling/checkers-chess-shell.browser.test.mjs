@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
+import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {serveCheckersConsole} from '../auth/checkers-console.mjs';
 import {serveGomokuConsole} from '../auth/gomoku-console.mjs';
@@ -12,6 +13,11 @@ async function serverFor(t,{nickname=null}={}){
  const server=createServer((req,res)=>{
   const url=new URL(req.url,'http://127.0.0.1');
   if(serveCheckersConsole(req,res,url)||serveGomokuConsole(req,res,url))return;
+  if(/^\/checkers-hand\/[a-z0-9-]+\.png$/.test(url.pathname)){ // same files server.mjs serves
+   readFile(new URL('../public'+url.pathname,import.meta.url)).then(body=>{
+    res.writeHead(200,{'Content-Type':'image/png','Cache-Control':'public, max-age=3600'});res.end(body);
+   },()=>{res.writeHead(404);res.end();});return;
+  }
   if(url.pathname==='/auth/session'){
    res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
    res.end(JSON.stringify(nickname?{ok:true,loggedIn:true,nickname}:{ok:true,loggedIn:false}));return;
@@ -1129,6 +1135,45 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   assert.doesNotMatch(await page.locator('#chat-messages').textContent(),/Adam/,'previous bot conversation is not shown');
   assert.equal(await page.locator('#checkers-bots-mode').getAttribute('aria-expanded'),'false');
   assert.deepEqual(errors,[],'bot selection runs without browser JS errors');
+  await context.close();
+ }
+});
+
+test('Dłoń Premium: glove cursor matches the pawn size, loads real PNGs and stays closed for any drag',{timeout:95000},async t=>{
+ const {base}=await serverFor(t);
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ t.after(()=>browser.close());
+ for(const [viewport,scale,tier,first] of [[{width:1366,height:768},1,'l','l'],[{width:1366,height:768},2,'l','l'],[{width:1024,height:700},1,'m','m'],[{width:1920,height:1080},1,'xl','l']]){
+  const context=await browser.newContext({viewport,deviceScaleFactor:scale});
+  const page=await context.newPage(),errors=[],loaded=new Map();
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('response',response=>{const path=new URL(response.url()).pathname;
+   if(path.startsWith('/checkers-hand/'))loaded.set(path.slice(15),response.status()+' '+response.headers()['content-type']);});
+  await page.goto(base+'/konto/warcaby/',{waitUntil:'domcontentloaded'});
+  await takeSeat(page);
+  await page.waitForFunction(()=>document.getElementById('board').dataset.checkersHand);
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-hand'),tier,'glove size follows the real pawn');
+  const cursorAt=(x,y)=>page.evaluate(([x,y])=>getComputedStyle(document.elementFromPoint(x,y)).cursor,[x,y]);
+  const box=await page.locator('#board .square[data-index="17"] .piece').boundingBox();
+  const x=box.x+box.width/2,y=box.y+box.height/2;
+  await page.mouse.move(x,y);
+  const open=await cursorAt(x,y);
+  assert.match(open,new RegExp('image-set\\(url\\("[^"]+/checkers-hand/open-'+first+'\\.png"\\) 1dppx, url\\("[^"]+/checkers-hand/open-'+first+'-2x\\.png"\\) 2dppx\\) \\d+ \\d+'),'open glove with HiDPI pair');
+  assert.match(open,/open\.png"\) \d+ \d+, grab$/,'32px PNG and standard grab fallback');
+  const empty=await page.locator('#board .square[data-index="19"]').boundingBox(); // illegal sideways target
+  await page.mouse.down();await page.mouse.move(empty.x+empty.width/2,empty.y+empty.height/2,{steps:8});
+  assert.match(await cursorAt(empty.x+empty.width/2,empty.y+empty.height/2),new RegExp('grip-'+first+'\\.png.*grabbing$'),'closed glove over an illegal square');
+  const frame=await page.locator('#board').boundingBox(),ox=Math.min(viewport.width-12,frame.x+frame.width+40),oy=frame.y+frame.height/2;
+  await page.mouse.move(ox,oy,{steps:4});
+  assert.match(await cursorAt(ox,oy),/grip-.*grabbing$/,'closed glove also outside the board');
+  await page.mouse.up();
+  assert.doesNotMatch(await cursorAt(ox,oy),/checkers-hand/,'normal cursor after the snap-back');
+  assert.equal(await page.locator('#move-count').textContent(),'Ruch 0','illegal drag never moves');
+  assert.equal(await page.locator('.checkers-drag-ghost').count(),0);
+  const want=scale>1?'-2x.png':'.png';
+  await page.waitForFunction(names=>names.every(name=>performance.getEntriesByType('resource').some(r=>r.name.endsWith('/checkers-hand/'+name))),['open-'+first+want,'grip-'+first+want]);
+  for(const name of ['open-'+first+want,'grip-'+first+want])assert.equal(loaded.get(name),'200 image/png',name+' requested by the browser');
+  assert.deepEqual(errors,[]);
   await context.close();
  }
 });

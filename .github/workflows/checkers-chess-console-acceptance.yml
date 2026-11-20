@@ -7,6 +7,9 @@ on:
       - 'contact-api/auth/checkers-bots-picker.mjs'
       - 'contact-api/auth/checkers-ui-parity.mjs'
       - 'contact-api/auth/chess-console.mjs'
+      - 'contact-api/auth/checkers-hand-cursor.mjs'
+      - 'contact-api/public/checkers-hand/**'
+      - 'contact-api/test/checkers-hand-cursor.test.mjs'
       - 'contact-api/scaling/checkers-chess-shell.browser.test.mjs'
       - '.github/workflows/checkers-chess-console-acceptance.yml'
   workflow_dispatch:
@@ -33,6 +36,6 @@ jobs:
           ./contact-api/node_modules/.bin/playwright install --with-deps chromium
       - name: Verify existing Warcaby source, controllers and rendering
         run: |
-          node --test contact-api/test/checkers-console.test.mjs contact-api/test/checkers-training.test.mjs contact-api/test/checkers-rule-regressions.test.mjs
+          node --test contact-api/test/checkers-console.test.mjs contact-api/test/checkers-training.test.mjs contact-api/test/checkers-rule-regressions.test.mjs contact-api/test/checkers-hand-cursor.test.mjs
       - name: Verify real desktop/mobile chess console and unchanged Warcaby gameplay
         run: node --test contact-api/scaling/checkers-chess-shell.browser.test.mjs

@@ -65,6 +65,9 @@ export const productionModules=Object.freeze([
   'auth/checkers-chess-shell.mjs',
   // Local-only DOM parity for checkers (mobile header, annotations, move replay).
   'auth/checkers-ui-parity.mjs',
+  // Presentation-only Warcaby glove cursor: static CSS/JS strings and the fixed list of
+  // same-origin PNG names served from public/checkers-hand; no IO, imports or game logic.
+  'auth/checkers-hand-cursor.mjs',
   // Isolated Warcaby result+tables lobby: same-origin social and warcaby tables APIs;
   // strict textContent DOM writes; no new routes or privileged data.
   'auth/checkers-loss-popup.mjs',
