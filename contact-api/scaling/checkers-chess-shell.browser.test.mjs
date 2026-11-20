@@ -1085,7 +1085,7 @@ test('Warcaby bot catalog selects real opponent, color and clock on desktop and 
   const controls=await page.locator('#checkers-bot-identity, #checkers-bots-mode, #online-mode').evaluateAll(nodes=>nodes.map(node=>{
    const b=node.getBoundingClientRect();return {text:node.textContent.trim(),x:b.x,y:b.y,width:b.width,height:b.height};
   }));
-  assert.deepEqual(controls.map(c=>c.text),['🤖Komputer','Graj z botem','Graj ze znajomym']);
+  assert.deepEqual(controls.map(c=>c.text),['🤖Komputer','Graj z botem','Graj ze znajomymi']);
   assert.ok(controls.every(c=>Math.abs(c.y-controls[0].y)<2&&Math.abs(c.height-controls[0].height)<2),
    'three mode tiles share one line and matching height');
   assert.ok(controls.every((c,i)=>i===0||c.x>=controls[i-1].x+controls[i-1].width-1),
