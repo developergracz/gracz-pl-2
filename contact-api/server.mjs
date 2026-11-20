@@ -382,12 +382,13 @@ const server = createServer(async (req, res) => {
       }
     }
 
-    // Only the two approved hand cursor assets can be served.
-    if (req.method === "GET" && (url.pathname === "/checkers-hand/open.png" || url.pathname === "/checkers-hand/grip.png")) {
-      const filename = url.pathname.endsWith("/open.png") ? "open.png" : "grip.png";
+    // Serve only the approved checkers cursor assets (SVG and PNG fallback).
+    if (req.method === "GET" && ["/checkers-hand/open.png", "/checkers-hand/grip.png", "/checkers-hand/open-large.svg", "/checkers-hand/grip-large.svg"].includes(url.pathname)) {
+      const filename = url.pathname.slice("/checkers-hand/".length);
       try {
         const asset = await readFile(new URL("./public/checkers-hand/" + filename, import.meta.url));
-        res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
+        const isSvg = filename.endsWith(".svg");
+        res.writeHead(200, { "Content-Type": isSvg ? "image/svg+xml; charset=utf-8" : "image/png", "Cache-Control": "public, max-age=3600", "X-Content-Type-Options": "nosniff" });
         return res.end(asset);
       } catch (error) {
         if (error?.code !== "ENOENT") throw error;
