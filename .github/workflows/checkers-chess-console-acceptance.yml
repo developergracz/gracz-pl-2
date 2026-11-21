@@ -11,6 +11,7 @@ on:
       - 'contact-api/public/checkers-hand/**'
       - 'contact-api/test/checkers-hand-cursor.test.mjs'
       - 'contact-api/scaling/checkers-chess-shell.browser.test.mjs'
+      - 'contact-api/test/checkers-console.test.mjs'
       - '.github/workflows/checkers-chess-console-acceptance.yml'
   workflow_dispatch:
 

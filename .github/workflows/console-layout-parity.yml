@@ -8,13 +8,41 @@ on:
       - 'contact-api/auth/chess-console.mjs'
       - 'contact-api/auth/checkers-training-ui.mjs'
       - '.github/workflows/console-layout-parity.yml'
+      - 'scripts/ci/checkers-change-scope.mjs'
+      - 'scripts/ci/checkers-change-scope.test.mjs'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  scope:
+    name: Select safe CI scope
+    runs-on: ubuntu-24.04
+    outputs:
+      targeted: ${{ steps.route.outputs.targeted }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - name: Verify fail-closed CI selector
+        run: node --test scripts/ci/checkers-change-scope.test.mjs
+      - name: Select scoped PR test plan
+        id: route
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$CI_EVENT" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$CI_BASE_SHA" || true
+          fi
+          node scripts/ci/checkers-change-scope.mjs
   geometry:
+    needs: scope
+    if: needs.scope.outputs.targeted != 'true'
     name: Measure Gomoku, Warcaby and Szachy in Chromium
     runs-on: ubuntu-24.04
     timeout-minutes: 20
