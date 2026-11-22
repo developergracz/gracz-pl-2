@@ -1,0 +1,697 @@
+/* GRACZ NEXT: accepted GRACZ.PL homepage, flat premium hero.
+   Scoped to the home page; game consoles, authentication and APIs are untouched. */
+#public-portal[data-page='home'] .r4-hero.owner-accepted-hero {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(680px, 1.88fr) !important;
+  align-items: center !important;
+  gap: clamp(22px, 2.2vw, 42px) !important;
+  margin: 0 auto !important;
+  padding: clamp(24px, 3vw, 46px) 2.1% 22px !important;
+  width: 100% !important;
+  max-width: 1760px !important;
+  min-height: 0 !important;
+  isolation: isolate;
+  background: #002e30 !important;
+  color: #fff6e8 !important;
+  overflow: visible !important;
+  border: 0 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero::before,
+#public-portal[data-page='home'] .owner-accepted-hero::after,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule::after {
+  display: none !important;
+  content: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero *,
+#public-portal[data-page='home'] .owner-accepted-hero *::before,
+#public-portal[data-page='home'] .owner-accepted-hero *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-copy {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  background: none !important;
+  position: relative !important;
+  inset: auto !important;
+  text-align: left !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero h1 {
+  width: 100% !important;
+  max-width: none !important;
+  font:
+    700 clamp(38px, 3.4vw, 62px)/1.06 Georgia,
+    serif !important;
+  letter-spacing: -0.036em !important;
+  color: #fff5e6 !important;
+  margin: 0 0 14px !important;
+  text-align: left !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero h1 span {
+  color: #f6d079 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-motto {
+  font:
+    italic 700 clamp(23px, 2.2vw, 39px)/1.18 Georgia,
+    serif !important;
+  color: #ffd16a !important;
+  text-align: left !important;
+  margin: 0 0 14px !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  height: 33px !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 0 13px !important;
+  border: 0 !important;
+  color: #fbd278 !important;
+  background: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule::before {
+  display: block !important;
+  position: static !important;
+  content: '♛' !important;
+  font:
+    700 31px Georgia,
+    serif;
+  color: #fbd278;
+  border-bottom: 1px solid #d6ab57;
+  width: 100%;
+  text-align: center;
+  line-height: 1.2;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-claim {
+  font:
+    700 clamp(25px, 2.2vw, 37px)/1.07 Georgia,
+    serif !important;
+  color: #fff6e8 !important;
+  text-align: center !important;
+  margin: 0 0 15px !important;
+  max-width: 100% !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-description {
+  color: #f1f5f0 !important;
+  font:
+    400 clamp(15px, 1.1vw, 18px)/1.35 Arial,
+    sans-serif !important;
+  max-width: 560px !important;
+  margin: 0 0 13px !important;
+  text-align: left !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-description strong {
+  color: #fff !important;
+  font-weight: 800 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-description strong span {
+  color: #f34253 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1.24fr !important;
+  gap: 9px 12px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions .r4-btn,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions .r4-btn-gomoku {
+  position: static !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 49px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #ddc48a !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  background: #003c3c !important;
+  font:
+    700 clamp(14px, 1.12vw, 18px)/1.2 Arial,
+    sans-serif !important;
+  letter-spacing: -0.01em !important;
+  text-decoration: none !important;
+  transform: none !important;
+  text-align: center !important;
+  opacity: 1 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions .r4-btn-gold,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions .owner-quick {
+  background: #ffd36d !important;
+  color: #00383a !important;
+  border-color: #ffd36d !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  min-height: 49px;
+  grid-column: 1 / -1;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack .r4-btn {
+  display: none !important;
+}
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='warcaby']
+  .r4-game-cta-stack
+  [data-game='warcaby'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='szachy']
+  .r4-game-cta-stack
+  [data-game='szachy'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='gomoku']
+  .r4-game-cta-stack
+  [data-game='gomoku'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='soon']
+  .r4-game-cta-stack
+  [data-game='soon'] {
+  display: flex !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-quick {
+  grid-column: 1/-1;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-console {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 12px !important;
+  border: 2px solid #e5e7dd;
+  border-radius: 17px;
+  background: #003438;
+  color: #fff;
+}
+#public-portal[data-page='home'] .owner-console-toplinks {
+  display: flex;
+  gap: clamp(10px, 1.9vw, 23px);
+  overflow: hidden;
+  white-space: nowrap;
+  font:
+    600 clamp(11px, 0.85vw, 14px) Arial,
+    sans-serif;
+  color: #e6ebe7;
+  padding: 2px 5px;
+}
+#public-portal[data-page='home'] .owner-console-toplinks span {
+  white-space: nowrap;
+}
+#public-portal[data-page='home'] .owner-console-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.36fr) minmax(300px, 0.98fr);
+  align-items: stretch;
+  gap: 14px;
+}
+#public-portal[data-page='home'] .owner-console-board {
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e6dfcd;
+}
+#public-portal[data-page='home'] .owner-slide {
+  display: none !important;
+}
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='warcaby']
+  .owner-slide[data-owner-slide='warcaby'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='szachy']
+  .owner-slide[data-owner-slide='szachy'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='gomoku']
+  .owner-slide[data-owner-slide='gomoku'],
+#public-portal[data-page='home']
+  .owner-accepted-hero[data-hero-slide='soon']
+  .owner-slide[data-owner-slide='soon'] {
+  display: grid !important;
+}
+#public-portal[data-page='home'] .owner-square-board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+}
+#public-portal[data-page='home'] .owner-square {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1;
+  background: #e6dfcd;
+}
+#public-portal[data-page='home'] .owner-square.dark {
+  background: #39858a;
+}
+#public-portal[data-page='home'] .owner-axis-num,
+#public-portal[data-page='home'] .owner-axis-file {
+  position: absolute;
+  font:
+    800 clamp(9px, 0.8vw, 13px)/1 Arial,
+    sans-serif;
+  color: #003a3d;
+  z-index: 2;
+}
+#public-portal[data-page='home'] .owner-square.dark .owner-axis-num,
+#public-portal[data-page='home'] .owner-square.dark .owner-axis-file {
+  color: #fff7de;
+}
+#public-portal[data-page='home'] .owner-axis-num {
+  top: 3px;
+  left: 4px;
+}
+#public-portal[data-page='home'] .owner-axis-file {
+  bottom: 3px;
+  right: 4px;
+}
+#public-portal[data-page='home'] .owner-piece {
+  display: block;
+  width: 73%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid #736650;
+  background: radial-gradient(circle at 42% 35%, #334145, #060e13 70%);
+}
+#public-portal[data-page='home'] .owner-piece.white {
+  background: #fff;
+  border: 3px solid #dbc7a1;
+  outline: 1px solid #c4c9c9;
+  outline-offset: -6px;
+}
+#public-portal[data-page='home'] .owner-chess-piece {
+  font:
+    500 clamp(25px, 3.1vw, 57px)/1 Georgia,
+    'DejaVu Sans',
+    serif;
+  color: #101d21;
+}
+#public-portal[data-page='home'] .owner-chess-piece.white {
+  color: #fffdf5;
+  -webkit-text-stroke: 1px #293a41;
+}
+#public-portal[data-page='home'] .owner-gomoku {
+  display: grid;
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  background: #e3d5b2;
+}
+#public-portal[data-page='home'] .owner-gomoku-cell {
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(50% - 0.5px),
+      #8c856a 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      #8c856a 50%,
+      transparent calc(50% + 0.5px)
+    );
+}
+#public-portal[data-page='home'] .owner-gomoku-stone {
+  position: relative;
+  width: 78%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #101e22;
+  border: 1px solid #101e22;
+}
+#public-portal[data-page='home'] .owner-gomoku-stone.white {
+  background: #fdfcf5;
+  border-color: #6f817d;
+}
+#public-portal[data-page='home'] .owner-soon {
+  place-content: center;
+  justify-items: center;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  color: #ffd77b;
+  background-color: #00383d;
+  background-image:
+    linear-gradient(#ffffff08 1px, transparent 1px),
+    linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+  background-size: 13% 13%;
+  text-align: center;
+}
+#public-portal[data-page='home'] .owner-soon .owner-soon-crown {
+  font:
+    700 clamp(33px, 4vw, 68px)/1 Georgia,
+    serif;
+  margin-bottom: 10px;
+}
+#public-portal[data-page='home'] .owner-soon strong {
+  max-width: 94%;
+  font:
+    700 clamp(24px, 2.25vw, 41px)/1.08 Georgia,
+    serif;
+}
+#public-portal[data-page='home'] .owner-console-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 15px;
+  padding: 12px 11px;
+  background: #fbf3e2;
+  color: #003b40;
+  font:
+    500 clamp(11px, 0.86vw, 14px)/1.28 Arial,
+    sans-serif;
+}
+#public-portal[data-page='home'] .owner-clocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  margin-bottom: 12px;
+  text-align: center;
+}
+#public-portal[data-page='home'] .owner-clocks > div:first-child {
+  border-right: 1px solid #d8ccad;
+}
+#public-portal[data-page='home'] .owner-clocks b {
+  display: block;
+  font-size: clamp(18px, 1.7vw, 27px);
+  line-height: 1.1;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+#public-portal[data-page='home'] .owner-clocks small {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+#public-portal[data-page='home'] .owner-mode {
+  display: flex;
+  gap: 8px;
+  padding: 7px;
+  margin-bottom: 12px;
+  border-radius: 13px;
+  background: #f2e7cf;
+}
+#public-portal[data-page='home'] .owner-mode span {
+  width: 50%;
+  padding: 10px 4px;
+  text-align: center;
+  font-weight: 700;
+}
+#public-portal[data-page='home'] .owner-mode span:first-child {
+  background: #fff9ef;
+  border-radius: 10px;
+}
+#public-portal[data-page='home'] .owner-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+#public-portal[data-page='home'] .owner-controls span {
+  text-align: center;
+  font-size: clamp(9px, 0.76vw, 12px);
+  font-weight: 700;
+  flex: 1;
+}
+#public-portal[data-page='home'] .owner-panel-caption {
+  min-height: 22px;
+  text-align: center;
+  font-size: 11px;
+  margin: 0 0 8px;
+}
+#public-portal[data-page='home'] .owner-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid #d8cfba;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+#public-portal[data-page='home'] .owner-tabs span {
+  text-align: center;
+  padding: 9px 4px;
+  font-weight: 750;
+}
+#public-portal[data-page='home'] .owner-tabs span:first-child {
+  color: #fff;
+  background: #006d68;
+}
+#public-portal[data-page='home'] .owner-bot-ad {
+  display: grid;
+  grid-template-columns: minmax(85px, 0.67fr) 1.5fr;
+  gap: 5px;
+  min-height: 0;
+  flex: 1;
+  padding: 10px;
+  border-radius: 11px;
+  color: #fff;
+  background: #003c40;
+}
+#public-portal[data-page='home'] .owner-bot-person {
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #0b5b60;
+}
+#public-portal[data-page='home'] .owner-bot-person::before {
+  content: '';
+  position: absolute;
+  bottom: -24px;
+  width: 90%;
+  height: 70%;
+  border-radius: 44% 44% 10% 10%;
+  background: #167c91;
+  border: 4px solid #1b5064;
+}
+#public-portal[data-page='home'] .owner-bot-person img {
+  position: relative;
+  z-index: 1;
+  width: min(96%, 130px);
+  height: auto;
+  margin-bottom: 28px;
+  border-radius: 42% 42% 8% 8%;
+  object-fit: cover;
+}
+#public-portal[data-page='home'] .owner-ad-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+#public-portal[data-page='home'] .owner-ad-copy h2 {
+  margin: 0 0 6px;
+  color: #fff;
+  font:
+    800 clamp(17px, 1.45vw, 25px)/1.04 Arial,
+    sans-serif;
+  letter-spacing: -0.035em;
+}
+#public-portal[data-page='home'] .owner-ad-copy h2 span {
+  color: #ffd367;
+}
+#public-portal[data-page='home'] .owner-ad-copy ul {
+  list-style: none;
+  margin: 0 0 5px;
+  padding: 0;
+  font-size: clamp(10px, 0.78vw, 13px);
+}
+#public-portal[data-page='home'] .owner-ad-copy li {
+  margin: 4px 0;
+}
+#public-portal[data-page='home'] .owner-ad-copy li::before {
+  content: '✓';
+  color: #ffd367;
+  font-weight: 900;
+  margin-right: 5px;
+}
+#public-portal[data-page='home'] .owner-ad-copy a {
+  display: block;
+  text-align: center;
+  background: #ffd367;
+  color: #003c40;
+  font-size: clamp(11px, 0.9vw, 14px);
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 9px 4px;
+}
+#public-portal[data-page='home'] .owner-chat-input {
+  margin-top: 7px;
+  border: 1px solid #d9d0bd;
+  border-radius: 10px;
+  background: #fff;
+  padding: 9px 12px;
+  color: #33555a;
+}
+#public-portal[data-page='home'] .owner-tools {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+  gap: 5px;
+}
+#public-portal[data-page='home'] .owner-tools span {
+  text-align: center;
+  font-size: clamp(9px, 0.65vw, 11px);
+}
+#public-portal[data-page='home'] .owner-accepted-hero .portal-rotation-toggle {
+  bottom: 13px;
+  right: 17px;
+  border: 1px solid #b6c4bf;
+  background: #003f42;
+  color: #fff4df;
+  font:
+    700 11px Arial,
+    sans-serif;
+}
+#public-portal[data-page='home'] .r4-homepage .r4-shortcuts {
+  margin-top: 0 !important;
+}
+@media (max-width: 1180px) {
+  #public-portal[data-page='home'] .r4-hero.owner-accepted-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 28px 22px 16px !important;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero .r4-hero-copy {
+    max-width: 740px !important;
+  }
+  #public-portal[data-page='home'] .owner-console-body {
+    grid-template-columns: minmax(0, 1.35fr) minmax(250px, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] .r4-hero.owner-accepted-hero {
+    padding: 22px 14px 16px !important;
+    gap: 20px !important;
+  }
+  #public-portal[data-page='home'] .owner-console {
+    padding: 7px !important;
+  }
+  #public-portal[data-page='home'] .owner-console-body {
+    grid-template-columns: 1fr;
+  }
+  #public-portal[data-page='home'] .owner-console-board {
+    max-width: 560px;
+    margin: auto;
+  }
+  #public-portal[data-page='home'] .owner-console-panel {
+    min-height: 380px;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero h1 {
+    font-size: clamp(34px, 9vw, 52px) !important;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero .r4-hero-motto {
+    font-size: clamp(21px, 6vw, 33px) !important;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero .r4-hero-actions {
+    grid-template-columns: 1fr !important;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack {
+    grid-column: 1;
+  }
+  #public-portal[data-page='home'] .owner-accepted-hero .owner-quick {
+    grid-column: 1;
+  }
+  #public-portal[data-page='home'] .owner-ad-copy h2 {
+    font-size: 21px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #public-portal[data-page='home'] .owner-accepted-hero *,
+  #public-portal[data-page='home'] .owner-accepted-hero *::before,
+  #public-portal[data-page='home'] .owner-accepted-hero *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+/* Keep the approved console fully visible at every viewport width.
+   The legacy hero aspect ratio clipped it on desktop. */
+#public-portal[data-page='home'] .r4-hero.owner-accepted-hero {
+  height: auto !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero h1,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-claim {
+  white-space: normal !important;
+  overflow-wrap: normal;
+}
+#public-portal[data-page='home'] .owner-console-board {
+  width: 100% !important;
+  max-width: 100%;
+  justify-self: stretch;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule::before {
+  content: '' !important;
+  display: block !important;
+  height: 39px;
+  background: url('/assets/gracz-crown-premium.svg') center / 43px 35px no-repeat !important;
+  border-bottom: 1px solid #d6ab57;
+}
+
+/* Legacy-specific compatibility: show the approved hero instead of the old comic mobile intro. */
+@media (max-width: 680px) {
+  body.homepage-premium-max:has(#public-portal .owner-accepted-hero) .r4-homepage > .comic-mobile { display: none !important; }
+  body.homepage-premium-max #public-portal .owner-accepted-hero { display: grid !important; }
+}
+
+/* The old legacy theme hides these promotional lines on narrow viewports.
+   The accepted GRACZ NEXT hero shows them on desktop and mobile. */
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-claim,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-description {
+  display: block !important;
+  visibility: visible !important;
+  height: auto !important;
+  opacity: 1 !important;
+}
+
+/* Override the retired R3 CTA opacity/visibility animation: it has no Szachy case.
+   Only the currently selected game link is displayed and keyboard-focusable. */
+#public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack > .r4-btn {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  transition: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='warcaby'] .r4-game-cta-stack > [data-game='warcaby'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='szachy'] .r4-game-cta-stack > [data-game='szachy'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='gomoku'] .r4-game-cta-stack > [data-game='gomoku'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .r4-game-cta-stack > [data-game='soon'] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
