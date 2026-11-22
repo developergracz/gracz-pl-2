@@ -2,6 +2,12 @@ export const checkersChessShellCss=String.raw`
 /* Keep the legacy engine control hidden; only the bot and friends buttons are visible. */
 body.warcaby-console #training-mode[hidden],body.warcaby-console.chess-console.cc-owner #game .checkers-owner-mode>#training-mode.mode-choice{display:none!important}
 
+/* Close control for the color-selection dialog. */
+body.warcaby-console .checkers-start-card{position:relative!important}
+body.warcaby-console .checkers-start-card .checkers-start-close{position:absolute;top:12px;right:12px;display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:0;border-radius:8px;background:transparent;color:#064c4d;font:400 28px/1 system-ui,sans-serif;cursor:pointer;z-index:2}
+body.warcaby-console .checkers-start-card .checkers-start-close:hover{background:rgba(0,90,85,.10)}
+body.warcaby-console .checkers-start-card .checkers-start-close:focus-visible{outline:2px solid #006e71;outline-offset:2px}
+
 /* Warcaby in the owner's chess console. Chess game and checkers engine stay isolated. */
 /* Modern Warcaby: both announcements fill the chat content region, not the board. */
 body.warcaby-console.chess-console.cc-owner #chat-panel{
