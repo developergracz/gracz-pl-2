@@ -136,6 +136,22 @@ body.warcaby-console.chess-console.cc-owner .checkers-start-card{
  box-shadow:0 20px 60px rgba(0,17,20,.38);padding:clamp(22px,4vw,36px);
  text-align:center;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
 }
+body.warcaby-console.chess-console.cc-owner .checkers-start-card {
+ position:relative;
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-close{
+ position:absolute;top:10px;right:10px;z-index:1;
+ width:34px;height:34px;padding:0;border:1px solid #d3c6a6;
+ border-radius:9px;background:#fff8ea;color:#124348;
+ font:700 24px/1 system-ui,-apple-system,'Segoe UI',sans-serif;
+ cursor:pointer;
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-close:hover{
+ background:#ede5d2;
+}
+body.warcaby-console.chess-console.cc-owner .checkers-start-close:focus-visible{
+ outline:2px solid #0b6a69;outline-offset:2px;
+}
 body.warcaby-console.chess-console.cc-owner .checkers-start-card h2{
  margin:0 0 12px;font-weight:800;font-size:clamp(19px,2.6vw,26px);line-height:1.25;
 }
