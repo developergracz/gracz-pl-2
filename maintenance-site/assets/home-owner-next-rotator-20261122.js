@@ -10,12 +10,32 @@
   const durations = { warcaby: 12000, szachy: 12000, gomoku: 12000, soon: 6000 };
   const examples = {
     // 8x8 grid index = row * 8 + column; dark-square diagonal moves.
-    warcaby: [[42, 35], [19, 26], [44, 37], [21, 28]],
+    // The opening includes a capture and a short forced follow-up.
+    warcaby: [[42, 35], [19, 26], [44, 37], [21, 28], [35, 21, 28], [12, 30, 21], [30, 44, 37]],
     // Legal chess opening: e4, ...e5, Nf3, ...Nc6, Bc4.
-    szachy: [[52, 36], [12, 28], [62, 45], [1, 18], [61, 34]],
+    szachy: [[52, 36], [12, 28], [62, 45], [1, 18], [61, 34], [6, 21], [57, 42], [5, 26]],
     // 15x15 free intersections near an existing mid-game position.
-    gomoku: [[82, 'white'], [158, 'black'], [111, 'white'], [159, 'black']]
+    gomoku: [[82, 'white'], [158, 'black'], [111, 'white'], [159, 'black'], [83, 'white'], [142, 'black'], [115, 'white']]
   };
+  // These are four existing GRACZ.PL checkers bot portraits, used only in the promotional panel.
+  const botProfiles = {
+    warcaby: { name: 'Mila', id: 'N1', src: '/assets/checkers-bot-mila-n1.webp' },
+    szachy: { name: 'Kaja', id: 'T1', src: '/assets/checkers-bot-kaja-t1.webp' },
+    gomoku: { name: 'Sara', id: 'E1', src: '/assets/checkers-bot-sara-e1.webp' },
+    soon: { name: 'Wiktor', id: 'A1', src: '/assets/checkers-bot-wiktor-a1.webp' }
+  };
+  const botPhoto = hero.querySelector('.owner-bot-person img');
+  const botName = hero.querySelector('.owner-bot-name');
+  function showBot(name) {
+    const bot = botProfiles[name];
+    if (!bot) return;
+    if (botPhoto) {
+      if (botPhoto.getAttribute('src') !== bot.src) botPhoto.setAttribute('src', bot.src);
+      botPhoto.alt = bot.name + ' (' + bot.id + ') — bot GRACZ.PL';
+    }
+    if (botName) botName.textContent = bot.name + ' · ' + bot.id;
+  }
+
   const boardNames = ['warcaby', 'szachy'];
   const boards = {};
   const initial = {};
@@ -85,7 +105,7 @@
       const dy = fromCenterY - toCenterY;
       node.animate(
         [{ transform: 'translate(' + dx + 'px, ' + dy + 'px)' }, { transform: 'translate(0, 0)' }],
-        { duration: 520, easing: 'ease-in-out' }
+        { duration: 380, easing: 'ease-in-out' }
       );
     }
     source.classList.add('preview-from');
@@ -109,16 +129,20 @@
         if (typeof stone.animate === 'function') {
           stone.animate(
             [{ opacity: 0, transform: 'scale(.35)' }, { opacity: 1, transform: 'scale(1)' }],
-            { duration: 480, easing: 'ease-out' }
+            { duration: 320, easing: 'ease-out' }
           );
         }
       }
     } else {
-      const [from, to] = step;
+      const [from, to, captured] = step;
       const source = boards[name][from];
       const target = boards[name][to];
       const node = source?.querySelector(name === 'warcaby' ? '.owner-piece' : '.owner-chess-piece');
       if (node && target && !target.querySelector(name === 'warcaby' ? '.owner-piece' : '.owner-chess-piece')) {
+        if (name === 'warcaby' && Number.isInteger(captured)) {
+          const taken = boards[name][captured]?.querySelector('.owner-piece');
+          if (taken) taken.remove();
+        }
         boards[name].forEach(cell => cell.classList.remove('preview-from', 'preview-to'));
         animateMove(node, source, target);
       }
@@ -130,7 +154,7 @@
       const names = { warcaby: 'Warcaby', szachy: 'Szachy', gomoku: 'Gomoku' };
       caption.textContent = names[name] + ' — ruch pokazowy ' + moveIndex + '/' + moves.length;
     }
-    if (moveIndex < moves.length) moveTimer = window.setTimeout(makeMove, 2250);
+    if (moveIndex < moves.length) moveTimer = window.setTimeout(makeMove, 1500);
   }
 
   function stopped() {
@@ -147,6 +171,7 @@
       const oldName = slides[current];
       current = (current + 1) % slides.length;
       hero.setAttribute('data-hero-slide', slides[current]);
+      showBot(slides[current]);
       reset(oldName);
       reset(slides[current]);
       moveIndex = 0;
@@ -155,7 +180,7 @@
       schedule();
     }, durations[name]);
     if (examples[name] && moveIndex < examples[name].length) {
-      moveTimer = window.setTimeout(makeMove, 1700);
+      moveTimer = window.setTimeout(makeMove, 900);
     }
   }
 
@@ -181,5 +206,6 @@
   document.addEventListener('visibilitychange', schedule);
   if (typeof reducedMotion.addEventListener === 'function') reducedMotion.addEventListener('change', schedule);
   else if (typeof reducedMotion.addListener === 'function') reducedMotion.addListener(schedule);
+  showBot(slides[current]);
   schedule();
 })();
