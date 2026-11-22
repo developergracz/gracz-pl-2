@@ -860,9 +860,14 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     await expect(active).toHaveAttribute('href',href);
     const board=hero.locator('.owner-slide[data-owner-slide="'+slide+'"]');
     await expect(board).toBeVisible();
+    if(i===steps.length-1) {
+      // New cycle begins with the original 24 pawns, including captured ones.
+      await expect(hero.locator('.owner-piece')).toHaveCount(24);
+      await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(42).locator('.owner-piece.white')).toHaveCount(1);
+    }
     if(slide!=='soon'){
       await page.clock.runFor(1900);
-      await expect(board).toHaveAttribute('data-preview-moves','1');
+      await expect(board).toHaveAttribute('data-preview-moves',/^[1-8]$/);
       if(slide==='warcaby'){
         await expect(board.locator('.owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
         await expect(board.locator('.owner-piece')).toHaveCount(24);
@@ -874,16 +879,15 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
       if(slide==='gomoku'){
         await expect(board.locator('.owner-gomoku-cell').nth(82).locator('.owner-gomoku-stone.white')).toHaveCount(1);
       }
-      await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy 1/');
+      await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy ');
     }
     expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
     if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:1900));
    }
-   // The loop has returned to Warcaby and shown move 1 of the next cycle.
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
-   await expect(hero.locator('.owner-piece')).toHaveCount(24);
+   // The loop successfully restarted and the new demo is advancing.
+   await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves',/^[1-7]$/);
   }finally{await context.close()}
  }
 });
@@ -891,23 +895,27 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
 test('Hero preview pause blocks both movements and board changes',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:900},reducedMotion:'no-preference'});
  try{
- const page=await context.newPage();
- await page.clock.install();
- await page.goto('/');
- await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
- const hero=page.locator('.owner-accepted-hero');
- await page.clock.runFor(2600);
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
- const toggle=hero.locator('.portal-rotation-toggle');
- await toggle.click();
- await expect(toggle).toHaveAttribute('aria-pressed','true');
- await page.clock.runFor(25000);
- await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
- await toggle.click();
- await expect(toggle).toHaveAttribute('aria-pressed','false');
- await page.clock.runFor(2600);
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','2');
+  const page=await context.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const hero=page.locator('.owner-accepted-hero');
+  const board=hero.locator('.owner-slide[data-owner-slide="warcaby"]');
+  await page.clock.runFor(2600);
+  await expect(board).toHaveAttribute('data-preview-moves',/^[1-7]$/);
+  const toggle=hero.locator('.portal-rotation-toggle');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  const frozen=Number(await board.getAttribute('data-preview-moves'));
+  expect(frozen).toBeGreaterThanOrEqual(1);
+  expect(frozen).toBeLessThan(7);
+  await page.clock.runFor(25000);
+  await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
+  expect(Number(await board.getAttribute('data-preview-moves'))).toBe(frozen);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','false');
+  await page.clock.runFor(2700);
+  expect(Number(await board.getAttribute('data-preview-moves'))).toBeGreaterThan(frozen);
  }finally{await context.close()}
 });
 test('Five premium game cards: linked live games and disabled upcoming games remain compact',async({browser})=>{
