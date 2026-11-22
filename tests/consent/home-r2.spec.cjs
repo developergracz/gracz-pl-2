@@ -1198,3 +1198,33 @@ test('Coming-soon newsletter uses existing consent-gated signup modal',async({pa
  await modal.locator('[data-newsletter-signup-close]').first().click();
  await expect(modal).toBeHidden();
 });
+
+
+test('Four homepage console scenes have a visual capture on desktop and phone',async({browser})=>{
+ for(const width of [390,1366]){
+  const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'no-preference',deviceScaleFactor:1});
+  try{
+   const page=await context.newPage();
+   await page.clock.install();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await page.evaluate(()=>document.fonts.ready);
+   const hero=page.locator('.owner-accepted-hero');
+   const scenes=[['warcaby',0],['szachy',12050],['gomoku',24050],['soon',36050]];
+   let last=0;
+   for(const [scene,time] of scenes){
+    if(time>last) await page.clock.runFor(time-last);
+    last=time;
+    await expect(hero).toHaveAttribute('data-hero-slide',scene);
+    const board=hero.locator('.owner-slide[data-owner-slide="'+scene+'"]');
+    await expect(board).toBeVisible();
+    const consoleView=hero.locator('.owner-console');
+    const rect=await consoleView.boundingBox();
+    expect(rect?.width??0).toBeGreaterThan(250);
+    const filename=path.resolve('test-results/home-r4/console-'+scene+'-'+width+'.png');
+    fs.mkdirSync(path.dirname(filename),{recursive:true});
+    await consoleView.screenshot({path:filename,animations:'disabled'});
+   }
+  }finally{await context.close()}
+ }
+});
