@@ -809,14 +809,14 @@ test('Gracz.pl board thumbnails load and display in all three premium game cards
  }
 });
 
-// Approved four-screen hero: exact game previews and links synchronized every five seconds.
-test('Approved hero rotates Warcaby, Szachy, Gomoku, coming soon, then repeats',async({browser})=>{
+// Approved hero previews show realistic movements, then change scenes (12/12/12/6 seconds).
+test('Approved hero animates game moves and rotates four scenes, then resets',async({browser})=>{
  const steps=[
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/'],
-  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/'],
-  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/'],
-  ['soon','Poznaj kolejne gry','/gry/'],
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/']
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000],
+  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/',12000],
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/',12000],
+  ['soon','Poznaj kolejne gry','/gry/',6000],
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000]
  ];
  for(const width of [390,768,1366,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -834,21 +834,64 @@ test('Approved hero rotates Warcaby, Szachy, Gomoku, coming soon, then repeats',
    await expect(page.locator('.owner-chess-piece')).toHaveCount(32);
    await expect(page.locator('.owner-gomoku-cell')).toHaveCount(225);
    const stage=await page.locator('.owner-console').boundingBox();
-   for(const [i,[slide,label,href]] of steps.entries()){
-    if(i)await page.clock.runFor(5000);
+   for(const [i,[slide,label,href,duration]] of steps.entries()){
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     await expect(active).toHaveCount(1);
     await expect(active).toHaveText(label);
     await expect(active).toHaveAttribute('href',href);
-    await expect(hero.locator('.owner-slide[data-owner-slide="'+slide+'"]')).toBeVisible();
+    const board=hero.locator('.owner-slide[data-owner-slide="'+slide+'"]');
+    await expect(board).toBeVisible();
+    if(slide!=='soon'){
+      await page.clock.runFor(1900);
+      await expect(board).toHaveAttribute('data-preview-moves','1');
+      if(slide==='warcaby'){
+        await expect(board.locator('.owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
+        await expect(board.locator('.owner-piece')).toHaveCount(24);
+      }
+      if(slide==='szachy'){
+        await expect(board.locator('.owner-square').nth(36).locator('.owner-chess-piece.white')).toHaveCount(1);
+        await expect(board.locator('.owner-chess-piece')).toHaveCount(32);
+      }
+      if(slide==='gomoku'){
+        await expect(board.locator('.owner-gomoku-cell').nth(82).locator('.owner-gomoku-stone.white')).toHaveCount(1);
+      }
+      await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy 1/');
+    }
     expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
+    if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:1900));
    }
+   // The loop has returned to Warcaby and shown move 1 of the next cycle.
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
+   await expect(hero.locator('.owner-piece')).toHaveCount(24);
   }finally{await context.close()}
  }
 });
 
+test('Hero preview pause blocks both movements and board changes',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:900},reducedMotion:'no-preference'});
+ try{
+ const page=await context.newPage();
+ await page.clock.install();
+ await page.goto('/');
+ await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+ const hero=page.locator('.owner-accepted-hero');
+ await page.clock.runFor(2600);
+ await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
+ const toggle=hero.locator('.portal-rotation-toggle');
+ await toggle.click();
+ await expect(toggle).toHaveAttribute('aria-pressed','true');
+ await page.clock.runFor(25000);
+ await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
+ await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
+ await toggle.click();
+ await expect(toggle).toHaveAttribute('aria-pressed','false');
+ await page.clock.runFor(2600);
+ await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','2');
+ }finally{await context.close()}
+});
 test('Five premium game cards: linked live games and disabled upcoming games remain compact',async({browser})=>{
  for(const width of [390,768,1366,1600]){
   const context=await browser.newContext({viewport:{width,height:900}});
