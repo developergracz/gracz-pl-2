@@ -678,3 +678,20 @@
   height: auto !important;
   opacity: 1 !important;
 }
+
+/* Override the retired R3 CTA opacity/visibility animation: it has no Szachy case.
+   Only the currently selected game link is displayed and keyboard-focusable. */
+#public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack > .r4-btn {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  transition: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='warcaby'] .r4-game-cta-stack > [data-game='warcaby'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='szachy'] .r4-game-cta-stack > [data-game='szachy'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='gomoku'] .r4-game-cta-stack > [data-game='gomoku'],
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .r4-game-cta-stack > [data-game='soon'] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
