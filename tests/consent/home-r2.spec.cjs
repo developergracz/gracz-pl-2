@@ -809,13 +809,15 @@ test('Gracz.pl board thumbnails load and display in all three premium game cards
  }
 });
 
-// HERO R3: one fixed console; only the board, console details and the game CTA change every 5 s.
-test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',async({browser})=>{
+// Approved four-screen hero: exact game previews and links synchronized every five seconds.
+test('Approved hero rotates Warcaby, Szachy, Gomoku, coming soon, then repeats',async({browser})=>{
  const steps=[
-  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/'],
   ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/'],
+  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/'],
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/'],
   ['soon','Poznaj kolejne gry','/gry/'],
-  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/']];
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/']
+ ];
  for(const width of [390,768,1366,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
@@ -823,42 +825,25 @@ test('HERO R3 rotates Gomoku, Warcaby and coming soon in one fixed console',asyn
    await page.clock.install();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const hero=page.locator('.r4-hero');
-   for(const selector of (width<=680
-     ? ['#comic-mobile-title','.comic-scene-art','.comic-login','.comic-register']
-     : ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description']))
-     await expect(page.locator(selector)).toBeVisible();
-   await expect(page.locator('.r4-hero-actions svg')).toHaveCount(0);
-   await expect(page.locator('.r4-hero-live-actions')).toHaveCount(0);
-   await expect(page.locator('#r4-hero-checkers-board .r4-sq')).toHaveCount(64);
-   await expect(page.locator('#r4-hero-checkers-board .r4-sq--dark .r4-man--white')).toHaveCount(12);
-   await expect(page.locator('#r4-hero-checkers-board .r4-sq--dark .r4-man--black')).toHaveCount(12);
-   const stage=await page.locator('.r4-console-stage').boundingBox();
+   const hero=page.locator('.owner-accepted-hero');
+   for(const selector of ['#hero-title','.r4-hero-motto','.r4-hero-claim','.r4-hero-description'])
+    await expect(page.locator(selector)).toBeVisible();
+   await expect(page.locator('.owner-square-board[data-owner-slide="warcaby"] .owner-square')).toHaveCount(64);
+   await expect(page.locator('.owner-square-board[data-owner-slide="szachy"] .owner-square')).toHaveCount(64);
+   await expect(page.locator('.owner-piece')).toHaveCount(24);
+   await expect(page.locator('.owner-chess-piece')).toHaveCount(32);
+   await expect(page.locator('.owner-gomoku-cell')).toHaveCount(225);
+   const stage=await page.locator('.owner-console').boundingBox();
    for(const [i,[slide,label,href]] of steps.entries()){
     if(i)await page.clock.runFor(5000);
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
-    if(width<=680){
-      await expect(active).toHaveCount(0);
-      await expect(page.locator('.comic-mobile')).toBeVisible();
-      await expect(page.locator('.comic-game-card')).toHaveCount(3);
-    }else{
-      await expect(active).toHaveCount(1);
-      await expect(active).toHaveText(label);
-      await expect(active).toHaveAttribute('href',href);
-      await expect.poll(()=>page.evaluate(()=>[...new Set([...document.querySelectorAll('.r4-pane')]
-       .filter(e=>getComputedStyle(e).visibility==='visible').map(e=>e.dataset.pane))].join('|'))).toBe(slide==='gomoku'?'':slide);
-    }
-    expect(await page.locator('.r4-console-stage').boundingBox()).toEqual(stage);
-    const layout=await page.evaluate(()=>{
-     const boxes=[...document.querySelectorAll('.r4-hero-actions > a, .r4-game-cta-stack')].map(e=>e.getBoundingClientRect());
-     const overlap=boxes.some((a,i)=>boxes.some((b,j)=>j>i&&a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1));
-     const clipped=[...document.querySelectorAll('.r4-hero-actions .r4-btn')].some(e=>e.scrollWidth>e.clientWidth+1);
-     return {overlap,clipped,scrollWidth:document.documentElement.scrollWidth};
-    });
-    expect(layout.overlap).toBe(false);
-    expect(layout.clipped).toBe(false);
-    expect(layout.scrollWidth).toBeLessThanOrEqual(width+2);
+    await expect(active).toHaveCount(1);
+    await expect(active).toHaveText(label);
+    await expect(active).toHaveAttribute('href',href);
+    await expect(hero.locator('.owner-slide[data-owner-slide="'+slide+'"]')).toBeVisible();
+    expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
    }
   }finally{await context.close()}
  }
