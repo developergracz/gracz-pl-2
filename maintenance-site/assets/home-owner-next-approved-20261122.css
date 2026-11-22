@@ -1420,8 +1420,15 @@
     aspect-ratio: 1 !important;
   }
 }
+/* Hero "Nasze gry" navigation: land with the complete heading below the
+   sticky header, as in the accepted viewport reference (not clipped under it). */
 #public-portal[data-page='home'] #nasze-gry {
-  scroll-margin-top: 83px;
+  scroll-margin-top: 190px !important;
+}
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] #nasze-gry {
+    scroll-margin-top: 96px !important;
+  }
 }
 /* The portrait is a real navigation link to an existing Warcaby bot profile. */
 #public-portal[data-page='home'] .owner-bot-person {
