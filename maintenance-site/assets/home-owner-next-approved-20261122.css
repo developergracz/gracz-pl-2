@@ -1375,4 +1375,9 @@
   #public-portal[data-page='home'] .owner-console-body {
     grid-template-columns: minmax(0, 1.58fr) minmax(285px, .82fr);
   }
+  /* Keep all four scenes identical in height even when the bot panel text
+     wraps more narrowly than the newsletter on wide monitors. */
+  #public-portal[data-page='home'] .owner-console-panel {
+    min-height: 668px !important;
+  }
 }
