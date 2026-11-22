@@ -668,3 +668,13 @@
   body.homepage-premium-max:has(#public-portal .owner-accepted-hero) .r4-homepage > .comic-mobile { display: none !important; }
   body.homepage-premium-max #public-portal .owner-accepted-hero { display: grid !important; }
 }
+
+/* The old legacy theme hides these promotional lines on narrow viewports.
+   The accepted GRACZ NEXT hero shows them on desktop and mobile. */
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-claim,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-description {
+  display: block !important;
+  visibility: visible !important;
+  height: auto !important;
+  opacity: 1 !important;
+}
