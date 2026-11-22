@@ -139,11 +139,11 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/favicon-192.png?v=card-r1">
   <script src="/assets/legal-links.js?v=r49-premium-email-input-20261022" defer></script>
   <script src="/assets/home-css-viewport.js?v=20261109-large-news-r1"></script>
-  <link rel="stylesheet" href="/assets/home-owner-next-approved-20261122.css?v=pr915-clean-console">
+  <link rel="stylesheet" href="/assets/home-owner-next-approved-20261122.css?v=pr917-viewport-search">
   <noscript><link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1"></noscript>
 
   <script src="/assets/newsletter-interactive-r30-loader.js?v=20261113-newsletter-mobile-r1" defer></script>
-  <script src="/assets/home-owner-next-rotator-20261122.js?v=pr915-clean-console" defer></script>
+  <script src="/assets/home-owner-next-rotator-20261122.js?v=pr917-viewport-search" defer></script>
 
 
 
@@ -376,12 +376,21 @@
             <a href="https://gracz-contact-api.onrender.com/konto/warcaby/">Wybierz bota</a>
           </div>
         </aside>
-        <aside class="owner-newsletter-promo" aria-label="Zapis do newslettera GRACZ.PL">
-          <span class="owner-newsletter-icon" aria-hidden="true">✉</span>
-          <h2>Więcej gier już wkrótce!</h2>
-          <p>Dowiedz się pierwszy o premierach, turniejach i nowościach GRACZ.PL.</p>
-          <button type="button" data-newsletter-open aria-haspopup="dialog" aria-controls="newsletter-signup-modal">Zapisz się do newslettera</button>
-          <small>Zapisy są obecnie chwilowo wstrzymane.</small>
+        <aside class="owner-newsletter-promo" aria-label="Inteligentna wyszukiwarka i newsletter GRACZ.PL">
+          <span class="owner-newsletter-icon" aria-hidden="true">⌕</span>
+          <h2>Skorzystaj z naszej inteligentnej wyszukiwarki</h2>
+          <p class="owner-hero-search-intro">Znajdź gry, zasady, poradniki i odpowiedzi na swoje pytania.</p>
+          <form class="owner-hero-search" data-hero-search-form role="search" action="/szukaj/" method="get">
+            <label for="owner-hero-search-query">Co chcesz znaleźć?</label>
+            <input id="owner-hero-search-query" type="search" name="q" maxlength="160" placeholder="Wpisz grę lub pytanie…" autocomplete="off" required>
+            <button type="submit">Szukaj</button>
+          </form>
+          <p class="owner-hero-search-note">Wyniki otworzą się w wyszukiwarce GRACZ.PL.</p>
+          <div class="owner-hero-newsletter">
+            <strong>Więcej gier już wkrótce!</strong>
+            <button type="button" data-newsletter-open aria-haspopup="dialog" aria-controls="newsletter-signup-modal">Zapisz się do newslettera</button>
+            <small>Zapisy są obecnie chwilowo wstrzymane.</small>
+          </div>
         </aside>
         <div class="owner-chat-input" role="status" aria-live="polite" aria-atomic="true">Cześć! Jestem Mila, chętnie z Tobą zagram w warcaby.</div>
         <div class="owner-tools" aria-hidden="true"><span>⚙<br>Ustawienia</span><span>▦<br>Plansza</span><span>♙<br>Pionki</span><span>☼<br>Motyw</span><span>⛶<br>Pełny ekran</span></div>

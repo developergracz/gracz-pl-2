@@ -1183,8 +1183,14 @@ test('Moving chess pieces and checkers stay on top of the board',async({browser}
 
 test('Coming-soon newsletter uses existing consent-gated signup modal',async({page})=>{
  await page.clock.install();
+ // This test advances an animated carousel; do not depend on the CI host's
+ // ambient prefers-reduced-motion setting (the site intentionally respects it).
+ await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+ // The carousel pauses while game CTAs are hovered; after dismissing cookies,
+ // move the pointer away so screen size cannot accidentally pause this test.
+ await page.mouse.move(0,0);
  const hero=page.locator('.owner-accepted-hero');
  await page.clock.runFor(36050);
  await expect(hero).toHaveAttribute('data-hero-slide','soon');
@@ -1227,4 +1233,54 @@ test('Four homepage console scenes have a visual capture on desktop and phone',a
    }
   }finally{await context.close()}
  }
+});
+
+
+test('R917 compact laptop viewport fits the entire home console without clipping',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:1649,height:784},deviceScaleFactor:1,reducedMotion:'no-preference'});
+ try{
+  const page=await context.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  await page.evaluate(()=>document.fonts.ready);
+  const hero=page.locator('.owner-accepted-hero');
+  for(const [slide,time] of [['warcaby',0],['gomoku',24050],['soon',36050]]){
+   if(time)await page.clock.runFor(time===24050?24050:12000);
+   await expect(hero).toHaveAttribute('data-hero-slide',slide);
+   const dims=await page.evaluate(()=>{
+    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,width:r.width};};
+    return {height:window.innerHeight,hero:rect('.owner-accepted-hero'),console:rect('.owner-console'),
+      board:rect('.owner-console-board'),panel:rect('.owner-console-panel')};
+   });
+   const filename=path.resolve('test-results/home-r4/viewport-'+slide+'-1649x784.png');
+   fs.mkdirSync(path.dirname(filename),{recursive:true});
+   await page.screenshot({path:filename,animations:'disabled'});
+   expect(dims.console.bottom,JSON.stringify(dims)).toBeLessThanOrEqual(dims.height-2);
+   expect(dims.hero.bottom,JSON.stringify(dims)).toBeLessThanOrEqual(dims.height+2);
+   expect(Math.abs(dims.board.height-dims.board.width),'Board must remain square').toBeLessThanOrEqual(2);
+  }
+ }finally{await context.close()}
+});
+
+test('R917 fourth scene search opens existing SEARCH R3 with the typed question',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'no-preference'});
+ try{
+  const page=await context.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  await page.clock.runFor(36050);
+  const hero=page.locator('.owner-accepted-hero');
+  await expect(hero).toHaveAttribute('data-hero-slide','soon');
+  const form=hero.locator('form[data-hero-search-form]');
+  await expect(form).toBeVisible();
+  await expect(hero.locator('.owner-newsletter-promo h2')).toHaveText('Skorzystaj z naszej inteligentnej wyszukiwarki');
+  await expect(hero.locator('.owner-hero-newsletter [data-newsletter-open]')).toBeVisible();
+  await form.locator('input[name="q"]').fill('jak grać w gomoku');
+  await form.getByRole('button',{name:'Szukaj'}).click();
+  await expect(page).toHaveURL(/\/szukaj\/\?q=/);
+  expect(new URL(page.url()).searchParams.get('q')).toBe('jak grać w gomoku');
+  await expect(page.locator('#search-page-app')).toHaveAttribute('inert','');
+ }finally{await context.close()}
 });

@@ -159,6 +159,22 @@
   const consoleFrame = hero.querySelector('.owner-console');
   if (consoleFrame) consoleFrame.appendChild(pause);
 
+  // Forward typed queries to the existing SEARCH R3 page, which owns results
+  // and applies its existing guest/login access gate. No second search engine.
+  const heroSearch = hero.querySelector('[data-hero-search-form]');
+  if (heroSearch) {
+    heroSearch.addEventListener('submit', event => {
+      event.preventDefault();
+      const input = heroSearch.querySelector('input[name="q"]');
+      const query = (input?.value || '').trim();
+      if (!query) {
+        input?.focus();
+        return;
+      }
+      window.location.assign('/szukaj/?q=' + encodeURIComponent(query));
+    });
+  }
+
   function reset(name) {
     const cells = boards[name];
     if (cells) {
