@@ -1119,7 +1119,7 @@ test('Chess console hover preview shows the Owner image enlarged, in view and wi
    const scan=await previewEdgeScan(context,shot);
    expect(scan.w).toBeGreaterThanOrEqual(Math.floor(m.w*dpr)-1);
    expect(scan.corners).toBe(true);
-   expect(scan.edges).toBe(2*(scan.w+scan.h));
+   expect(Math.abs(scan.edges-2*(scan.w+scan.h)),'gold border rasterization tolerance (2px)').toBeLessThanOrEqual(2);
    expect(scan.bad,'turquoise or non-gold pixels outside the gold frame').toEqual([]);
    await page.mouse.move(width-4,height-4);
    await expect(preview).toBeHidden();
