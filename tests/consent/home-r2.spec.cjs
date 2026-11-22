@@ -850,10 +850,31 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
    for(const [i,[slide,label,href,duration,botName,botId,botAsset]] of steps.entries()){
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
     await expect(hero.locator('.owner-bot-name')).toHaveText(botName+' · '+botId);
+    await expect(hero.locator('.owner-bot-greeting')).toHaveText('Jestem '+botName+', zagraj ze mną!');
+    await expect(hero.locator('.owner-clock-bot-name')).toHaveText(botName);
+    const clockFaces=hero.locator('.owner-clocks b');
+    await expect(clockFaces.nth(0)).toHaveText('07:00');
+    await expect(clockFaces.nth(1)).toHaveText('07:00');
     const photo=hero.locator('.owner-bot-person img');
     await expect(photo).toHaveAttribute('src','/assets/'+botAsset);
     await expect(photo).toHaveAttribute('alt',botName+' ('+botId+') — bot GRACZ.PL');
     await expect(photo).toBeVisible();
+    // The Gomoku bot and all other portraits must stay within the same frame,
+    // with the greeting positioned below the full-body image on every viewport.
+    const portrait=await hero.evaluate(el=>{
+      const frame=el.querySelector('.owner-bot-person').getBoundingClientRect();
+      const picture=el.querySelector('.owner-bot-person img').getBoundingClientRect();
+      const greeting=el.querySelector('.owner-bot-greeting').getBoundingClientRect();
+      return {left:picture.left-frame.left,right:frame.right-picture.right,
+        top:picture.top-frame.top,bottom:frame.bottom-greeting.bottom,
+        gap:greeting.top-picture.bottom,fit:getComputedStyle(el.querySelector('.owner-bot-person img')).objectFit};
+    });
+    expect(portrait.left).toBeGreaterThanOrEqual(-2);
+    expect(portrait.right).toBeGreaterThanOrEqual(-2);
+    expect(portrait.top).toBeGreaterThanOrEqual(-2);
+    expect(portrait.bottom).toBeGreaterThanOrEqual(-2);
+    expect(portrait.gap).toBeGreaterThanOrEqual(-2);
+    expect(portrait.fit).toBe('contain');
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     await expect(active).toHaveCount(1);
     await expect(active).toHaveText(label);
@@ -866,7 +887,7 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
       await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(42).locator('.owner-piece.white')).toHaveCount(1);
     }
     if(slide!=='soon'){
-      await page.clock.runFor(1900);
+      await page.clock.runFor(2200);
       await expect(board).toHaveAttribute('data-preview-moves',/^[1-8]$/);
       if(slide==='warcaby'){
         await expect(board.locator('.owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
@@ -880,10 +901,12 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
         await expect(board.locator('.owner-gomoku-cell').nth(82).locator('.owner-gomoku-stone.white')).toHaveCount(1);
       }
       await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy ');
+      expect(await clockFaces.allTextContents()).not.toEqual(['07:00','07:00']);
+      await expect(hero.locator('.owner-clocks > div').first()).toHaveClass(/owner-clock-active/);
     }
     expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
-    if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:1900));
+    if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:2200));
    }
    // The loop successfully restarted and the new demo is advancing.
    await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
@@ -907,11 +930,13 @@ test('Hero preview pause blocks both movements and board changes',async({browser
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed','true');
   const frozen=Number(await board.getAttribute('data-preview-moves'));
+  const frozenClocks=await hero.locator('.owner-clocks b').allTextContents();
   expect(frozen).toBeGreaterThanOrEqual(1);
   expect(frozen).toBeLessThan(7);
   await page.clock.runFor(25000);
   await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
   expect(Number(await board.getAttribute('data-preview-moves'))).toBe(frozen);
+  expect(await hero.locator('.owner-clocks b').allTextContents()).toEqual(frozenClocks);
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed','false');
   await page.clock.runFor(2700);
@@ -1090,4 +1115,29 @@ test('Chess console hover preview stays off on touch devices without overflow',a
    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
   }finally{await context.close();}
  }
+});
+
+// A transformed piece must be above neighbouring squares during its animation.
+test('Moving chess pieces and checkers stay on top of the board',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:1366,height:900},reducedMotion:'no-preference'});
+ try{
+  const page=await context.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const hero=page.locator('.owner-accepted-hero');
+  await page.clock.runFor(980);
+  const target=hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(35);
+  await expect(target).toHaveClass(/preview-moving-cell/);
+  await expect(target.locator('.owner-piece')).toHaveClass(/preview-moving-piece/);
+  const z=await target.evaluate(el=>Number.parseInt(getComputedStyle(el).zIndex,10));
+  expect(z).toBeGreaterThan(10);
+  await page.clock.runFor(12000-980);
+  await expect(hero).toHaveAttribute('data-hero-slide','szachy');
+  await page.clock.runFor(980);
+  const chess=hero.locator('.owner-slide[data-owner-slide="szachy"] .owner-square').nth(36);
+  await expect(chess).toHaveClass(/preview-moving-cell/);
+  await expect(chess.locator('.owner-chess-piece')).toHaveClass(/preview-moving-piece/);
+  expect(await chess.evaluate(el=>Number.parseInt(getComputedStyle(el).zIndex,10))).toBeGreaterThan(10);
+ }finally{await context.close()}
 });
