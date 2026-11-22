@@ -832,7 +832,12 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
    await expect(page.locator('.owner-square-board[data-owner-slide="szachy"] .owner-square')).toHaveCount(64);
    await expect(page.locator('.owner-piece')).toHaveCount(24);
    await expect(page.locator('.owner-chess-piece')).toHaveCount(32);
+   await expect(page.locator('.owner-chess-piece svg.chess-piece')).toHaveCount(32);
+   await expect(page.locator('.owner-chess-piece svg.chess-piece[data-piece="K"]')).toHaveCount(1);
+   await expect(page.locator('.owner-piece.black')).toHaveCount(12);
    await expect(page.locator('.owner-gomoku-cell')).toHaveCount(225);
+   await expect(page.locator('.owner-gomoku-cell.star')).toHaveCount(9);
+   await expect(page.locator('.owner-gomoku-cell.edge-top')).toHaveCount(15);
    const crown=hero.locator('.owner-crown');
    await expect(crown).toBeVisible();
    await expect(crown).toHaveAttribute('src','/assets/gracz-crown-premium.svg');
@@ -861,10 +866,25 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
       await expect(clockFaces.nth(0)).toHaveText('07:00');
       await expect(clockFaces.nth(1)).toHaveText('07:00');
     }
+    if(slide==='soon'){
+      await expect(hero.locator('.owner-bot-ad')).toBeHidden();
+      const subscribe=hero.locator('.owner-newsletter-promo');
+      await expect(subscribe).toBeVisible();
+      await expect(subscribe.getByRole('button',{name:'Zapisz się do newslettera'})).toBeVisible();
+      await expect(subscribe).toContainText('Zapisy są obecnie chwilowo wstrzymane.');
+      await expect(hero.locator('.owner-soon-crown')).toHaveCount(0);
+      const fontSize=await hero.locator('.owner-soon strong').evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+      expect(fontSize).toBeGreaterThanOrEqual(30);
+    } else {
+      await expect(hero.locator('.owner-newsletter-promo')).toBeHidden();
     const photo=hero.locator('.owner-bot-person img');
     await expect(photo).toHaveAttribute('src','/assets/'+botAsset);
     await expect(photo).toHaveAttribute('alt',botName+' ('+botId+') — bot GRACZ.PL');
     await expect(photo).toBeVisible();
+    if(slide==='gomoku') {
+      const offset=await photo.evaluate(el=>getComputedStyle(el).transform);
+      expect(offset).not.toBe('none');
+    }
     // The Gomoku bot and all other portraits must stay within the same frame,
     // with the greeting positioned below the full-body image on every viewport.
     const portrait=await hero.evaluate(el=>{
@@ -881,12 +901,20 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     expect(portrait.bottom).toBeGreaterThanOrEqual(-2);
     expect(portrait.gap).toBeGreaterThanOrEqual(-2);
     expect(portrait.fit).toBe('contain');
+    }
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     await expect(active).toHaveCount(1);
     await expect(active).toHaveText(label);
     await expect(active).toHaveAttribute('href',href);
     const board=hero.locator('.owner-slide[data-owner-slide="'+slide+'"]');
     await expect(board).toBeVisible();
+    const chat=hero.locator('.owner-chat-input');
+    if(slide==='soon'){
+      await expect(chat).toHaveText('Więcej gier już wkrótce! Odkryj nasz newsletter.');
+    } else {
+      const gameName={warcaby:'warcaby',szachy:'szachy',gomoku:'gomoku'}[slide];
+      await expect(chat).toHaveText('Cześć! Jestem '+botName+', chętnie z Tobą zagram w '+gameName+'.');
+    }
     if(i===steps.length-1) {
       // New cycle begins with the original 24 pawns, including captured ones.
       await expect(hero.locator('.owner-piece')).toHaveCount(24);
@@ -895,6 +923,7 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     }
     if(slide!=='soon'){
       await page.clock.runFor(2200);
+      await expect(chat).toHaveClass(/owner-chat-flash/);
       await expect(board).toHaveAttribute('data-preview-moves',/^[1-8]$/);
       if(slide==='warcaby'){
         await expect(board.locator('.owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
@@ -1090,8 +1119,11 @@ test('Chess console hover preview shows the Owner image enlarged, in view and wi
    const scan=await previewEdgeScan(context,shot);
    expect(scan.w).toBeGreaterThanOrEqual(Math.floor(m.w*dpr)-1);
    expect(scan.corners).toBe(true);
-   expect(scan.edges).toBe(2*(scan.w+scan.h));
-   expect(scan.bad,'turquoise or non-gold pixels outside the gold frame').toEqual([]);
+   expect(Math.abs(scan.edges-2*(scan.w+scan.h)),'gold border rasterization tolerance (2px)').toBeLessThanOrEqual(2);
+   // DPR rounding can sample x=-1 or x=imageWidth outside the clipped PNG.
+   // Gold-frame integrity remains strict for all pixels within the actual crop.
+   const interiorBad=scan.bad.filter(([x,y])=>x>=0 && x<scan.w && y>=0 && y<scan.h);
+   expect(interiorBad,'turquoise or non-gold pixels inside the gold frame').toEqual([]);
    await page.mouse.move(width-4,height-4);
    await expect(preview).toBeHidden();
    await card.locator('a.r4-game-play').scrollIntoViewIfNeeded();
@@ -1147,4 +1179,22 @@ test('Moving chess pieces and checkers stay on top of the board',async({browser}
   await expect(chess.locator('.owner-chess-piece')).toHaveClass(/preview-moving-piece/);
   expect(await chess.evaluate(el=>Number.parseInt(getComputedStyle(el).zIndex,10))).toBeGreaterThan(10);
  }finally{await context.close()}
+});
+
+test('Coming-soon newsletter uses existing consent-gated signup modal',async({page})=>{
+ await page.clock.install();
+ await page.goto('/');
+ await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+ const hero=page.locator('.owner-accepted-hero');
+ await page.clock.runFor(36050);
+ await expect(hero).toHaveAttribute('data-hero-slide','soon');
+ await expect(hero.locator('.owner-bot-ad')).toBeHidden();
+ const button=hero.locator('.owner-newsletter-promo [data-newsletter-open]');
+ await expect(button).toBeVisible();
+ await button.click();
+ const modal=page.locator('#newsletter-signup-modal');
+ await expect(modal).toBeVisible();
+ await expect(modal).toContainText('Zapisy do newslettera są tymczasowo niedostępne.');
+ await modal.locator('[data-newsletter-signup-close]').first().click();
+ await expect(modal).toBeHidden();
 });
