@@ -845,3 +845,209 @@
     max-height: 146px !important;
   }
 }
+
+/* Native GRACZ.PL checkers piece surfaces, ported from the active engine. */
+#public-portal[data-page='home'] .owner-square { container-type: inline-size; }
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece{position:relative;isolation:isolate;display:grid;place-items:center;width:77%;height:77%;border-radius:50%;font-size:clamp(3px,.6vw,7.4px);font-size:7.7cqi}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece:before,
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece:after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece:before{inset:7.5%}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece:after{inset:25%}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.white{background:conic-gradient(from 210deg,#fff,#b7c3c5 16%,#f5f8f8 32%,#9caaad 50%,#eef2f2 66%,#a9b6b8 83%,#fff);box-shadow:inset 0 0 0 .045em #fffc,0 0 0 .05em #23434ab3,0 .2em 0 #8c9b9d,0 .2em 0 .05em #15303699,0 .42em .5em #00121a8c}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.white:before{background:radial-gradient(ellipse 58% 40% at 36% 24%,#fffffff0,#fff0 72%),conic-gradient(from 140deg,#fff8ee00,#eef4ff52,#fff6ea3d,#ecfaf552,#fff8ee00),radial-gradient(circle at 40% 32%,#fff 0,#fff 38%,#f5f7f7 70%,#e3e9e9);box-shadow:0 0 0 .04em #7b8c8fa6,inset 0 .1em .08em #fff,inset 0 -.18em .26em #6f828545}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.white:after{box-shadow:0 0 0 .055em #7f9093b3,0 .06em 0 .055em #fff,inset 0 .08em .12em #6d7f8238}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.black{background:conic-gradient(from 210deg,#a3afb5,#1f272c 15%,#6c7980 31%,#0b0f12 49%,#7f8c93 66%,#182024 83%,#a3afb5);box-shadow:inset 0 0 0 .045em #d3dde266,0 0 0 .05em #b5c4ca59,0 .2em 0 #040607,0 .2em 0 .05em #8ea0a838,0 .42em .5em #00080db3}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.black:before{background:radial-gradient(ellipse 56% 38% at 35% 24%,#b7c6cf4d,#b7c6cf00 72%),radial-gradient(circle at 40% 32%,#2a3135 0,#111518 34%,#050708 66%,#000);box-shadow:0 0 0 .04em #000000e6,inset 0 .1em .08em #ffffff24,inset 0 -.16em .22em #000000b3}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.black:after{box-shadow:0 0 0 .05em #000000d9,0 .06em 0 .055em #8fa0a873,inset 0 .07em .1em #00000070}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.king:after{content:none}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece .crown{position:relative;z-index:1;width:78%;height:78%;overflow:visible;color:#4f3205}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece.black .crown{color:#120c02}
+
+/* Original chess vectors from contact-api/auth/chess-pieces.mjs. */
+#public-portal[data-page='home'] .owner-chess-piece {
+  display: grid;
+  place-items: center;
+  width: 89%;
+  height: 89%;
+  min-width: 0;
+  min-height: 0;
+}
+#public-portal[data-page='home'] .owner-chess-piece svg.chess-piece {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Native 15 x 15 Gomoku board palette and intersection rules, reused from
+   contact-api/auth/gomoku-console.mjs without mounting the game runtime. */
+#public-portal[data-page='home'] .owner-gomoku {
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  grid-template-rows: repeat(15, minmax(0, 1fr));
+  padding: 0 !important;
+  border: 2px solid #bcab8d;
+  border-radius: 8px;
+  overflow: hidden;
+  background: radial-gradient(circle at 34% 25%, #fff 0%, #f8f9f8 47%, #edf0ec 100%) !important;
+}
+#public-portal[data-page='home'] .owner-gomoku-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: transparent !important;
+}
+#public-portal[data-page='home'] .owner-gomoku-cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to right, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px)),
+    linear-gradient(to bottom, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px));
+}
+#public-portal[data-page='home'] .owner-gomoku-cell.edge-top::before {
+  background: linear-gradient(to right, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px)),
+    linear-gradient(to bottom, transparent 50%, #707778a8 50%, #707778a8 calc(50% + .6px), transparent calc(50% + .6px));
+}
+#public-portal[data-page='home'] .owner-gomoku-cell.edge-bottom::before {
+  background: linear-gradient(to right, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px)),
+    linear-gradient(to bottom, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 50%, transparent 50%);
+}
+#public-portal[data-page='home'] .owner-gomoku-cell.edge-left::before {
+  background: linear-gradient(to right, transparent 50%, #707778a8 50%, #707778a8 calc(50% + .6px), transparent calc(50% + .6px)),
+    linear-gradient(to bottom, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px));
+}
+#public-portal[data-page='home'] .owner-gomoku-cell.edge-right::before {
+  background: linear-gradient(to right, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 50%, transparent 50%),
+    linear-gradient(to bottom, transparent calc(50% - .6px), #707778a8 calc(50% - .6px), #707778a8 calc(50% + .6px), transparent calc(50% + .6px));
+}
+#public-portal[data-page='home'] .owner-gomoku-cell.star:not(:has(.owner-gomoku-stone))::after {
+  content: '';
+  width: 15%;
+  height: 15%;
+  border-radius: 50%;
+  background: #b6975b;
+  position: relative;
+  z-index: 1;
+}
+#public-portal[data-page='home'] .owner-gomoku-stone {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 84%;
+  height: 84%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 0;
+  background: radial-gradient(circle at 27% 19%, #9babb1, #313b42 29%, #060e14 64%, #000);
+}
+#public-portal[data-page='home'] .owner-gomoku-stone.white {
+  border: 0;
+  background: radial-gradient(circle at 27% 18%, #fff 0%, #fbfcfc 34%, #dfe6e8 76%, #98a2a7);
+}
+
+/* Promotional bot's greeting appears in the message area, then flashes twice
+   after two seconds; never in a real game chat or network request. */
+#public-portal[data-page='home'] .owner-chat-input {
+  display: flex;
+  align-items: center;
+  min-height: 63px;
+  height: 63px;
+  max-height: 63px;
+  overflow: hidden;
+  padding: 7px 11px;
+  font: 600 clamp(10px, .78vw, 12px)/1.3 Arial, sans-serif;
+  color: #144a50;
+  opacity: 1;
+}
+@keyframes ownerChatFlashTwice {
+  0%, 34%, 53%, 87%, 100% { opacity: 1; }
+  19%, 70% { opacity: .23; }
+}
+#public-portal[data-page='home'] .owner-chat-input.owner-chat-flash {
+  animation: ownerChatFlashTwice .72s ease-in-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  #public-portal[data-page='home'] .owner-chat-input.owner-chat-flash {
+    animation: none !important;
+  }
+}
+
+/* Announce upcoming games at readable, centered scale — without a crown. */
+#public-portal[data-page='home'] .owner-soon {
+  padding: clamp(12px, 2vw, 28px) !important;
+}
+#public-portal[data-page='home'] .owner-soon strong {
+  display: block;
+  width: 100%;
+  max-width: 98%;
+  margin: 0 auto;
+  font: 700 clamp(37px, 3.7vw, 66px)/1.11 Georgia, serif !important;
+  letter-spacing: -.025em;
+  text-align: center;
+  text-wrap: balance;
+}
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] .owner-soon strong {
+    font-size: clamp(32px, 7.3vw, 54px) !important;
+  }
+}
+
+/* The coming-soon scene replaces the entire bot ad with the existing,
+   Owner-gated newsletter signup dialog. No new subscription endpoint. */
+#public-portal[data-page='home'] .owner-newsletter-promo {
+  display: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-bot-ad {
+  display: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo {
+  display: flex !important;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(8px, 1.1vw, 13px);
+  min-width: 0;
+  min-height: 0;
+  border-radius: 11px;
+  padding: clamp(12px, 1.3vw, 20px);
+  background: #003c40;
+  color: #fff6e8;
+  text-align: center;
+}
+#public-portal[data-page='home'] .owner-newsletter-icon {
+  font: 400 clamp(25px, 2.4vw, 36px)/1 Georgia, serif;
+  color: #ffd367;
+}
+#public-portal[data-page='home'] .owner-newsletter-promo h2 {
+  margin: 0;
+  font: 700 clamp(17px, 1.3vw, 23px)/1.1 Georgia, serif;
+  color: #ffd367;
+}
+#public-portal[data-page='home'] .owner-newsletter-promo p {
+  margin: 0;
+  max-width: 26ch;
+  font: 500 clamp(11px, .84vw, 13px)/1.4 Arial, sans-serif;
+}
+#public-portal[data-page='home'] .owner-newsletter-promo button {
+  width: 100%;
+  min-height: 41px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffd367;
+  color: #003c40;
+  cursor: pointer;
+  font: 800 clamp(11px, .85vw, 14px)/1.25 Arial, sans-serif;
+}
+#public-portal[data-page='home'] .owner-newsletter-promo small {
+  color: #f5dfb2;
+  font: 500 10px/1.35 Arial, sans-serif;
+}
+
+/* Sara is shifted slightly right inside her existing safe portrait frame. */
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='gomoku'] .owner-bot-person img {
+  transform: translateX(5px) !important;
+}
