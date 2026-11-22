@@ -38,7 +38,7 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  assert.ok(from>0&&to>from&&trainStart>to&&trainEnd>trainStart);
  const messages=node('section'),preview=node('section');
  const boxes={'chat-messages':messages,'chat-preview':preview};
- const document={createElement:node,createDocumentFragment:()=>node('#fragment')};
+ const document={createElement:node,createDocumentFragment:()=>node('#fragment'),body:{dataset:{}}};
  const window={};runInNewContext(gameChatJs,{document,window});
  const run=new Function('document','$','window',[
   "let mode='training',current=null,chatSignature='',trainingAiMessages=[];",
@@ -73,4 +73,21 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  assert.equal(messages.children[1].children[0].textContent,'Ty:');
  assert.equal(messages.children[1].className,'chat-bubble game-chat-message own');
  assert.equal(preview.children[1].children[1].textContent,'Moja wiadomość');
+ // The selected bot's actual portrait is left of its speech, never over the user's.
+ document.body.dataset.checkersBotId='N1';
+ run.training([
+  {role:'assistant',sender:'Mila',content:'Zagramy?',createdAt:at},
+  {role:'user',content:'Tak, zaczynajmy.',createdAt:at}
+ ]);
+ assert.equal(messages.children.length,2);
+ const botRow=messages.children[0];
+ assert.equal(botRow.className,'checkers-bot-chat-row');
+ assert.equal(botRow.children[0].tagName,'img');
+ assert.equal(botRow.children[0].className,'checkers-bot-chat-portrait');
+ assert.equal(botRow.children[0].src,'/checkers-bots/N1.webp');
+ assert.equal(botRow.children[1].children[0].textContent,'Mila:');
+ assert.equal(messages.children[1].className,'chat-bubble game-chat-message own');
+ assert.equal(messages.children[1].children[1].textContent,'Tak, zaczynajmy.');
+ assert.equal(preview.children[0].className,'chat-bubble game-chat-message');
+
 });
