@@ -703,9 +703,10 @@
 #public-portal[data-page='home'] .owner-square.preview-to {
   box-shadow: inset 0 0 0 2px rgba(239, 190, 106, .85);
 }
+/* Gomoku stones sit on intersections: no square destination outlines. */
 #public-portal[data-page='home'] .owner-gomoku-cell.preview-to {
-  outline: 1px solid rgba(107, 81, 39, .4);
-  outline-offset: -1px;
+  outline: none;
+  outline-offset: 0;
 }
 #public-portal[data-page='home'] .owner-console-panel .owner-panel-caption {
   min-height: 2.7em;
