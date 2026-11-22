@@ -1399,7 +1399,7 @@
 @media (min-width: 1181px) {
   #public-portal[data-page='home'] .owner-console-board {
     position: relative;
-    top: 6px;
+    top: 7px;
     align-self: end !important;
     height: auto !important;
     aspect-ratio: 1 !important;
