@@ -1410,7 +1410,7 @@
    instead of leaving a gap above it. Do not affect laptop/mobile layouts. */
 @media (min-width: 1500px) and (max-height: 870px) {
   #public-portal[data-page='home'] .owner-console-body {
-    grid-template-columns: minmax(0, min(60%, calc(100dvh - 218px))) minmax(0, 1fr);
+    grid-template-columns: minmax(0, min(60%, calc(100dvh - 209px))) minmax(0, 1fr);
   }
   #public-portal[data-page='home'] .owner-console-board {
     top: 0;
