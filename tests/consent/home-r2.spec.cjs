@@ -1183,6 +1183,9 @@ test('Moving chess pieces and checkers stay on top of the board',async({browser}
 
 test('Coming-soon newsletter uses existing consent-gated signup modal',async({page})=>{
  await page.clock.install();
+ // This test advances an animated carousel; do not depend on the CI host's
+ // ambient prefers-reduced-motion setting (the site intentionally respects it).
+ await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  const hero=page.locator('.owner-accepted-hero');
