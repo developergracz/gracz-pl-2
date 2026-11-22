@@ -1254,7 +1254,9 @@
     padding: 8px !important;
   }
   #public-portal[data-page='home'] .owner-console-body {
-    grid-template-columns: minmax(0, min(60%, calc(100dvh - 244px))) minmax(0, 1fr);
+    /* At compact desktop heights the panel is about one square board tall.
+       Widen the board column so both boxes share the same top/bottom edge. */
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.9fr);
     gap: 10px;
   }
   #public-portal[data-page='home'] .owner-console-board {
@@ -1399,8 +1401,8 @@
 @media (min-width: 1181px) {
   #public-portal[data-page='home'] .owner-console-board {
     position: relative;
-    top: 6px;
-    /* A tall right panel must not stretch the left square into a rectangle. */
+    top: 0;
+    /* Align the square board to the bottom of the adjacent console panel. */
     align-self: end !important;
     height: auto !important;
   }
