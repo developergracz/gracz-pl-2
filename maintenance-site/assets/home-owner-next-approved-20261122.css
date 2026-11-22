@@ -789,7 +789,7 @@
 }
 #public-portal[data-page='home'] .owner-bot-person {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(92px, 1fr) auto;
   justify-items: center;
   align-items: end;
   align-self: stretch;
@@ -811,7 +811,7 @@
   justify-self: center;
   align-self: end;
   width: min(100%, 142px) !important;
-  height: clamp(94px, 10vw, 155px) !important;
+  height: 100% !important;
   max-height: 155px !important;
   max-width: 100% !important;
   min-height: 0;
@@ -841,6 +841,7 @@
     grid-template-columns: minmax(102px, .9fr) minmax(0, 1.5fr);
   }
   #public-portal[data-page='home'] .owner-bot-person img {
-    height: clamp(98px, 27vw, 146px) !important;
+    height: 100% !important;
+    max-height: 146px !important;
   }
 }
