@@ -940,7 +940,11 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
       expect(await clockFaces.allTextContents()).not.toEqual(['07:00','07:00']);
       await expect(hero.locator('.owner-clocks > div').first()).toHaveClass(/owner-clock-active/);
     }
-    expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
+    // Browser fractional grid tracks can round by <1px between scenes.
+    // Verify visually stable dimensions instead of exact fractional equality.
+    const afterStage=await page.locator('.owner-console').boundingBox();
+    for(const key of ['x','y','width','height'])
+      expect(Math.abs(afterStage[key]-stage[key]),key+' must not jump between scenes').toBeLessThanOrEqual(1);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
     if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:2200));
    }
