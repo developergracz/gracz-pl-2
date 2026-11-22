@@ -1122,3 +1122,38 @@
 #public-portal[data-page='home'] .owner-chat-input {
   font: 600 clamp(12px, .95vw, 14px)/1.35 Arial, sans-serif;
 }
+
+
+/* The fourth scene is an upcoming-games announcement, not a playable match.
+   Show the newsletter invitation instead of clocks, bot labels and game tools. */
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-console-panel > :not(.owner-newsletter-promo) {
+  display: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo {
+  display: flex !important;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(14px, 1.4vw, 24px) !important;
+  padding: clamp(22px, 2.2vw, 38px) !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-icon {
+  position: static !important;
+  font-size: clamp(30px, 3vw, 42px) !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo h2 {
+  margin: 0 !important;
+  font: 700 clamp(23px, 2vw, 32px)/1.14 Georgia, serif !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo p {
+  max-width: 27ch;
+  font: 500 clamp(13px, 1vw, 16px)/1.4 Arial, sans-serif !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo button {
+  min-height: 48px;
+  font-size: clamp(12px, 1vw, 15px) !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='soon'] .owner-newsletter-promo small {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
