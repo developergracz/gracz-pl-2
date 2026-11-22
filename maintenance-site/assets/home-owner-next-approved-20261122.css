@@ -1400,6 +1400,9 @@
   #public-portal[data-page='home'] .owner-console-board {
     position: relative;
     top: 6px;
+    /* A tall right panel must not stretch the left square into a rectangle. */
+    align-self: end !important;
+    height: auto !important;
   }
 }
 #public-portal[data-page='home'] #nasze-gry {
