@@ -66,7 +66,7 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.hero.height).toBeGreaterThan(300);
    await expect(page.locator('.owner-console')).toBeVisible();
    await expect(page.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toHaveText('Nasze gry');
+   await expect(page.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]')).toHaveText('Nasze gry');
    if(width<=680){
      await expect(page.locator('.comic-mobile')).toBeHidden();
      await expect(page.locator('.owner-console-board')).toBeVisible();
@@ -215,14 +215,14 @@ test('Owner Premium: approved console, visible HTML copy and accessible CTAs',as
    await expect(hero.locator('.owner-console-panel')).toBeVisible();
    await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
    await expect(hero.locator('.owner-bot-person img')).toHaveAttribute('src','/assets/checkers-bot-mila-n1.webp');
-   await expect(hero.locator('.r4-hero-actions > a[href="/gry/"]')).toHaveText('Nasze gry');
+   await expect(hero.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]')).toHaveText('Nasze gry');
    await expect(hero.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
    const dims=await hero.evaluate(el=>({hero:el.getBoundingClientRect().toJSON(),panel:el.querySelector('.owner-console').getBoundingClientRect().toJSON(),scroll:document.documentElement.scrollWidth}));
    expect(dims.hero.height).toBeGreaterThan(500);
    expect(dims.panel.width).toBeGreaterThan(400);
    expect(dims.scroll).toBeLessThanOrEqual(width+2);
    if(width===1366){
-    await hero.locator('.r4-hero-actions > a[href="/gry/"]').click();
+    await hero.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]').click();
     await expect(page).toHaveURL(/\/gry\/$/);
    }
   }finally{await context.close()}
