@@ -855,14 +855,12 @@ test('Five premium game cards: linked live games and disabled upcoming games rem
   try{
    const page=await context.newPage();await page.goto('/');
    if(width<=680){
-     const visible=page.locator('.comic-game-card');
-     await expect(visible).toHaveCount(3);
-     for(const [name,game] of [['Gomoku','gomoku'],['Warcaby','warcaby'],['Szachy','szachy']]){
-       const card=visible.filter({hasText:name});
-       await expect(card).toBeVisible();
-       await expect(card.locator('a')).toHaveText('ZAGRAJ');
-       await expect(card.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
-     }
+     await expect(page.locator('.owner-console-board')).toBeVisible();
+     for(const [game,href] of [
+       ['warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/'],
+       ['szachy','https://gracz-contact-api.onrender.com/konto/szachy/'],
+       ['gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/']
+     ]) await expect(page.locator('.r4-game-cta-stack > a[data-game="'+game+'"]')).toHaveAttribute('href',href);
      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
      continue;
    }
@@ -1009,9 +1007,9 @@ test('Chess console hover preview stays off on touch devices without overflow',a
    const page=await context.newPage();await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
    if(width<=680){
-     const visible=page.locator('.comic-game-card').filter({hasText:'Szachy'});
-     await expect(visible).toBeVisible();
-     await expect(visible.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
+     await expect(page.locator('.owner-console-board')).toBeVisible();
+     await expect(page.locator('.r4-game-cta-stack > a[data-game="szachy"]'))
+       .toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/szachy/');
      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
      continue;
    }
