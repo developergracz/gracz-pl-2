@@ -51,6 +51,8 @@
     soon: { name: 'Wiktor', id: 'A1', src: '/assets/checkers-bot-wiktor-a1.webp' }
   };
   const botPhoto = hero.querySelector('.owner-bot-person img');
+  const botPortraitLink = hero.querySelector('a.owner-bot-person');
+  const botActionLink = hero.querySelector('.owner-ad-copy a');
   const botName = hero.querySelector('.owner-bot-name');
   const chat = hero.querySelector('.owner-chat-input');
   const chatGameNames = { warcaby: 'warcaby', szachy: 'szachy', gomoku: 'gomoku' };
@@ -81,6 +83,15 @@
     if (botPhoto) {
       if (botPhoto.getAttribute('src') !== bot.src) botPhoto.setAttribute('src', bot.src);
       botPhoto.alt = bot.name + ' (' + bot.id + ') — bot GRACZ.PL';
+    }
+    // All four teaser portraits are real Warcaby bot profiles (N1, T1, E1, A1).
+    // Clicking a portrait or the bot CTA launches the existing bot engine via
+    // a validated deep link on the game service. Do not fake a Chess/Gomoku bot.
+    const gameUrl = 'https://gracz-contact-api.onrender.com/konto/warcaby/?bot=' + encodeURIComponent(bot.id);
+    for (const link of [botPortraitLink, botActionLink]) {
+      if (!link) continue;
+      link.href = gameUrl;
+      link.setAttribute('aria-label', 'Zagraj w warcaby z botem ' + bot.name);
     }
     if (botName) botName.textContent = bot.name + ' · ' + bot.id;
     if (botGreeting) botGreeting.textContent = 'Jestem ' + bot.name + ', zagraj ze mną!';

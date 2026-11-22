@@ -66,7 +66,7 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.hero.height).toBeGreaterThan(300);
    await expect(page.locator('.owner-console')).toBeVisible();
    await expect(page.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]')).toHaveText('Nasze gry');
+   await expect(page.locator('.r4-hero-actions > a.r4-btn-gold[href="#nasze-gry"]')).toHaveText('Nasze gry');
    if(width<=680){
      await expect(page.locator('.comic-mobile')).toBeHidden();
      await expect(page.locator('.owner-console-board')).toBeVisible();
@@ -215,15 +215,15 @@ test('Owner Premium: approved console, visible HTML copy and accessible CTAs',as
    await expect(hero.locator('.owner-console-panel')).toBeVisible();
    await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
    await expect(hero.locator('.owner-bot-person img')).toHaveAttribute('src','/assets/checkers-bot-mila-n1.webp');
-   await expect(hero.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]')).toHaveText('Nasze gry');
+   await expect(hero.locator('.r4-hero-actions > a.r4-btn-gold[href="#nasze-gry"]')).toHaveText('Nasze gry');
    await expect(hero.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
    const dims=await hero.evaluate(el=>({hero:el.getBoundingClientRect().toJSON(),panel:el.querySelector('.owner-console').getBoundingClientRect().toJSON(),scroll:document.documentElement.scrollWidth}));
    expect(dims.hero.height).toBeGreaterThan(500);
    expect(dims.panel.width).toBeGreaterThan(400);
    expect(dims.scroll).toBeLessThanOrEqual(width+2);
    if(width===1366){
-    await hero.locator('.r4-hero-actions > a.r4-btn-gold[href="/gry/"]').click();
-    await expect(page).toHaveURL(/\/gry\/$/);
+    await hero.locator('.r4-hero-actions > a.r4-btn-gold[href="#nasze-gry"]').click();
+    await expect(page).toHaveURL(/#nasze-gry$/);
    }
   }finally{await context.close()}
  }
@@ -1360,4 +1360,52 @@ test('PR919 shortcuts start below the first desktop viewport without disappearin
    await page.screenshot({path:filename,animations:'disabled'});
   }finally{await context.close();}
  }
+});
+
+
+test('PR920 first-fold console alignment and Nasze gry in-page link',async({browser})=>{
+ for(const [width,height] of [[1649,784],[1920,930]]){
+  const ctx=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,reducedMotion:'no-preference'});
+  try{
+   const page=await ctx.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await page.evaluate(()=>document.fonts.ready);
+   const rects=await page.evaluate(()=>{
+    const rect=selector=>{const x=document.querySelector(selector).getBoundingClientRect();return {top:x.top,bottom:x.bottom,width:x.width,height:x.height}};
+    return {board:rect('.owner-console-board'),console:rect('.owner-console'),hero:rect('.owner-accepted-hero'),panel:rect('.owner-console-panel'),shortcut:rect('.r4-shortcuts')};
+   });
+   expect(rects.shortcut.top).toBeGreaterThanOrEqual(height-1);
+   expect(rects.console.bottom).toBeLessThanOrEqual(height);
+   expect(rects.board.bottom).toBeLessThan(rects.console.bottom);
+   expect(rects.console.bottom-rects.board.bottom).toBeLessThanOrEqual(13);
+   expect(Math.abs(rects.board.width-rects.board.height)).toBeLessThanOrEqual(2);
+   const p=path.resolve('test-results/home-r4/pr920-first-fold-'+width+'.png');
+   fs.mkdirSync(path.dirname(p),{recursive:true});
+   await page.screenshot({path:p,animations:'disabled'});
+   const link=page.locator('.r4-hero-actions .r4-btn-gold');
+   await expect(link).toHaveAttribute('href','#nasze-gry');
+   await link.click();
+   await expect(page).toHaveURL(/#nasze-gry$/);
+   await expect(page.locator('#nasze-gry')).toBeVisible();
+  }finally{await ctx.close()}
+ }
+});
+
+test('PR920 Kaja portrait opens an existing Warcaby T1 bot deep link',async({browser})=>{
+ const ctx=await browser.newContext({viewport:{width:1649,height:900},deviceScaleFactor:1,reducedMotion:'no-preference'});
+ try{
+  const page=await ctx.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  await page.mouse.move(0,0);
+  const hero=page.locator('.owner-accepted-hero');
+  await page.clock.runFor(12050);
+  await expect(hero).toHaveAttribute('data-hero-slide','szachy');
+  const portrait=hero.locator('a.owner-bot-person');
+  await expect(portrait).toHaveAttribute('aria-label','Zagraj w warcaby z botem Kaja');
+  await expect(portrait).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1');
+  await expect(hero.locator('.owner-ad-copy a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1');
+ }finally{await ctx.close()}
 });
