@@ -26,6 +26,8 @@
   };
   const botPhoto = hero.querySelector('.owner-bot-person img');
   const botName = hero.querySelector('.owner-bot-name');
+  const botGreeting = hero.querySelector('.owner-bot-greeting');
+  const clockBotName = hero.querySelector('.owner-clock-bot-name');
   function showBot(name) {
     const bot = botProfiles[name];
     if (!bot) return;
@@ -34,6 +36,8 @@
       botPhoto.alt = bot.name + ' (' + bot.id + ') — bot GRACZ.PL';
     }
     if (botName) botName.textContent = bot.name + ' · ' + bot.id;
+    if (botGreeting) botGreeting.textContent = 'Jestem ' + bot.name + ', zagraj ze mną!';
+    if (clockBotName) clockBotName.textContent = bot.name;
   }
 
   const boardNames = ['warcaby', 'szachy'];
@@ -60,6 +64,42 @@
   let pausedByUser = false;
   let hoveringAction = false;
   const cta = hero.querySelector('.r4-game-cta-stack');
+  // Two lightweight demonstration clocks. They are not the actual online game clocks.
+  // Side 0 is the bot (left); side 1 is the visitor (right, first move).
+  const clockFaces = [...hero.querySelectorAll('.owner-clocks b')];
+  const clockSides = [...hero.querySelectorAll('.owner-clocks > div')];
+  const clockStart = 7 * 60 * 1000;
+  let clockRemaining = [clockStart, clockStart];
+  let clockActive = 1;
+  let lastClockTick = Date.now();
+
+  function paintClocks() {
+    for (let side = 0; side < clockFaces.length; side++) {
+      const seconds = Math.ceil(Math.max(0, clockRemaining[side]) / 1000);
+      const display = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' +
+        String(seconds % 60).padStart(2, '0');
+      clockFaces[side].textContent = display;
+      clockSides[side]?.classList.toggle('owner-clock-active',
+        clockActive === side && Boolean(examples[slides[current]]) && !stopped());
+    }
+  }
+
+  function advanceClocks() {
+    const now = Date.now();
+    if (clockActive !== null && examples[slides[current]] && !stopped()) {
+      clockRemaining[clockActive] = Math.max(0,
+        clockRemaining[clockActive] - Math.max(0, now - lastClockTick));
+    }
+    lastClockTick = now;
+    paintClocks();
+  }
+
+  function resetClocks(name) {
+    clockRemaining = [clockStart, clockStart];
+    clockActive = examples[name] ? 1 : null;
+    lastClockTick = Date.now();
+    paintClocks();
+  }
 
   const pause = document.createElement('button');
   pause.type = 'button';
@@ -72,11 +112,12 @@
   function reset(name) {
     const cells = boards[name];
     if (cells) {
-      cells.forEach(cell => cell.classList.remove('preview-from', 'preview-to'));
+      cells.forEach(cell => cell.classList.remove('preview-from', 'preview-to', 'preview-moving-cell'));
       for (const { node, index } of initial[name]) {
         if (typeof node.getAnimations === 'function') {
           node.getAnimations().forEach(animation => animation.cancel());
         }
+        node.classList.remove('preview-moving-piece');
         if (node.parentElement !== cells[index]) cells[index].appendChild(node);
       }
     }
@@ -91,6 +132,10 @@
   function animateMove(node, source, target) {
     const from = source.getBoundingClientRect();
     target.appendChild(node);
+    // Raise the target cell above every neighbouring square while the piece
+    // travels from its previous position; otherwise it passes underneath them.
+    target.classList.add('preview-moving-cell');
+    node.classList.add('preview-moving-piece');
     const to = node.getBoundingClientRect();
     // Transform the already-moved piece from its previous screen position;
     // there is no duplicate or layout-shifting absolutely positioned copy.
@@ -103,10 +148,19 @@
       // difference in absolute position rather than resizing the piece.
       const dx = fromCenterX - toCenterX;
       const dy = fromCenterY - toCenterY;
-      node.animate(
+      const animation = node.animate(
         [{ transform: 'translate(' + dx + 'px, ' + dy + 'px)' }, { transform: 'translate(0, 0)' }],
         { duration: 380, easing: 'ease-in-out' }
       );
+      const clearLayer = () => {
+        target.classList.remove('preview-moving-cell');
+        node.classList.remove('preview-moving-piece');
+      };
+      animation.addEventListener('finish', clearLayer, { once: true });
+      animation.addEventListener('cancel', clearLayer, { once: true });
+    } else {
+      target.classList.remove('preview-moving-cell');
+      node.classList.remove('preview-moving-piece');
     }
     source.classList.add('preview-from');
     target.classList.add('preview-to');
@@ -148,6 +202,13 @@
       }
     }
     moveIndex++;
+    // A completed demonstration move starts the opponent's countdown.
+    advanceClocks();
+    if (clockActive !== null) {
+      clockActive = 1 - clockActive;
+      lastClockTick = Date.now();
+      paintClocks();
+    }
     const board = hero.querySelector('.owner-slide[data-owner-slide="' + name + '"]');
     if (board) board.dataset.previewMoves = String(moveIndex);
     if (caption) {
@@ -168,9 +229,11 @@
     if (stopped()) return;
     const name = slides[current];
     timer = window.setTimeout(() => {
+      advanceClocks();
       const oldName = slides[current];
       current = (current + 1) % slides.length;
       hero.setAttribute('data-hero-slide', slides[current]);
+      resetClocks(slides[current]);
       showBot(slides[current]);
       reset(oldName);
       reset(slides[current]);
@@ -207,5 +270,7 @@
   if (typeof reducedMotion.addEventListener === 'function') reducedMotion.addEventListener('change', schedule);
   else if (typeof reducedMotion.addListener === 'function') reducedMotion.addListener(schedule);
   showBot(slides[current]);
+  resetClocks(slides[current]);
+  window.setInterval(advanceClocks, 160);
   schedule();
 })();
