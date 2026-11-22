@@ -853,8 +853,14 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     await expect(hero.locator('.owner-bot-greeting')).toHaveText('Jestem '+botName+', zagraj ze mną!');
     await expect(hero.locator('.owner-clock-bot-name')).toHaveText(botName);
     const clockFaces=hero.locator('.owner-clocks b');
-    await expect(clockFaces.nth(0)).toHaveText('07:00');
-    await expect(clockFaces.nth(1)).toHaveText('07:00');
+    // Clocks start at 07:00 on each new scene and tick during the demo.
+    // Assertions must not wait for an exact instant after they have started.
+    await expect(clockFaces.nth(0)).toHaveText(/^0[0-7]:[0-5][0-9]$/);
+    await expect(clockFaces.nth(1)).toHaveText(/^0[0-7]:[0-5][0-9]$/);
+    if(slide==='soon'){
+      await expect(clockFaces.nth(0)).toHaveText('07:00');
+      await expect(clockFaces.nth(1)).toHaveText('07:00');
+    }
     const photo=hero.locator('.owner-bot-person img');
     await expect(photo).toHaveAttribute('src','/assets/'+botAsset);
     await expect(photo).toHaveAttribute('alt',botName+' ('+botId+') — bot GRACZ.PL');
