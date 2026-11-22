@@ -751,3 +751,97 @@
   color: #ffd367;
   margin: 0 0 7px;
 }
+
+/* Demo clocks alternate on every displayed move; no additional game backend. */
+#public-portal[data-page='home'] .owner-clocks > div {
+  min-width: 0;
+  transition: color .15s ease;
+}
+#public-portal[data-page='home'] .owner-clocks > div.owner-clock-active b {
+  color: #00786b;
+}
+#public-portal[data-page='home'] .owner-clock-bot-name {
+  display: block;
+  margin-top: 3px;
+  font: 700 12px/1.2 Arial, sans-serif;
+  color: #00786b;
+}
+
+/* Keep moving pieces ABOVE neighbouring squares, never hidden under them. */
+#public-portal[data-page='home'] .owner-square.preview-moving-cell {
+  position: relative;
+  z-index: 30 !important;
+  overflow: visible !important;
+}
+#public-portal[data-page='home'] .owner-square > .preview-moving-piece {
+  position: relative;
+  z-index: 31 !important;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* All four original bot portraits use one stable, contained frame.
+   In particular Sara in the Gomoku preview must not be cropped or offset. */
+#public-portal[data-page='home'] .owner-bot-ad {
+  grid-template-columns: minmax(102px, .88fr) minmax(0, 1.48fr);
+  align-items: stretch;
+  gap: 9px;
+}
+#public-portal[data-page='home'] .owner-bot-person {
+  display: grid;
+  grid-template-rows: minmax(92px, 1fr) auto;
+  justify-items: center;
+  align-items: end;
+  align-self: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 172px;
+  min-width: 0;
+  padding: 8px 5px 6px;
+  overflow: hidden;
+}
+#public-portal[data-page='home'] .owner-bot-person::before {
+  display: none !important;
+  content: none !important;
+}
+#public-portal[data-page='home'] .owner-bot-person img {
+  position: relative;
+  display: block;
+  justify-self: center;
+  align-self: end;
+  width: min(100%, 142px) !important;
+  height: 100% !important;
+  max-height: 155px !important;
+  max-width: 100% !important;
+  min-height: 0;
+  margin: 0 auto !important;
+  padding: 0;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  border-radius: 8px 8px 0 0;
+  transform: none !important;
+}
+#public-portal[data-page='home'] .owner-bot-person .owner-bot-greeting {
+  display: block;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 2px 2px;
+  color: #fff5df;
+  font: 700 clamp(10px, .8vw, 12px)/1.25 Arial, sans-serif;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] .owner-bot-ad {
+    grid-template-columns: minmax(102px, .9fr) minmax(0, 1.5fr);
+  }
+  #public-portal[data-page='home'] .owner-bot-person img {
+    height: 100% !important;
+    max-height: 146px !important;
+  }
+}
