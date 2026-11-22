@@ -812,11 +812,11 @@ test('Gracz.pl board thumbnails load and display in all three premium game cards
 // Approved hero previews show realistic movements, then change scenes (12/12/12/6 seconds).
 test('Approved hero animates game moves and rotates four scenes, then resets',async({browser})=>{
  const steps=[
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000],
-  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/',12000],
-  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/',12000],
-  ['soon','Poznaj kolejne gry','/gry/',6000],
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000]
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000,'Mila','N1','checkers-bot-mila-n1.webp'],
+  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/',12000,'Kaja','T1','checkers-bot-kaja-t1.webp'],
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/',12000,'Sara','E1','checkers-bot-sara-e1.webp'],
+  ['soon','Poznaj kolejne gry','/gry/',6000,'Wiktor','A1','checkers-bot-wiktor-a1.webp'],
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000,'Mila','N1','checkers-bot-mila-n1.webp']
  ];
  for(const width of [390,768,1366,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -833,9 +833,27 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
    await expect(page.locator('.owner-piece')).toHaveCount(24);
    await expect(page.locator('.owner-chess-piece')).toHaveCount(32);
    await expect(page.locator('.owner-gomoku-cell')).toHaveCount(225);
+   const crown=hero.locator('.owner-crown');
+   await expect(crown).toBeVisible();
+   await expect(crown).toHaveAttribute('src','/assets/gracz-crown-premium.svg');
+   await expect(hero.locator('.owner-clocks > div').first().locator('small')).toHaveText('Zagraj z botem');
+   const crownPosition=await hero.evaluate(el=>{
+     const wrap=el.querySelector('.r4-hero-rule').getBoundingClientRect();
+     const img=el.querySelector('.owner-crown');
+     const box=img.getBoundingClientRect();
+     return {offset:Math.abs((wrap.left+wrap.width/2)-(box.left+box.width/2)),
+       transform:getComputedStyle(img).transform};
+   });
+   expect(crownPosition.offset).toBeLessThanOrEqual(2);
+   expect(crownPosition.transform).toBe('none');
    const stage=await page.locator('.owner-console').boundingBox();
-   for(const [i,[slide,label,href,duration]] of steps.entries()){
+   for(const [i,[slide,label,href,duration,botName,botId,botAsset]] of steps.entries()){
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
+    await expect(hero.locator('.owner-bot-name')).toHaveText(botName+' · '+botId);
+    const photo=hero.locator('.owner-bot-person img');
+    await expect(photo).toHaveAttribute('src','/assets/'+botAsset);
+    await expect(photo).toHaveAttribute('alt',botName+' ('+botId+') — bot GRACZ.PL');
+    await expect(photo).toBeVisible();
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     await expect(active).toHaveCount(1);
     await expect(active).toHaveText(label);
