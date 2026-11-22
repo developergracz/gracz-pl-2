@@ -236,7 +236,12 @@ test('Anonymous guest and color picker: white below; black side triggers compute
   assert.equal(await gate.isVisible(),false,'no color dialog on hover');
   await page.getByRole('button',{name:'Nowa gra'}).click();
   await gate.waitFor({state:'visible'});
-  assert.deepEqual(await gate.locator('button').allTextContents(),['Białe','Czarne']);
+  assert.deepEqual(await gate.locator('button[data-checkers-side]').allTextContents(),['Białe','Czarne']);
+  await gate.getByRole('button',{name:'Zamknij okno wyboru koloru'}).click();
+  await gate.waitFor({state:'hidden'});
+  assert.equal(await page.locator('#board').getAttribute('data-checkers-playable'),'false');
+  await page.getByRole('button',{name:'Nowa gra'}).click();
+  await gate.waitFor({state:'visible'});
   assert.deepEqual(await Promise.all(['clock-1','clock-2'].map(id=>page.locator('#'+id).textContent())),['07:00','07:00']);
   await gate.getByRole('button',{name:'Wybierz czarne pionki'}).click();
   await gate.waitFor({state:'hidden'});
