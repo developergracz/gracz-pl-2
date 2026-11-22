@@ -1284,3 +1284,51 @@ test('R917 fourth scene search opens existing SEARCH R3 with the typed question'
   await expect(page.locator('#search-page-app')).toHaveAttribute('inert','');
  }finally{await context.close()}
 });
+
+
+test('PR918 native Gomoku 2px intersections and enlarged responsive console',async({browser})=>{
+ for(const width of [390,1649]){
+  const context=await browser.newContext({viewport:{width,height:width===1649?784:900},reducedMotion:'no-preference',deviceScaleFactor:1});
+  try{
+   const page=await context.newPage();
+   await page.clock.install();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await page.mouse.move(0,0);
+   const hero=page.locator('.owner-accepted-hero');
+   await page.clock.runFor(24050);
+   await expect(hero).toHaveAttribute('data-hero-slide','gomoku');
+   const metrics=await hero.evaluate(el=>{
+     const rect=e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom}};
+     const board=el.querySelector('.owner-console-board');
+     const panel=el.querySelector('.owner-console-panel');
+     const pause=el.querySelector('.portal-rotation-toggle');
+     const cell=el.querySelector('.owner-gomoku-cell');
+     const corner=el.querySelector('.owner-gomoku-cell.edge-top.edge-left');
+     const p=getComputedStyle(cell,'::before');
+     return {board:rect(board),panel:rect(panel),console:rect(el.querySelector('.owner-console')),
+       pause:rect(pause),gridBackground:p.backgroundImage,gridSize:p.backgroundSize,
+       top:getComputedStyle(corner).getPropertyValue('--grid-height').trim(),
+       left:getComputedStyle(corner).getPropertyValue('--grid-width').trim(),
+       windowHeight:innerHeight};
+   });
+   expect(metrics.gridBackground).toContain('rgb(54, 59, 62)');
+   expect(metrics.gridSize).toContain('2px');
+   expect(metrics.top).toBe('50%');
+   expect(metrics.left).toBe('50%');
+   expect(Math.abs(metrics.board.width-metrics.board.height)).toBeLessThanOrEqual(2);
+   await expect(hero.locator('.owner-gomoku-cell')).toHaveCount(225);
+   await expect(hero.locator('.owner-gomoku-cell.star')).toHaveCount(9);
+   await expect(hero.locator('.portal-rotation-toggle')).toBeVisible();
+   if(width===1649){
+     expect(metrics.console.bottom,JSON.stringify(metrics)).toBeLessThanOrEqual(metrics.windowHeight-2);
+     expect(metrics.board.width).toBeGreaterThanOrEqual(525);
+     expect(metrics.board.width).toBeGreaterThan(metrics.panel.width);
+     expect(metrics.pause.y+metrics.pause.height,JSON.stringify(metrics)).toBeLessThan(metrics.board.y);
+   }
+   const filename=path.resolve('test-results/home-r4/native-gomoku-'+width+'.png');
+   fs.mkdirSync(path.dirname(filename),{recursive:true});
+   await page.locator('.owner-console').screenshot({path:filename,animations:'disabled'});
+  }finally{await context.close()}
+ }
+});
