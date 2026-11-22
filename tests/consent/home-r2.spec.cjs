@@ -1409,3 +1409,56 @@ test('PR920 Kaja portrait opens an existing Warcaby T1 bot deep link',async({bro
   await expect(hero.locator('.owner-ad-copy a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1');
  }finally{await ctx.close()}
 });
+
+
+test('LIVE smoke: navigate from homepage Kaja portrait to a real training game',async({browser})=>{
+ test.setTimeout(140000);
+ const context=await browser.newContext({viewport:{width:1649,height:900},deviceScaleFactor:1,reducedMotion:'no-preference'});
+ try{
+  const page=await context.newPage();
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('https://gracz.pl/',{waitUntil:'domcontentloaded',timeout:45000});
+  const cta=page.locator('.r4-hero-actions a.r4-btn-gold');
+  await expect(cta).toHaveAttribute('href','#nasze-gry',{timeout:15000});
+  await cta.click();
+  await expect(page).toHaveURL(/#nasze-gry$/);
+  await expect(page.locator('#nasze-gry')).toBeVisible();
+  await page.evaluate(()=>window.scrollTo(0,0));
+  // Real carousel rotation, without mocked clocks or private DOM manipulation.
+  await page.mouse.move(0,0);
+  const hero=page.locator('.owner-accepted-hero');
+  await expect(hero).toHaveAttribute('data-hero-slide','szachy',{timeout:40000});
+  const portrait=hero.locator('a.owner-bot-person');
+  await expect(portrait).toHaveAttribute('aria-label','Zagraj w warcaby z botem Kaja');
+  await portrait.click();
+  await expect(page).toHaveURL('https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1',{timeout:45000});
+  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-id'),{timeout:45000}).toBe('T1');
+  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-name'),{timeout:20000}).toMatch(/Kaja/);
+  await expect(page.locator('#checkers-start-gate')).toBeHidden();
+  await expect.poll(()=>page.locator('#board').getAttribute('data-checkers-playable'),{timeout:20000}).toBe('true');
+  expect(errors).toEqual([]);
+ }finally{await context.close()}
+});
+
+test('LIVE smoke: pawn color modal closes without starting a game',async({browser})=>{
+ test.setTimeout(110000);
+ const context=await browser.newContext({viewport:{width:1366,height:768},deviceScaleFactor:1});
+ try{
+  const page=await context.newPage();
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('https://gracz-contact-api.onrender.com/konto/warcaby/',{waitUntil:'domcontentloaded',timeout:45000});
+  await expect.poll(()=>page.locator('#board').getAttribute('data-checkers-playable'),{timeout:45000}).toBe('false');
+  await page.getByRole('button',{name:'Nowa gra'}).click();
+  const modal=page.locator('#checkers-start-gate');
+  await expect(modal).toBeVisible();
+  await modal.getByRole('button',{name:'Zamknij wybór koloru pionków'}).click();
+  await expect(modal).toBeHidden();
+  await expect(page.locator('#board')).toHaveAttribute('data-checkers-playable','false');
+  await page.getByRole('button',{name:'Nowa gra'}).click();
+  await expect(modal).toBeVisible();
+  await expect(modal.getByRole('button',{name:'Wybierz białe pionki'})).toBeVisible();
+  expect(errors).toEqual([]);
+ }finally{await context.close()}
+});
