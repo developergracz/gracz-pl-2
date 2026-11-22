@@ -1394,15 +1394,20 @@
 }
 
 
-/* PR920 — match the owner's 1920x1080 first-fold reference without changing
-   the hero viewport, colors, board aspect ratio, or the next section. */
+/* Keep the board surface exactly flush with the neighboring console:
+   the previous bottom alignment and 6px offset created a visible top gap.
+   Desktop only; stacked mobile board retains its original square ratio. */
 @media (min-width: 1181px) {
+  #public-portal[data-page='home'] .owner-console-body {
+    align-items: stretch;
+  }
   #public-portal[data-page='home'] .owner-console-board {
     position: relative;
-    top: 6px;
-    /* A tall right panel must not stretch the left square into a rectangle. */
-    align-self: end !important;
-    height: auto !important;
+    top: 0;
+    align-self: stretch !important;
+    height: 100% !important;
+    max-height: none !important;
+    aspect-ratio: auto;
   }
 }
 #public-portal[data-page='home'] #nasze-gry {
