@@ -6,6 +6,32 @@
   const hero = document.querySelector('#public-portal[data-page="home"] .owner-accepted-hero');
   if (!hero) return;
 
+  // Reuse exactly the SVG piece factory from the existing chess game.
+  // Keep the Unicode fallback until the native vector module has loaded.
+  async function installOriginalChessFigures() {
+    try {
+      const { createChessPiece } = await import('/assets/gracz-original-chess-pieces.mjs');
+      for (const host of hero.querySelectorAll('.owner-chess-piece[data-piece]')) {
+        const svg = createChessPiece(document, host.dataset.piece);
+        if (svg) host.replaceChildren(svg);
+      }
+    } catch (_) {
+      // If an asset cannot load, keep the legible static chess symbols.
+    }
+  }
+  void installOriginalChessFigures();
+
+  // Recreate original Gomoku board intersections, edges and star points.
+  hero.querySelectorAll('.owner-gomoku-cell').forEach((cell, index) => {
+    const row = Math.floor(index / 15);
+    const col = index % 15;
+    if (row === 0) cell.classList.add('edge-top');
+    if (row === 14) cell.classList.add('edge-bottom');
+    if (col === 0) cell.classList.add('edge-left');
+    if (col === 14) cell.classList.add('edge-right');
+    if ([3, 7, 11].includes(row) && [3, 7, 11].includes(col)) cell.classList.add('star');
+  });
+
   const slides = ['warcaby', 'szachy', 'gomoku', 'soon'];
   const durations = { warcaby: 12000, szachy: 12000, gomoku: 12000, soon: 6000 };
   const examples = {
@@ -26,6 +52,27 @@
   };
   const botPhoto = hero.querySelector('.owner-bot-person img');
   const botName = hero.querySelector('.owner-bot-name');
+  const chat = hero.querySelector('.owner-chat-input');
+  const chatGameNames = { warcaby: 'warcaby', szachy: 'szachy', gomoku: 'gomoku' };
+  let chatFlashTimer = null;
+  function announceGame(name, bot) {
+    if (!chat) return;
+    window.clearTimeout(chatFlashTimer);
+    chat.classList.remove('owner-chat-flash');
+    if (chatGameNames[name]) {
+      chat.textContent = 'Cześć! Jestem ' + bot.name + ', chętnie z Tobą zagram w ' + chatGameNames[name] + '.';
+      if (!reducedMotion.matches) {
+        chatFlashTimer = window.setTimeout(() => {
+          chat.classList.remove('owner-chat-flash');
+          // Restart the animation when the same game appears in the next loop.
+          void chat.offsetWidth;
+          chat.classList.add('owner-chat-flash');
+        }, 2000);
+      }
+    } else {
+      chat.textContent = 'Więcej gier już wkrótce! Odkryj nasz newsletter.';
+    }
+  }
   const botGreeting = hero.querySelector('.owner-bot-greeting');
   const clockBotName = hero.querySelector('.owner-clock-bot-name');
   function showBot(name) {
@@ -38,6 +85,7 @@
     if (botName) botName.textContent = bot.name + ' · ' + bot.id;
     if (botGreeting) botGreeting.textContent = 'Jestem ' + bot.name + ', zagraj ze mną!';
     if (clockBotName) clockBotName.textContent = bot.name;
+    announceGame(name, bot);
   }
 
   const boardNames = ['warcaby', 'szachy'];
