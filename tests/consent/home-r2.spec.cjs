@@ -890,7 +890,8 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     if(i===steps.length-1) {
       // New cycle begins with the original 24 pawns, including captured ones.
       await expect(hero.locator('.owner-piece')).toHaveCount(24);
-      await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(42).locator('.owner-piece.white')).toHaveCount(1);
+      // The next cycle may have made its first move; restored white pieces remain present.
+       await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-piece.white')).toHaveCount(12);
     }
     if(slide!=='soon'){
       await page.clock.runFor(2200);
