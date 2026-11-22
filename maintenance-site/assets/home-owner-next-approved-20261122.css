@@ -1051,3 +1051,17 @@
 #public-portal[data-page='home'] .owner-accepted-hero[data-hero-slide='gomoku'] .owner-bot-person img {
   transform: translateX(5px) !important;
 }
+
+/* Retain the native checkers contours instead of the retired preview borders. */
+#public-portal[data-page='home'] .owner-accepted-hero .owner-piece {
+  border: 0 !important;
+  outline: none !important;
+  box-sizing: border-box;
+}
+/* Same panel height for the bot promotion and newsletter on narrow screens.
+   Avoid layout shift when the carousel crosses into its fourth scene. */
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] .owner-console-panel {
+    min-height: 620px !important;
+  }
+}
