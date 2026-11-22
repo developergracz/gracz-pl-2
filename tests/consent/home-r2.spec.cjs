@@ -5,7 +5,7 @@ const {test,expect}=require('@playwright/test');
 // Approved owner image, not an experimental redesign: exact section hierarchy,
 // featured photographs, five game tiles and working real routes.
 for(const width of [360,390,768,1366,1920]){
- test('R4 approved image layout, '+width+'px',async({browser})=>{
+ test('Approved GRACZ NEXT hero layout, '+width+'px',async({browser})=>{
   const context=await browser.newContext({viewport:{width,height:850},deviceScaleFactor:1});
   try{
    const page=await context.newPage();
@@ -15,7 +15,7 @@ for(const width of [360,390,768,1366,1920]){
    await expect(page.locator('h1')).toHaveCount(1);
    await expect(page.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
    await expect(page.locator('.r4-hero-motto')).toHaveText('Graj, ucz się, rywalizuj.');
-   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM !');
+   await expect(page.locator('.r4-hero-claim')).toHaveText('ZOSTAŃ NAJLEPSZYM GRACZEM!');
    await expect(page.locator('.r4-games-grid .r4-game')).toHaveCount(5);
    await expect(page.locator('.r4-shortcuts a')).toHaveCount(5);
    await expect(page.locator('.r4-guides-grid .r4-guide')).toHaveCount(3);
@@ -50,11 +50,11 @@ for(const width of [360,390,768,1366,1920]){
       const rect=q=>{const e=document.querySelector(q),r=e.getBoundingClientRect();
         return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
       return {width:innerWidth,scrollWidth:document.documentElement.scrollWidth,
-       hero:rect(innerWidth<=680?'.comic-mobile':'.r4-hero'),
-        card:rect(innerWidth<=680?'.comic-game-card':'.r4-game'),
+       hero:rect('.r4-hero'),
+        card:rect(innerWidth<=680?'.owner-console-board':'.r4-game'),
         footer:rect('.footer-news'),
         legal:rect('.footer-bottom'),
-       illustration:getComputedStyle(document.querySelector('.r4-hero-art')).backgroundImage,
+       console:rect('.owner-console'),
        css:getComputedStyle(document.querySelector('.r4-games-grid')).gridTemplateColumns,
        header:rect('.site-header')};
    });
@@ -64,25 +64,14 @@ for(const width of [360,390,768,1366,1920]){
    expect(layout.card.left).toBeGreaterThanOrEqual(-1);
    expect(layout.card.right).toBeLessThanOrEqual(width+2);
    expect(layout.hero.height).toBeGreaterThan(300);
-   if(width>680 && width<1181){
-     // Tablets show the same fixed console below the copy, not a second decorative artwork.
-     await expect(page.locator('.r4-owner-picture')).toBeVisible();
-     await expect(page.locator('.r4-hero-art')).toBeHidden();
-     expect(await page.locator('.r4-owner-image').evaluate(img=>img.currentSrc)).toContain('gracz-hero-gomoku-mobile-preview-r1.webp');
+   await expect(page.locator('.owner-console')).toBeVisible();
+   await expect(page.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
+   await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toHaveText('Nasze gry');
+   if(width<=680){
+     await expect(page.locator('.comic-mobile')).toBeHidden();
+     await expect(page.locator('.owner-console-board')).toBeVisible();
+     expect(layout.card.width).toBeGreaterThan(250);
    }
-    if(width<=680){
-      await expect(page.locator('.comic-mobile')).toBeVisible();
-      await expect(page.locator('.comic-scene-art')).toBeVisible();
-      await expect(page.locator('.r4-hero')).toBeHidden();
-      await expect(page.locator('.mobile-illustrated-featured')).toBeHidden();
-      await expect(page.locator('.comic-game-card')).toHaveCount(3);
-      await expect(page.locator('.comic-game-card img')).toHaveCount(3);
-      for(const [name,game] of [['Gomoku','gomoku'],['Warcaby','warcaby'],['Szachy','szachy']]){
-        const card=page.locator('.comic-game-card').filter({hasText:name});
-        await expect(card.locator('a')).toHaveText('ZAGRAJ');
-        await expect(card.locator('a')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/'+game+'/');
-      }
-    }
     expect(layout.footer.bottom,'Newsletter must not overlap legal footer').toBeLessThanOrEqual(layout.legal.top+2);
    await page.evaluate(()=>{for(const el of document.querySelectorAll('main > section'))el.style.contentVisibility='visible';});
    await page.locator('.footer-news').scrollIntoViewIfNeeded();
@@ -165,7 +154,7 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
           actions:rect('.header-actions'),label:rect('.r4-search-label'),
           labelVisible:getComputedStyle(label).display!=='none',
           heroHeight:document.querySelector('.r4-hero').getBoundingClientRect().height,
-          heroPhotoPosition:getComputedStyle(document.querySelector('.r4-hero-art')).position};
+          consoleWidth:document.querySelector('.owner-console').getBoundingClientRect().width};
       });
       expect(geometry.actions.r).toBeLessThanOrEqual(width+2);
       expect(geometry.nav.r).toBeLessThanOrEqual(geometry.search.l+3);
@@ -176,8 +165,8 @@ test('R4 desktop header search fits and a whole game card navigates', async ({br
         expect(geometry.label.b).toBeLessThanOrEqual(geometry.search.b+1);
         expect(geometry.label.r).toBeLessThanOrEqual(geometry.search.r+1);
       }
-      expect(Math.abs(geometry.heroHeight - Math.min(width,1500) * 724 / 2172)).toBeLessThan(3);
-      expect(geometry.heroPhotoPosition).toBe('absolute');
+      expect(geometry.heroHeight).toBeGreaterThan(500);
+      expect(geometry.consoleWidth).toBeGreaterThan(400);
       if(width===1600){
         const game=page.locator('.r4-game').nth(1);
         await expect(game.locator('a.r4-game-play')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/warcaby/');
@@ -289,7 +278,7 @@ test('Owner R5 compact desktop hierarchy and full community banner', async({brow
      scrollWidth:document.documentElement.scrollWidth};
    });
    expect(m.scrollWidth).toBeLessThanOrEqual(width+2);
-   expect(Math.abs(m.hero.h-m.hero.w*724/2172)).toBeLessThan(3);
+   expect(m.hero.h).toBeGreaterThan(500);
    expect(Math.abs(m.cVisual.x-(m.community.x+m.community.w*.22))).toBeLessThan(3);
    expect(m.cVisual.right).toBeLessThanOrEqual(m.community.right+2);
    expect(Math.abs(m.cVisual.h-m.community.h)).toBeLessThan(3);
