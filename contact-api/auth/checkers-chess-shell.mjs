@@ -201,30 +201,26 @@ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.s
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.sidebar>*:not(.mode){display:none!important}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus):not(.console-hide-mode) .side-dock .checkers-owner-mode{
- display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:4px!important;
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:4px!important;
  margin:0!important;padding:4px!important;border:1px solid var(--cc-line)!important;
  border-radius:15px!important;background:var(--cc-soft)!important
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice{
- display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:3px!important;
- height:48px!important;min-height:48px!important;min-width:0!important;margin:0!important;padding:2px 2px!important;
+ display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:10px!important;
+ height:60px!important;min-height:60px!important;min-width:0!important;margin:0!important;padding:4px 8px!important;
  color:var(--cc-ink)!important;background:transparent!important;border:0!important;border-radius:10px!important;
- box-shadow:none!important;font:700 11px/1.1 system-ui,sans-serif!important
+ box-shadow:none!important;font:700 16px/1.1 system-ui,sans-serif!important
 }
-body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice.active{
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice.active,
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice[aria-pressed="true"]{
  background:var(--cc-accent)!important;color:#fff!important
 }
-/* Bot mode runs on the Computer engine, but only the selected UI button is highlighted. */
-body.warcaby-console.chess-console.cc-owner[data-checkers-bot-selected="true"] #game:not(.game-focus) .checkers-owner-mode>#training-mode.mode-choice.active,
-body.warcaby-console.chess-console.cc-owner[data-checkers-bot-selected="true"] #game:not(.game-focus) .checkers-owner-mode>#online-mode.mode-choice.active{
- background:transparent!important;color:var(--cc-ink)!important
-}
 body.warcaby-console.chess-console.cc-owner .checkers-owner-mode .cc-mode-label{font:inherit;white-space:normal;text-align:center;overflow-wrap:normal}
-body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:17px;height:17px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7}
+body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:23px;height:23px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.7}
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:focus-visible{outline:2px solid var(--cc-accent)!important;outline-offset:-3px!important}
-body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:hover:not(.active){background:var(--cc-surface)!important}
-@media(max-width:380px){
- body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice{font-size:11px!important}
+body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice:hover:not(.active):not([aria-pressed="true"]){background:var(--cc-surface)!important}
+@media(max-width:600px){
+ body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .checkers-owner-mode>.mode-choice{font-size:13px!important}
  body.warcaby-console.chess-console.cc-owner .checkers-owner-mode svg{width:17px;height:17px}
 }
 body.warcaby-console.chess-console.cc-owner #game:not(.game-focus) .side-dock>.cc-top .players{display:grid!important;position:static!important}
