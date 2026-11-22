@@ -201,63 +201,53 @@ test('R4 sharpened hero is valid, local, and decoded by Chrome',async({page})=>{
 });
 
 
-test('Owner Premium: approved artwork, visible HTML copy and accessible CTAs',async({browser})=>{
+test('Owner Premium: approved console, visible HTML copy and accessible CTAs',async({browser})=>{
  for(const width of [1181,1366,1649,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
   try{
    const page=await context.newPage();
    await page.goto('/');
    await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-   const exact=page.locator('.r4-owner-image');
-   await expect(exact).toBeVisible();
-   await exact.evaluate(el=>el.decode());
-   const dims=await exact.evaluate(el=>({
-    naturalWidth:el.naturalWidth,naturalHeight:el.naturalHeight,
-    src:el.currentSrc,
-    imageRect:el.getBoundingClientRect().toJSON(),
-    heroRect:document.querySelector('.r4-hero').getBoundingClientRect().toJSON(),
-    game:document.querySelector('.r4-owner-hotspot--games').getBoundingClientRect().toJSON(),
-    guides:document.querySelector('.r4-owner-hotspot--guides').getBoundingClientRect().toJSON(),
-    copyVisible:getComputedStyle(document.querySelector('.r4-hero-copy')).clipPath,
-    overflow:document.documentElement.scrollWidth
-   }));
-   expect(dims.naturalWidth).toBe(2172);
-   expect(dims.naturalHeight).toBe(724);
-   expect(dims.src).toContain('gracz-hero-gomoku-approved-r1.webp');
-   expect(Math.abs(dims.heroRect.height/dims.heroRect.width-724/2172)).toBeLessThan(.01);
-   expect(Math.abs(dims.imageRect.height/dims.imageRect.width-724/2172)).toBeLessThan(.02);
-   expect(dims.heroRect.height).toBeGreaterThan(380);
-   expect(dims.copyVisible).toBe('none');
-   await expect(page.locator('.r4-hero-actions > a[href="/gry/"]')).toBeVisible();
-   await expect(page.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
-   expect(dims.overflow).toBeLessThanOrEqual(width+2);
-   await expect(page.locator('.r4-owner-hotspot--games')).toBeHidden();
-   await expect(page.locator('.r4-owner-hotspot--guides')).toBeHidden();
-   if(width===1366) {
-     await page.locator('.r4-hero-actions > a[href="/gry/"]').click();
-     await expect(page).toHaveURL(/\/gry\/$/);
+   const hero=page.locator('.owner-accepted-hero');
+   await expect(hero).toBeVisible();
+   await expect(hero.locator('.owner-console')).toBeVisible();
+   await expect(hero.locator('#hero-title')).toHaveText('Polskie Centrum Gracza');
+   await expect(hero.locator('.owner-console-panel')).toBeVisible();
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toBeVisible();
+   await expect(hero.locator('.owner-bot-person img')).toHaveAttribute('src','/assets/checkers-bot-mila-n1.webp');
+   await expect(hero.locator('.r4-hero-actions > a[href="/gry/"]')).toHaveText('Nasze gry');
+   await expect(hero.locator('.r4-hero-actions > a[href="/poradniki/"]')).toBeVisible();
+   const dims=await hero.evaluate(el=>({hero:el.getBoundingClientRect().toJSON(),panel:el.querySelector('.owner-console').getBoundingClientRect().toJSON(),scroll:document.documentElement.scrollWidth}));
+   expect(dims.hero.height).toBeGreaterThan(500);
+   expect(dims.panel.width).toBeGreaterThan(400);
+   expect(dims.scroll).toBeLessThanOrEqual(width+2);
+   if(width===1366){
+    await hero.locator('.r4-hero-actions > a[href="/gry/"]').click();
+    await expect(page).toHaveURL(/\/gry\/$/);
    }
   }finally{await context.close()}
  }
 });
-test('Owner-approved mobile comic home offers immediate playable game links',async({browser})=>{
+test('Owner-approved mobile hero links to working games',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  try{
   const page=await context.newPage();
   await page.goto('/');
   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
-  await expect(page.locator('.comic-mobile')).toBeVisible();
-  await expect(page.locator('.comic-scene-art')).toBeVisible();
-  await expect(page.locator('#comic-mobile-title')).toBeVisible();
-  await expect(page.locator('.r4-hero')).toBeHidden();
-  await expect(page.locator('.comic-login')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/?widok=login');
-  await expect(page.locator('.comic-register')).toHaveAttribute('href','https://gracz-contact-api.onrender.com/konto/');
-  await expect(page.locator('.comic-game-card')).toHaveCount(3);
-  await expect(page.locator('.comic-game-card a')).toHaveCount(3);
-  await expect(page.locator('.comic-header-profile')).toBeVisible();
+  await expect(page.locator('.comic-mobile')).toBeHidden();
+  const hero=page.locator('.owner-accepted-hero');
+  await expect(hero).toBeVisible();
+  await expect(hero.locator('.owner-console-board')).toBeVisible();
+  const boardWidth=await hero.locator('.owner-console-board').evaluate(el=>el.getBoundingClientRect().width);
+  expect(boardWidth).toBeGreaterThan(250);
+  await expect(hero.locator('.owner-square-board[data-owner-slide="warcaby"] .owner-square')).toHaveCount(64);
+  await expect(hero.locator('.owner-bot-ad')).toBeVisible();
+  for(const [game,href] of [
+   ['warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/'],
+   ['szachy','https://gracz-contact-api.onrender.com/konto/szachy/'],
+   ['gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/']
+  ])await expect(hero.locator('.r4-game-cta-stack > a[data-game="'+game+'"]')).toHaveAttribute('href',href);
   await expect(page.locator('.mobile-header-search')).toBeVisible();
-  await expect(page.locator('.comic-bottom-nav a')).toHaveCount(4);
-  await expect(page.locator('.comic-bottom-nav button')).toHaveCount(1);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
  }finally{await context.close()}
 });
