@@ -1065,3 +1065,9 @@
     min-height: 620px !important;
   }
 }
+
+/* A single stable minimum for all four promotional scenes at tablet and
+   desktop widths as well; the newsletter copy must never resize the console. */
+#public-portal[data-page='home'] .owner-console-panel {
+  min-height: 620px !important;
+}
