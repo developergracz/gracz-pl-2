@@ -1392,3 +1392,26 @@
     box-sizing: border-box;
   }
 }
+
+
+/* PR920 — match the owner's 1920x1080 first-fold reference without changing
+   the hero viewport, colors, board aspect ratio, or the next section. */
+@media (min-width: 1181px) {
+  #public-portal[data-page='home'] .owner-console-board {
+    position: relative;
+    top: 6px;
+  }
+}
+#public-portal[data-page='home'] #nasze-gry {
+  scroll-margin-top: 83px;
+}
+/* The portrait is a real navigation link to an existing Warcaby bot profile. */
+#public-portal[data-page='home'] .owner-bot-person {
+  color: inherit;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+#public-portal[data-page='home'] .owner-bot-person:focus-visible {
+  outline: 2px solid #f7cf70 !important;
+  outline-offset: 2px;
+}
