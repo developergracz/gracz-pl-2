@@ -1412,31 +1412,44 @@ test('PR920 Kaja portrait opens an existing Warcaby T1 bot deep link',async({bro
 
 
 test('LIVE smoke: navigate from homepage Kaja portrait to a real training game',async({browser})=>{
- test.setTimeout(140000);
+ test.setTimeout(135000);
  const context=await browser.newContext({viewport:{width:1649,height:900},deviceScaleFactor:1,reducedMotion:'no-preference'});
+ const started=Date.now();
+ const stage=name=>console.log('[LIVE_KAJA] '+name+' after '+(Date.now()-started)+'ms');
  try{
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('https://gracz.pl/',{waitUntil:'domcontentloaded',timeout:45000});
+  stage('loading homepage');
+  await page.goto('https://gracz.pl/',{waitUntil:'domcontentloaded',timeout:35000});
+  stage('homepage loaded');
+  // Consent overlay intercepts clicks for first-time users; close it as in
+  // existing local E2E before checking in-page navigation.
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click({timeout:10000});
+  stage('consent closed');
   const cta=page.locator('.r4-hero-actions a.r4-btn-gold');
-  await expect(cta).toHaveAttribute('href','#nasze-gry',{timeout:15000});
-  await cta.click();
+  await expect(cta).toHaveAttribute('href','#nasze-gry',{timeout:10000});
+  await cta.click({timeout:10000});
   await expect(page).toHaveURL(/#nasze-gry$/);
   await expect(page.locator('#nasze-gry')).toBeVisible();
+  stage('in-page games anchor works');
   await page.evaluate(()=>window.scrollTo(0,0));
-  // Real carousel rotation, without mocked clocks or private DOM manipulation.
   await page.mouse.move(0,0);
   const hero=page.locator('.owner-accepted-hero');
-  await expect(hero).toHaveAttribute('data-hero-slide','szachy',{timeout:40000});
+  await expect(hero).toHaveAttribute('data-hero-slide','szachy',{timeout:25000});
+  stage('Kaja carousel screen active');
   const portrait=hero.locator('a.owner-bot-person');
   await expect(portrait).toHaveAttribute('aria-label','Zagraj w warcaby z botem Kaja');
-  await portrait.click();
-  await expect(page).toHaveURL('https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1',{timeout:45000});
-  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-id'),{timeout:45000}).toBe('T1');
-  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-name'),{timeout:20000}).toMatch(/Kaja/);
+  await portrait.click({timeout:10000});
+  stage('clicked Kaja portrait');
+  await expect(page).toHaveURL('https://gracz-contact-api.onrender.com/konto/warcaby/?bot=T1',{timeout:25000});
+  stage('navigated to live Warcaby');
+  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-id'),{timeout:25000}).toBe('T1');
+  stage('T1 bot id selected');
+  await expect.poll(()=>page.locator('body').getAttribute('data-checkers-bot-name'),{timeout:10000}).toMatch(/Kaja/);
   await expect(page.locator('#checkers-start-gate')).toBeHidden();
-  await expect.poll(()=>page.locator('#board').getAttribute('data-checkers-playable'),{timeout:20000}).toBe('true');
+  await expect.poll(()=>page.locator('#board').getAttribute('data-checkers-playable'),{timeout:12000}).toBe('true');
+  stage('training started without modal');
   expect(errors).toEqual([]);
  }finally{await context.close()}
 });
