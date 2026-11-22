@@ -91,3 +91,11 @@ test('Warcaby renders player and AI messages in the same premium bubble structur
  assert.equal(preview.children[0].className,'chat-bubble game-chat-message');
 
 });
+
+test('Warcaby bot chat wraps message text and hides scrollbar chrome without disabling scroll',()=>{
+ const css=asset(serveCheckersConsole,'/konto/warcaby/styl.css');
+ assert.match(css,/#chat-messages\{[^}]*overflow-x:hidden!important;overflow-y:auto!important;/);
+ assert.match(css,/#chat-messages::-webkit-scrollbar\{display:none!important/);
+ assert.match(css,/#chat-messages \.checkers-bot-chat-row \.game-chat-message\{[^}]*flex:1 1 0!important/);
+ assert.match(css,/#chat-messages \.game-chat-message p\{[^}]*overflow-wrap:anywhere!important/);
+});
