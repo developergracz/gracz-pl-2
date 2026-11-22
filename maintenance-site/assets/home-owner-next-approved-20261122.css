@@ -1381,3 +1381,14 @@
     min-height: 668px !important;
   }
 }
+
+
+/* PR919: the five-link shortcuts bar belongs to the SECOND screen.
+   Fill the first desktop viewport with the hero itself; keep the shortcuts
+   in the normal document flow so scrolling still reveals every link. */
+@media (min-width: 1181px) {
+  #public-portal[data-page='home'] .r4-hero.owner-accepted-hero {
+    min-height: calc(100dvh - 74px) !important;
+    box-sizing: border-box;
+  }
+}
