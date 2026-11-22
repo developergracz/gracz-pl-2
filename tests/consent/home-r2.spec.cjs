@@ -1378,7 +1378,7 @@ test('PR920 first-fold console alignment and Nasze gry in-page link',async({brow
    expect(rects.shortcut.top).toBeGreaterThanOrEqual(height-1);
    expect(rects.console.bottom).toBeLessThanOrEqual(height);
    expect(rects.board.bottom).toBeLessThan(rects.console.bottom);
-   expect(rects.console.bottom-rects.board.bottom).toBeLessThanOrEqual(13);
+   expect(rects.console.bottom-rects.board.bottom,JSON.stringify({width,height,rects})).toBeLessThanOrEqual(13);
    expect(Math.abs(rects.board.width-rects.board.height)).toBeLessThanOrEqual(2);
    if(width===1649){
     // Reference screenshot: square playing surface and the cream right panel
