@@ -72,13 +72,13 @@ test('Gomoku AI safely sends a small Polish prompt, the board context and limite
 test('Gomoku AI rate budget restricts repeated anonymous requests',async()=>{
  const handler=createGomokuAiChatRoute({apiKey:'provider-key',now:()=>1000,
   fetchImpl:async()=>({ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})})});
- for(let i=0;i<3;i++){
+ for(let i=0;i<10;i++){
   const res=response();await handler(request(payload()),res,endpoint);assert.equal(res.status,200);
  }
- const fourth=response();
- await handler(request(payload()),fourth,endpoint);
- assert.equal(fourth.status,429);
- assert.equal(fourth.payload.error.code,'AI_LIMIT');
+ const eleventh=response();
+ await handler(request(payload()),eleventh,endpoint);
+ assert.equal(eleventh.status,429);
+ assert.equal(eleventh.payload.error.code,'AI_LIMIT');
 });
 test('Gomoku AI never displays fabricated provider responses on upstream failure',async()=>{
  const handler=createGomokuAiChatRoute({apiKey:'provider-key',
@@ -151,7 +151,7 @@ test('Verified black diagonal is recognized without trusting client winner value
 
 test('Warcaby bot comments only on a position replayed from legal recorded moves',async()=>{
  const bodies=[];let clock=0;
- // Each call is a minute apart, so the unchanged shared limit of 3 requests/minute applies normally.
+ // Each call is a minute apart, so the shared minute budget resets normally.
  const handler=createGomokuAiChatRoute({apiKey:'provider-key',now:()=>(clock+=61000),fetchImpl:async(url,options)=>{
   bodies.push(JSON.parse(options.body));
   return {ok:true,json:async()=>({choices:[{message:{content:'OK'}}]})};

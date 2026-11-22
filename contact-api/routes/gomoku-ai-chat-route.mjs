@@ -230,8 +230,9 @@ export function createGomokuAiChatRoute({
   const ip=String(req.socket?.remoteAddress||'unknown');
   let bucket=buckets.get(ip);
   if(!bucket||time-bucket.since>=3600000){bucket={since:time,count:0};buckets.set(ip,bucket);}
-  // Intentionally stay under free-tier limits even during bot attacks.
-  if(dailyCount>=100||minuteCount>=3||bucket.count>=30||inFlight>=2){
+  // Permit a normal short conversation without hitting the old 3/minute wall.
+  // Keep the shared daily cap, hourly per-IP cap and concurrency guard intact.
+  if(dailyCount>=100||minuteCount>=10||bucket.count>=30||inFlight>=2){
    bodyError(res,429,'AI_LIMIT','Limit darmowych rozmów AI został osiągnięty. Spróbuj ponownie później.');return true;
   }
   dailyCount++;minuteCount++;bucket.count++;inFlight++;
