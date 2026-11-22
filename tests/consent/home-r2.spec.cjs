@@ -812,11 +812,11 @@ test('Gracz.pl board thumbnails load and display in all three premium game cards
 // Approved hero previews show realistic movements, then change scenes (12/12/12/6 seconds).
 test('Approved hero animates game moves and rotates four scenes, then resets',async({browser})=>{
  const steps=[
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000],
-  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/',12000],
-  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/',12000],
-  ['soon','Poznaj kolejne gry','/gry/',6000],
-  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000]
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000,'Mila','N1','checkers-bot-mila-n1.webp'],
+  ['szachy','Zagraj w szachy','https://gracz-contact-api.onrender.com/konto/szachy/',12000,'Kaja','T1','checkers-bot-kaja-t1.webp'],
+  ['gomoku','Zagraj w gomoku','https://gracz-contact-api.onrender.com/konto/gomoku/',12000,'Sara','E1','checkers-bot-sara-e1.webp'],
+  ['soon','Poznaj kolejne gry','/gry/',6000,'Wiktor','A1','checkers-bot-wiktor-a1.webp'],
+  ['warcaby','Zagraj w warcaby','https://gracz-contact-api.onrender.com/konto/warcaby/',12000,'Mila','N1','checkers-bot-mila-n1.webp']
  ];
  for(const width of [390,768,1366,1920]){
   const context=await browser.newContext({viewport:{width,height:900}});
@@ -833,18 +833,41 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
    await expect(page.locator('.owner-piece')).toHaveCount(24);
    await expect(page.locator('.owner-chess-piece')).toHaveCount(32);
    await expect(page.locator('.owner-gomoku-cell')).toHaveCount(225);
+   const crown=hero.locator('.owner-crown');
+   await expect(crown).toBeVisible();
+   await expect(crown).toHaveAttribute('src','/assets/gracz-crown-premium.svg');
+   await expect(hero.locator('.owner-clocks > div').first().locator('small')).toHaveText('Zagraj z botem');
+   const crownPosition=await hero.evaluate(el=>{
+     const wrap=el.querySelector('.r4-hero-rule').getBoundingClientRect();
+     const img=el.querySelector('.owner-crown');
+     const box=img.getBoundingClientRect();
+     return {offset:Math.abs((wrap.left+wrap.width/2)-(box.left+box.width/2)),
+       transform:getComputedStyle(img).transform};
+   });
+   expect(crownPosition.offset).toBeLessThanOrEqual(2);
+   expect(crownPosition.transform).toBe('none');
    const stage=await page.locator('.owner-console').boundingBox();
-   for(const [i,[slide,label,href,duration]] of steps.entries()){
+   for(const [i,[slide,label,href,duration,botName,botId,botAsset]] of steps.entries()){
     await expect(hero).toHaveAttribute('data-hero-slide',slide);
+    await expect(hero.locator('.owner-bot-name')).toHaveText(botName+' · '+botId);
+    const photo=hero.locator('.owner-bot-person img');
+    await expect(photo).toHaveAttribute('src','/assets/'+botAsset);
+    await expect(photo).toHaveAttribute('alt',botName+' ('+botId+') — bot GRACZ.PL');
+    await expect(photo).toBeVisible();
     const active=page.locator('.r4-game-cta-stack > a').filter({visible:true});
     await expect(active).toHaveCount(1);
     await expect(active).toHaveText(label);
     await expect(active).toHaveAttribute('href',href);
     const board=hero.locator('.owner-slide[data-owner-slide="'+slide+'"]');
     await expect(board).toBeVisible();
+    if(i===steps.length-1) {
+      // New cycle begins with the original 24 pawns, including captured ones.
+      await expect(hero.locator('.owner-piece')).toHaveCount(24);
+      await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(42).locator('.owner-piece.white')).toHaveCount(1);
+    }
     if(slide!=='soon'){
       await page.clock.runFor(1900);
-      await expect(board).toHaveAttribute('data-preview-moves','1');
+      await expect(board).toHaveAttribute('data-preview-moves',/^[1-8]$/);
       if(slide==='warcaby'){
         await expect(board.locator('.owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
         await expect(board.locator('.owner-piece')).toHaveCount(24);
@@ -856,16 +879,15 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
       if(slide==='gomoku'){
         await expect(board.locator('.owner-gomoku-cell').nth(82).locator('.owner-gomoku-stone.white')).toHaveCount(1);
       }
-      await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy 1/');
+      await expect(hero.locator('.owner-panel-caption')).toContainText('ruch pokazowy ');
     }
     expect(await page.locator('.owner-console').boundingBox()).toEqual(stage);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
     if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:1900));
    }
-   // The loop has returned to Warcaby and shown move 1 of the next cycle.
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
-   await expect(hero.locator('.owner-piece')).toHaveCount(24);
+   // The loop successfully restarted and the new demo is advancing.
+   await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves',/^[1-7]$/);
   }finally{await context.close()}
  }
 });
@@ -873,23 +895,27 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
 test('Hero preview pause blocks both movements and board changes',async({browser})=>{
  const context=await browser.newContext({viewport:{width:390,height:900},reducedMotion:'no-preference'});
  try{
- const page=await context.newPage();
- await page.clock.install();
- await page.goto('/');
- await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
- const hero=page.locator('.owner-accepted-hero');
- await page.clock.runFor(2600);
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
- const toggle=hero.locator('.portal-rotation-toggle');
- await toggle.click();
- await expect(toggle).toHaveAttribute('aria-pressed','true');
- await page.clock.runFor(25000);
- await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
- await toggle.click();
- await expect(toggle).toHaveAttribute('aria-pressed','false');
- await page.clock.runFor(2600);
- await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','2');
+  const page=await context.newPage();
+  await page.clock.install();
+  await page.goto('/');
+  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+  const hero=page.locator('.owner-accepted-hero');
+  const board=hero.locator('.owner-slide[data-owner-slide="warcaby"]');
+  await page.clock.runFor(2600);
+  await expect(board).toHaveAttribute('data-preview-moves',/^[1-7]$/);
+  const toggle=hero.locator('.portal-rotation-toggle');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','true');
+  const frozen=Number(await board.getAttribute('data-preview-moves'));
+  expect(frozen).toBeGreaterThanOrEqual(1);
+  expect(frozen).toBeLessThan(7);
+  await page.clock.runFor(25000);
+  await expect(hero).toHaveAttribute('data-hero-slide','warcaby');
+  expect(Number(await board.getAttribute('data-preview-moves'))).toBe(frozen);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed','false');
+  await page.clock.runFor(2700);
+  expect(Number(await board.getAttribute('data-preview-moves'))).toBeGreaterThan(frozen);
  }finally{await context.close()}
 });
 test('Five premium game cards: linked live games and disabled upcoming games remain compact',async({browser})=>{

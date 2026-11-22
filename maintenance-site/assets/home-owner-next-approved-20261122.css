@@ -718,3 +718,36 @@
     outline: none;
   }
 }
+
+/* The crown is a real, level image rather than a legacy rotated pseudo-element. */
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule {
+  height: 49px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  transform: none !important;
+  margin: 0 0 13px !important;
+  background: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule::before,
+#public-portal[data-page='home'] .owner-accepted-hero .r4-hero-rule::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-crown {
+  display: block !important;
+  width: 52px !important;
+  height: 43px !important;
+  max-width: 52px !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  transform: none !important;
+  rotate: none !important;
+  filter: none !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-bot-name {
+  font: 700 clamp(11px, .85vw, 13px)/1.25 Arial, sans-serif;
+  color: #ffd367;
+  margin: 0 0 7px;
+}
