@@ -862,20 +862,23 @@ test('Approved hero animates game moves and rotates four scenes, then resets',as
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+2);
     if(i<steps.length-1) await page.clock.runFor(duration-(slide==='soon'?0:1900));
    }
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).not.toHaveAttribute('data-preview-moves',/./);
-   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(42).locator('.owner-piece.white')).toHaveCount(0);
-   // The last test view advanced one move; the board still contains 24 pieces.
+   // The loop has returned to Warcaby and shown move 1 of the next cycle.
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
+   await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"] .owner-square').nth(35).locator('.owner-piece.white')).toHaveCount(1);
    await expect(hero.locator('.owner-piece')).toHaveCount(24);
   }finally{await context.close()}
  }
 });
 
-test('Hero preview pause blocks both movements and board changes',async({page})=>{
+test('Hero preview pause blocks both movements and board changes',async({browser})=>{
+ const context=await browser.newContext({viewport:{width:390,height:900},reducedMotion:'no-preference'});
+ try{
+ const page=await context.newPage();
  await page.clock.install();
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
  const hero=page.locator('.owner-accepted-hero');
- await page.clock.runFor(1900);
+ await page.clock.runFor(2600);
  await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
  const toggle=hero.locator('.portal-rotation-toggle');
  await toggle.click();
@@ -885,8 +888,9 @@ test('Hero preview pause blocks both movements and board changes',async({page})=
  await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','1');
  await toggle.click();
  await expect(toggle).toHaveAttribute('aria-pressed','false');
- await page.clock.runFor(1900);
+ await page.clock.runFor(2600);
  await expect(hero.locator('.owner-slide[data-owner-slide="warcaby"]')).toHaveAttribute('data-preview-moves','2');
+ }finally{await context.close()}
 });
 test('Five premium game cards: linked live games and disabled upcoming games remain compact',async({browser})=>{
  for(const width of [390,768,1366,1600]){
