@@ -59,9 +59,12 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const assembled=files.map(f=>fs.readFileSync("maintenance-site/assets/"+f,"utf8")).join("\n");
   const bundle=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1.css","utf8");
   assert.equal(bundle,compact(assembled),"LCP CSS bundle must exactly preserve the approved cascade");
-  // Exactly one selected stylesheet. No-JS visitors retain full approved CSS.
+  // One fallback bundle plus the approved new hero's render-blocking override.
+  // Both links remain available to no-JS visitors.
   const stylesheetTags=[...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)];
-  assert.equal(stylesheetTags.length,1,"No-JS fallback must be the only static stylesheet");
+  assert.equal(stylesheetTags.length,2,"Only the original fallback and new hero stylesheet are permitted");
+  assert.ok(stylesheetTags.some(tag=>tag[1].startsWith("/assets/home-owner-next-approved-20261122.css?")),
+    "Approved hero CSS must load as a local render-blocking stylesheet");
   assert.ok(html.includes('<noscript><link rel="stylesheet" href="/assets/home-lcp-bundle-r1.css?v=css-lcp-20261106-unused-css-prune-r1"></noscript>'),
     "No-JS users must receive approved full stylesheet");
   assert.ok(html.includes('<script src="/assets/home-css-viewport.js?v=20261109-large-news-r1"></script>'),
@@ -76,8 +79,13 @@ if(process.argv[1]?.endsWith("check-home-premium-css-compact.mjs")){
   const mobile=fs.readFileSync("maintenance-site/assets/home-lcp-bundle-r1-mobile.css","utf8");
   assert.equal(mobile,mobileCss(bundle).css,"Mobile stylesheet must preserve approved rule order");
   assert.ok(mobile.length<bundle.length*.80,"Mobile CSS must save at least 20%");
-  assert.ok(html.indexOf("gracz-hero-gomoku-mobile-preview-r1.webp")<html.indexOf("home-lcp-bundle-r1.css"),
-    "Preload mobile LCP image before requesting CSS bundle");
+  assert.ok(!/<link rel="preload" href="\/assets\/gracz-hero-gomoku-[^"]+\.webp"/.test(html),
+    "Do not preload obsolete large hero images");
+  assert.ok(html.includes('data-owner-slide="warcaby"') &&
+    html.includes('data-owner-slide="szachy"') &&
+    html.includes('data-owner-slide="gomoku"') &&
+    html.includes('data-owner-slide="soon"'),
+    "Approved four-stage hero must be present");
   assert.ok(html.includes('class="r4-hero-description"'),"Keep semantic hero copy");
   console.log(JSON.stringify({state:"PASS",sourceBytes:src.length,compactBytes:min.length}));
 }
