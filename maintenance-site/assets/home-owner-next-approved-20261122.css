@@ -1254,14 +1254,14 @@
     padding: 8px !important;
   }
   #public-portal[data-page='home'] .owner-console-body {
-    grid-template-columns: minmax(0, min(55%, calc(100dvh - 270px))) minmax(0, 1fr);
+    grid-template-columns: minmax(0, min(60%, calc(100dvh - 244px))) minmax(0, 1fr);
     gap: 10px;
   }
   #public-portal[data-page='home'] .owner-console-board {
     width: 100%;
     height: auto !important;
     align-self: start;
-    max-height: calc(100dvh - 270px);
+    max-height: calc(100dvh - 244px);
     aspect-ratio: 1;
   }
   #public-portal[data-page='home'] .owner-console-panel {
@@ -1301,4 +1301,83 @@
     padding: 7px 10px !important;
   }
   #public-portal[data-page='home'] .owner-accepted-hero .r4-game-cta-stack { min-height: 44px; }
+}
+
+
+/* PR918: match the latest native Gomoku board, not the outdated translucent
+   homepage preview. These strokes and edge variables are copied from the
+   production board CSS in contact-api/auth/gomoku-console.mjs:
+   .board .cell::before and its edge-top/bottom/left/right declarations. */
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell::before {
+  inset: -1px;
+  background:
+    linear-gradient(#363b3e,#363b3e) var(--grid-x,center) center / var(--grid-width,100%) 2px no-repeat,
+    linear-gradient(#363b3e,#363b3e) center var(--grid-y,center) / 2px var(--grid-height,100%) no-repeat !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell.edge-top {
+  --grid-y: bottom;
+  --grid-height: 50%;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell.edge-bottom {
+  --grid-y: top;
+  --grid-height: 50%;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell.edge-left {
+  --grid-x: right;
+  --grid-width: 50%;
+}
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell.edge-right {
+  --grid-x: left;
+  --grid-width: 50%;
+}
+/* Keep the 15x15 intersections and nine original star points on top of
+   their own grid; remove the square destination indicator entirely. */
+#public-portal[data-page='home'] .owner-accepted-hero .owner-gomoku-cell.preview-to {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Move the optional pause toggle out of flex layout.
+   It remains keyboard accessible but consumes zero board height. */
+#public-portal[data-page='home'] .owner-accepted-hero .owner-console > .portal-rotation-toggle {
+  position: absolute !important;
+  z-index: 4;
+  top: 5px !important;
+  right: 9px !important;
+  bottom: auto !important;
+  align-self: auto !important;
+  min-height: 23px;
+  padding: 3px 7px;
+  margin: 0 !important;
+  font: 700 10px/1.2 Arial, sans-serif;
+}
+#public-portal[data-page='home'] .owner-console-toplinks {
+  padding-right: 122px;
+}
+@media (max-width: 760px) {
+  #public-portal[data-page='home'] .owner-accepted-hero .owner-console > .portal-rotation-toggle {
+    top: 4px !important;
+    right: 5px !important;
+    min-height: 21px;
+    font-size: 9px;
+    padding: 3px 5px;
+  }
+  #public-portal[data-page='home'] .owner-console-toplinks {
+    padding-right: 88px;
+  }
+}
+
+/* Even at ordinary desktop heights, give more of the console width to
+   the board than to the promotional right sidebar. */
+@media (min-width: 1181px) and (min-height: 871px) {
+  #public-portal[data-page='home'] .owner-console-body {
+    grid-template-columns: minmax(0, 1.58fr) minmax(285px, .82fr);
+  }
+  /* Keep all four scenes identical in height even when the bot panel text
+     wraps more narrowly than the newsletter on wide monitors. */
+  #public-portal[data-page='home'] .owner-console-panel {
+    min-height: 668px !important;
+  }
 }
