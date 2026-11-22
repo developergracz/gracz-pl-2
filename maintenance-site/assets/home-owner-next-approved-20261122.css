@@ -1259,6 +1259,8 @@
   }
   #public-portal[data-page='home'] .owner-console-board {
     width: 100%;
+    height: auto !important;
+    align-self: start;
     max-height: calc(100dvh - 270px);
     aspect-ratio: 1;
   }
