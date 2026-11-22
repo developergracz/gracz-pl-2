@@ -155,7 +155,9 @@
   pause.textContent = 'Wstrzymaj pokaz';
   pause.setAttribute('aria-pressed', 'false');
   pause.setAttribute('aria-label', 'Wstrzymaj automatyczną zmianę plansz');
-  hero.appendChild(pause);
+  // Keep the rotation control inside the console frame, not as a stray hero grid item.
+  const consoleFrame = hero.querySelector('.owner-console');
+  if (consoleFrame) consoleFrame.appendChild(pause);
 
   function reset(name) {
     const cells = boards[name];
