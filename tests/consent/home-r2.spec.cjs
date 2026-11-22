@@ -1188,6 +1188,9 @@ test('Coming-soon newsletter uses existing consent-gated signup modal',async({pa
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.goto('/');
  await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+ // The carousel pauses while game CTAs are hovered; after dismissing cookies,
+ // move the pointer away so screen size cannot accidentally pause this test.
+ await page.mouse.move(0,0);
  const hero=page.locator('.owner-accepted-hero');
  await page.clock.runFor(36050);
  await expect(hero).toHaveAttribute('data-hero-slide','soon');
