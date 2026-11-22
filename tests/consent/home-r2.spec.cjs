@@ -1336,3 +1336,28 @@ test('PR918 native Gomoku 2px intersections and enlarged responsive console',asy
   }finally{await context.close()}
  }
 });
+
+
+test('PR919 shortcuts start below the first desktop viewport without disappearing',async({browser})=>{
+ for(const [width,height] of [[1649,784],[1366,900]]){
+  const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,reducedMotion:'no-preference'});
+  try{
+   const page=await context.newPage();
+   await page.goto('/');
+   await page.getByRole('button',{name:'Odrzuć wszystko'}).click();
+   await page.evaluate(async()=>{await document.fonts.ready;window.scrollTo(0,0);});
+   const dims=await page.evaluate(()=>{
+    const rect=s=>{const r=document.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height};};
+    return {screen:innerHeight,scrollY,hero:rect('.owner-accepted-hero'),
+      console:rect('.owner-console'),shortcuts:rect('.r4-shortcuts')};
+   });
+   expect(dims.shortcuts.top,JSON.stringify(dims)).toBeGreaterThanOrEqual(height-1);
+   expect(dims.shortcuts.height).toBeGreaterThan(40);
+   expect(dims.hero.bottom,JSON.stringify(dims)).toBeLessThanOrEqual(dims.shortcuts.top);
+   if(width===1649)expect(dims.console.bottom,JSON.stringify(dims)).toBeLessThanOrEqual(height-2);
+   const filename=path.resolve('test-results/home-r4/pr919-first-fold-'+width+'.png');
+   fs.mkdirSync(path.dirname(filename),{recursive:true});
+   await page.screenshot({path:filename,animations:'disabled'});
+  }finally{await context.close();}
+ }
+});
